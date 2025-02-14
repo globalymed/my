@@ -1,0 +1,71 @@
+.clinic-card {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: box-shadow 0.3s ease-in-out;
+  margin-bottom: 20px;
+}
+
+.clinic-card:hover {
+  box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+  padding: 20px;
+  cursor: pointer;
+  position: relative;
+}
+
+.clinic-name {
+  font-weight: bold;
+  font-size: 1.2rem;
+  margin-bottom: 10px;
+}
+
+.rating {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 10px;
+}
+
+.services {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 10px;
+}
+
+.distance {
+  color: #666;
+  margin-bottom: 10px;
+}
+
+.book-now {
+  margin-top: 10px;
+}
+
+.bookmark {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
+@media (min-width: 600px) {
+  .clinic-card {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+}
+
+@media print {
+  .clinic-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .map-preview, .book-now, .bookmark {
+    display: none;
+  }
+} 
