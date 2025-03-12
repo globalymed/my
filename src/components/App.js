@@ -1,11 +1,9 @@
 import React, { Suspense } from 'react';
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
-import { getFirestore } from 'firebase/firestore';
-import { getPerformance } from 'firebase/performance';
-import { isPlatform } from '@ionic/react';
-import { db } from '../firebase';
+import { Route, Routes, Navigate } from 'react-router-dom';
 import { CircularProgress, Box } from '@mui/material';
+import { db } from '../firebase';
 
+const AIChat = React.lazy(() => import('./AIChat'));
 const ClinicRecommender = React.lazy(() => import('./ClinicRecommender'));
 const CalendarComponent = React.lazy(() => import('./CalendarComponent'));
 const TimeSlotGrid = React.lazy(() => import('./TimeSlotGrid'));
@@ -21,7 +19,8 @@ const App = () => {
   return (
     <Suspense fallback={<LoadingFallback />}>
       <Routes>
-        <Route path="/" element={<Navigate to="/recommend" replace />} />
+        <Route path="/" element={<Navigate to="/chat" replace />} />
+        <Route path="/chat" element={<AIChat />} />
         <Route path="/recommend" element={<ClinicRecommender />} />
         <Route path="/book" element={
           <>
@@ -35,4 +34,4 @@ const App = () => {
   );
 };
 
-export default App; 
+export default App;

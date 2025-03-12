@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { TextField, Button, Checkbox, FormControlLabel } from '@mui/material';
 import { isValidPhoneNumber } from 'libphonenumber-js';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../firebase';
 
 const BookingConfirmationForm = ({ selectedSlot, onSubmit }) => {
   const [formData, setFormData] = useState({

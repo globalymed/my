@@ -1,4 +1,4 @@
-import create from 'zustand';
+import { create } from 'zustand';
 import { persist, devtools } from 'zustand/middleware';
 import { produce } from 'immer';
 import { v4 as uuidv4 } from 'uuid';
@@ -47,7 +47,7 @@ const initialState: RootState = {
   version: 1,
 };
 
-const useStore = create()(
+const useStore = create<RootState>()(
   devtools(
     persist(
       sessionManager(

@@ -3,6 +3,7 @@ import { collection, query, where, orderBy, limit, getDocs } from 'firebase/fire
 import { httpsCallable } from 'firebase/functions';
 import { Capacitor } from '@capacitor/core';
 import { ClinicCard } from './ClinicCard';
+import { db } from './src/firebase';
 
 const ClinicRecommender = () => {
   const [clinics, setClinics] = useState([]);

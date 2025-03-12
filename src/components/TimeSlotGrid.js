@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { format } from 'date-fns';
+import { db } from '../firebase';
 
 const TimeSlotGrid = ({ selectedDate }) => {
   const [slots, setSlots] = useState([]);
