@@ -71,8 +71,8 @@
   margin: 0;
   letter-spacing: -0.025em;
   background: var(--user-gradient);
-  -webkit-background-clip: text;
   background-clip: text;
+  -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 

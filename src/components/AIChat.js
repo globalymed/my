@@ -1,7 +1,28 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { TextField, Button, Typography, Box } from '@mui/material';
+import { 
+  TextField, 
+  Button, 
+  Typography, 
+  Box, 
+  Paper, 
+  IconButton, 
+  CircularProgress, 
+  Avatar, 
+  Chip,
+  Tooltip,
+  Divider,
+  useTheme
+} from '@mui/material';
 import './AIChat.css';
-import ClinicRecommender from './ClinicRecommender';
+import ClinicRecommender from './ClinicRecommenderEnhanced';
+import SendIcon from '@mui/icons-material/Send';
+import MicIcon from '@mui/icons-material/Mic';
+import SmartToyIcon from '@mui/icons-material/SmartToy';
+import PersonIcon from '@mui/icons-material/Person';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import DeleteIcon from '@mui/icons-material/Delete';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
 const GEMINI_API_KEY = process.env.REACT_APP_GEMINI_API_KEY;
 const SYSTEM_PROMPT = `You are MedYatra's medical triage assistant, designed to help patients find appropriate healthcare providers in India. Follow these instructions precisely:
@@ -81,24 +102,8 @@ const AIChat = () => {
     patientContext: {}
   });
   const [previousResponses, setPreviousResponses] = useState(new Set());
-
-  useEffect(() => {
-    const history = localStorage.getItem('chatHistory');
-    if (history) {
-      const parsedHistory = JSON.parse(history);
-      setMessages(parsedHistory);
-    }
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('chatHistory', JSON.stringify(messages));
-  }, [messages]);
-
-  useEffect(() => {
-    if (chatRef.current) {
-      chatRef.current.scrollTop = chatRef.current.scrollHeight;
-    }
-  }, [messages]);
+  const [showRecommendations, setShowRecommendations] = useState(false);
+  const theme = useTheme();
 
   const detectSymptoms = (message) => {
     const lowerMessage = message.toLowerCase();
@@ -384,151 +389,168 @@ I'm now searching for the best clinics that specialize in ${details.treatmentTyp
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!input.trim()) return;
-
-    // Add user message to chat
-    const newUserMessage = { text: input, sender: 'user' };
+    if (!input.trim() || loading) return;
     
-    // Update messages state
-    setMessages(prev => {
-      const updatedMessages = [...prev, newUserMessage];
+    const userMessage = sanitizeInput(input);
+    setInput('');
+    
+    // Add user message to chat
+    const updatedMessages = [...messages, { text: userMessage, sender: 'user' }];
+    setMessages(updatedMessages);
+    
+    // Set loading state
+    setLoading(true);
+    
+    try {
+      // First try to detect symptoms locally
+      const { detectedType, hasSymptoms } = detectSymptoms(userMessage);
       
-      // Generate response based on the updated messages
-      setTimeout(() => {
-        // Get current conversation state
-        const currentState = conversationState;
-        console.log("Current state before processing:", currentState);
+      if (detectedType && !treatmentDetails) {
+        console.log(`Detected ${detectedType} symptoms locally`);
+        setConversationState(prev => ({
+          ...prev,
+          detectedType,
+          stage: 'asking_details'
+        }));
         
-        // Get all user messages including the one just added
-        const allUserMessages = updatedMessages.filter(msg => msg.sender === 'user');
-        const lastMsg = allUserMessages[allUserMessages.length - 1].text;
-        
-        console.log("Generating response for:", lastMsg);
-        
-        // Set loading state
-        setLoading(true);
-        
-        let aiResponse = "";
-        
-        // If we're already in a specific treatment context, stay in that context
-        if (currentState.detectedType) {
-          console.log("Continuing conversation in context:", currentState.detectedType);
-          
-          // Process the message based on the current stage
-          if (currentState.stage === 'asking_details') {
-            // Move to asking duration
-            setConversationState(prev => ({
-              ...prev,
-              stage: 'asking_duration',
-              patientContext: {
-                ...prev.patientContext,
-                detailedDescription: lastMsg
-              }
-            }));
-            
-            aiResponse = "Thank you for those details. How long have you been experiencing these hair issues? Please let me know if it's been days, weeks, months, or years.";
-          } 
-          else if (currentState.stage === 'asking_duration') {
-            // Move to asking severity
-            setConversationState(prev => ({
-              ...prev,
-              stage: 'asking_severity',
-              duration: lastMsg
-            }));
-            
-            aiResponse = "I see you've been dealing with this for " + lastMsg + ". On a scale of 1 to 10, with 10 being the most severe, how would you rate the intensity of your hair thinning?";
-          }
-          else if (currentState.stage === 'asking_severity') {
-            // Move to asking area
-            const severityRating = parseInt(lastMsg) || 5;
-            
-            setConversationState(prev => ({
-              ...prev,
-              stage: 'asking_area',
-              severity: severityRating
-            }));
-            
-            if (currentState.detectedType === 'hair') {
-              aiResponse = "Thank you. Could you specify which areas of your scalp or hairline are most affected? For example, is it the crown, temples, or overall thinning?";
+        // If we've detected a treatment type and we're in the final stage, show recommendations
+        if (conversationState.stage === 'recommending' || messages.length > 6) {
+          setTreatmentDetails({
+            treatmentType: detectedType,
+            details: {
+              duration: conversationState.duration || "recently",
+              severity: conversationState.severity || 5,
+              area: conversationState.area || "unspecified"
             }
-          }
-          else if (currentState.stage === 'asking_area') {
-            // Move to confirmation
-            setConversationState(prev => ({
-              ...prev,
-              stage: 'confirming',
-              area: lastMsg
-            }));
-            
-            aiResponse = `Thank you for providing all this information. Let me confirm what I understand:
-            
-            - You're experiencing hair thinning
-            - You've been dealing with this for ${currentState.duration || "some time"}
-            - The severity is ${currentState.severity || "moderate"} out of 10
-            - The affected area is ${lastMsg}
-            
-            Is this correct? If so, I'll recommend some hair specialists for you.`;
-          }
-          else {
-            // Use the regular generateResponse logic
-            aiResponse = generateResponse();
+          });
+          
+          setShowRecommendations(true);
+          
+          // Add AI response about showing recommendations
+          setMessages([...updatedMessages, { 
+            text: `Based on your symptoms, I recommend seeing a specialist for ${detectedType} treatment. I've found some highly-rated clinics for you below.`, 
+            sender: 'ai' 
+          }]);
+          
+          setLoading(false);
+          return;
+        }
+      }
+      
+      // Generate response using our local function
+      const aiResponse = generateResponse();
+      
+      if (aiResponse) {
+        // Check if we've already said this exact response
+        if (previousResponses.has(aiResponse)) {
+          console.log("Avoiding duplicate response");
+          setMessages([...updatedMessages, { 
+            text: "I think I can help you better by recommending some clinics based on what you've told me. Let me show you some options.", 
+            sender: 'ai' 
+          }]);
+          
+          // If we're repeating ourselves, move to recommendation stage
+          if (!treatmentDetails && conversationState.detectedType) {
+            setTreatmentDetails({
+              treatmentType: conversationState.detectedType,
+              details: {
+                duration: conversationState.duration || "recently",
+                severity: conversationState.severity || 5,
+                area: conversationState.area || "unspecified"
+              }
+            });
+            setShowRecommendations(true);
           }
         } else {
-          // If no context yet, use the regular detection logic
-          const { detectedType, hasSymptoms } = detectSymptoms(lastMsg);
-          console.log("Detection results:", { detectedType, hasSymptoms });
-          
-          if (detectedType) {
-            setConversationState(prev => ({
-              ...prev,
-              stage: 'asking_details',
-              detectedType: detectedType
-            }));
-            
-            if (detectedType === 'hair') {
-              aiResponse = "I understand you're experiencing hair-related concerns. Could you tell me more about what specific issues you're noticing with your hair?";
-            } else {
-              aiResponse = generateResponse();
-            }
-          } else {
-            aiResponse = generateResponse();
-          }
+          // Add the response to our set of previous responses
+          setPreviousResponses(prev => new Set(prev).add(aiResponse));
+          setMessages([...updatedMessages, { text: aiResponse, sender: 'ai' }]);
         }
         
-        // Add AI response to messages
-        setMessages(currentMsgs => [...currentMsgs, { text: aiResponse, sender: 'ai' }]);
         setLoading(false);
-      }, 100);
+        return;
+      }
       
-      return updatedMessages;
-    });
-    
-    // Clear input field
-    setInput('');
+      // If local response generation failed, try the API
+      // Prepare conversation history for API
+      const conversationHistory = messages.map(msg => ({
+        role: msg.sender === 'user' ? 'user' : 'model',
+        parts: [{ text: msg.text }]
+      }));
+      
+      // Add the new user message
+      conversationHistory.push({
+        role: 'user',
+        parts: [{ text: userMessage }]
+      });
+      
+      // Add system prompt at the beginning
+      conversationHistory.unshift({
+        role: 'system',
+        parts: [{ text: SYSTEM_PROMPT }]
+      });
+      
+      const response = await fetchWithTimeout(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            contents: conversationHistory,
+            generationConfig: {
+              temperature: 0.7,
+              topK: 40,
+              topP: 0.95,
+              maxOutputTokens: 1000,
+            },
+          }),
+        },
+        TIMEOUT_MS
+      );
+      
+      const data = await response.json();
+      
+      if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+        const aiResponseText = data.candidates[0].content.parts[0].text;
+        
+        // Try to extract treatment details from the response
+        try {
+          // Look for JSON in the response
+          const jsonMatch = aiResponseText.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const jsonStr = jsonMatch[0];
+            const extractedDetails = JSON.parse(jsonStr);
+            
+            if (extractedDetails.treatmentType) {
+              console.log("Extracted treatment details:", extractedDetails);
+              setTreatmentDetails(extractedDetails);
+              setShowRecommendations(true);
+            }
+          }
+        } catch (error) {
+          console.error("Error parsing treatment details:", error);
+        }
+        
+        setMessages([...updatedMessages, { text: aiResponseText, sender: 'ai' }]);
+      } else {
+        throw new Error('Invalid response from API');
+      }
+    } catch (error) {
+      console.error('Error generating response:', error);
+      setMessages([...updatedMessages, { text: FALLBACK_RESPONSE, sender: 'ai' }]);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const formatResponse = (response) => {
-    return `I understand you're looking for ${response.treatmentType} treatment.
-Duration: ${response.details.duration}
-Severity: ${response.details.severity}/10
-Affected Area: ${response.details.area}
-
-Let me find the best clinics for you...`;
-  };
-
-  const handleClinicSelect = (clinic) => {
-    setSelectedClinic(clinic);
-    setMessages(prev => [...prev, {
-      text: `I recommend ${clinic.name}. This clinic specializes in ${clinic.services.join(', ')} and has excellent reviews. Would you like to schedule an appointment?`,
-      sender: 'ai'
-    }]);
-  };
-  
-  const resetChat = () => {
+  const clearChat = () => {
     setMessages([
       { text: "Hello! I'm your MedYatra AI assistant. Please describe your symptoms or medical needs, and I'll help you find the right clinic.", sender: 'ai' }
     ]);
     setTreatmentDetails(null);
+    setShowRecommendations(false);
     setConversationState({
       stage: 'initial',
       detectedType: null,
@@ -538,60 +560,289 @@ Let me find the best clinics for you...`;
       patientContext: {}
     });
     setPreviousResponses(new Set());
-    localStorage.removeItem('chatHistory');
   };
-  
+
   return (
-    <Box className="ai-chat">
-      <Typography variant="h5" className="header">
-        MedYatra AI Assistant
-      </Typography>
-      <Box className="chat-history" ref={chatRef}>
-        {messages.map((msg, idx) => (
-          <Box 
-            key={idx}
-            className={`chat-bubble ${msg.sender}`}
+    <Box sx={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      height: '100%', 
+      gap: 3
+    }}>
+      <Paper 
+        elevation={0} 
+        sx={{ 
+          p: 3, 
+          borderRadius: 3,
+          background: `linear-gradient(135deg, ${theme.palette.primary.light}20, ${theme.palette.primary.main}10)`,
+          border: '1px solid',
+          borderColor: `${theme.palette.primary.light}30`,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Avatar 
+            sx={{ 
+              bgcolor: theme.palette.primary.main, 
+              width: 48, 
+              height: 48,
+              mr: 2,
+              boxShadow: theme.shadows[2]
+            }}
           >
-            {msg.text}
+            <SmartToyIcon />
+          </Avatar>
+          <Box>
+            <Typography variant="h5" component="h1" gutterBottom sx={{ fontWeight: 700, mb: 0.5 }}>
+              MedYatra AI Assistant
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Describe your symptoms and I'll help find the right specialist for you
+            </Typography>
           </Box>
-        ))}
-        {loading && (
-          <Box className="chat-bubble ai loading">
-            <div className="typing-indicator">
-              <span></span>
-              <span></span>
-              <span></span>
-            </div>
+        </Box>
+        <Tooltip title="Clear conversation">
+          <IconButton 
+            onClick={clearChat}
+            sx={{ 
+              bgcolor: 'rgba(255, 255, 255, 0.8)',
+              '&:hover': {
+                bgcolor: 'rgba(255, 255, 255, 0.9)',
+              }
+            }}
+          >
+            <DeleteIcon />
+          </IconButton>
+        </Tooltip>
+      </Paper>
+
+      <Paper 
+        elevation={0} 
+        sx={{ 
+          flexGrow: 1, 
+          display: 'flex', 
+          flexDirection: 'column',
+          borderRadius: 3,
+          border: '1px solid',
+          borderColor: 'rgba(0, 0, 0, 0.08)',
+          bgcolor: 'background.paper',
+          overflow: 'hidden'
+        }}
+      >
+        <Box 
+          ref={chatRef}
+          sx={{ 
+            flexGrow: 1, 
+            overflowY: 'auto', 
+            p: 3,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2
+          }}
+        >
+          {messages.map((message, index) => (
+            <Box 
+              key={index} 
+              sx={{ 
+                alignSelf: message.sender === 'user' ? 'flex-end' : 'flex-start',
+                maxWidth: '80%',
+                display: 'flex',
+                flexDirection: message.sender === 'user' ? 'row-reverse' : 'row',
+                alignItems: 'flex-start',
+                gap: 1.5
+              }}
+            >
+              <Avatar 
+                sx={{ 
+                  bgcolor: message.sender === 'user' ? theme.palette.secondary.main : theme.palette.primary.main,
+                  width: 36,
+                  height: 36
+                }}
+              >
+                {message.sender === 'user' ? <PersonIcon /> : <SmartToyIcon />}
+              </Avatar>
+              <Paper 
+                elevation={0}
+                sx={{ 
+                  p: 2, 
+                  borderRadius: 3,
+                  bgcolor: message.sender === 'user' 
+                    ? `linear-gradient(135deg, ${theme.palette.secondary.main}, ${theme.palette.secondary.dark})`
+                    : theme.palette.background.default,
+                  color: message.sender === 'user' ? 'white' : 'text.primary',
+                  border: '1px solid',
+                  borderColor: message.sender === 'user' 
+                    ? 'transparent' 
+                    : 'rgba(0, 0, 0, 0.08)',
+                  position: 'relative',
+                  '&::after': message.sender === 'user' ? {
+                    content: '""',
+                    position: 'absolute',
+                    top: 12,
+                    right: -8,
+                    width: 0,
+                    height: 0,
+                    border: '8px solid transparent',
+                    borderLeftColor: theme.palette.secondary.dark,
+                    borderRight: 0,
+                    marginRight: -8,
+                  } : {
+                    content: '""',
+                    position: 'absolute',
+                    top: 12,
+                    left: -8,
+                    width: 0,
+                    height: 0,
+                    border: '8px solid transparent',
+                    borderRightColor: theme.palette.background.default,
+                    borderLeft: 0,
+                    marginLeft: -8,
+                  }
+                }}
+              >
+                <Typography variant="body1">
+                  {message.text}
+                </Typography>
+              </Paper>
+            </Box>
+          ))}
+          {loading && (
+            <Box 
+              sx={{ 
+                alignSelf: 'flex-start',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1.5
+              }}
+            >
+              <Avatar 
+                sx={{ 
+                  bgcolor: theme.palette.primary.main,
+                  width: 36,
+                  height: 36
+                }}
+              >
+                <SmartToyIcon />
+              </Avatar>
+              <Paper 
+                elevation={0}
+                sx={{ 
+                  p: 2, 
+                  borderRadius: 3,
+                  bgcolor: theme.palette.background.default,
+                  border: '1px solid',
+                  borderColor: 'rgba(0, 0, 0, 0.08)',
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <CircularProgress size={20} thickness={5} />
+                  <Typography variant="body2" color="text.secondary">
+                    Thinking...
+                  </Typography>
+                </Box>
+              </Paper>
+            </Box>
+          )}
+        </Box>
+        
+        <Divider />
+        
+        <Box 
+          component="form" 
+          onSubmit={handleSubmit}
+          sx={{ 
+            p: 2, 
+            display: 'flex', 
+            gap: 1,
+            bgcolor: 'rgba(0, 0, 0, 0.02)'
+          }}
+        >
+          <TextField
+            fullWidth
+            variant="outlined"
+            placeholder="Describe your symptoms or health concerns..."
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            disabled={loading}
+            InputProps={{
+              sx: { 
+                borderRadius: 3,
+                bgcolor: 'background.paper',
+                '&.Mui-focused': {
+                  boxShadow: `0 0 0 2px ${theme.palette.primary.main}`
+                }
+              }
+            }}
+          />
+          <Tooltip title="Send message">
+            <IconButton 
+              type="submit" 
+              color="primary" 
+              disabled={!input.trim() || loading}
+              sx={{ 
+                bgcolor: theme.palette.primary.main,
+                color: 'white',
+                '&:hover': {
+                  bgcolor: theme.palette.primary.dark,
+                },
+                '&.Mui-disabled': {
+                  bgcolor: 'rgba(0, 0, 0, 0.12)',
+                  color: 'rgba(0, 0, 0, 0.26)',
+                }
+              }}
+            >
+              <SendIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Voice input (coming soon)">
+            <IconButton 
+              color="primary"
+              sx={{ 
+                bgcolor: 'background.paper',
+                border: '1px solid',
+                borderColor: 'rgba(0, 0, 0, 0.08)',
+              }}
+            >
+              <MicIcon />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      </Paper>
+
+      {showRecommendations && treatmentDetails && (
+        <Paper 
+          elevation={0} 
+          sx={{ 
+            p: 3, 
+            borderRadius: 3,
+            border: '1px solid',
+            borderColor: 'rgba(0, 0, 0, 0.08)',
+            bgcolor: 'background.paper',
+          }}
+        >
+          <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="h5" component="h2" sx={{ fontWeight: 700 }}>
+              Recommended Clinics
+            </Typography>
+            <Chip 
+              label={treatmentDetails.treatmentType.charAt(0).toUpperCase() + treatmentDetails.treatmentType.slice(1)} 
+              color="primary" 
+              sx={{ fontWeight: 600 }}
+            />
           </Box>
-        )}
-      </Box>
-      
-      {/* Only show ClinicRecommender when treatment details are available */}
-      {treatmentDetails && conversationState.stage === 'recommending' && (
-        <ClinicRecommender
-          treatmentType={treatmentDetails.treatmentType}
-          onClinicSelect={handleClinicSelect}
-        />
+          
+          <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <InfoOutlinedIcon fontSize="small" color="action" />
+            <Typography variant="body2" color="text.secondary">
+              Based on your symptoms, we've found these specialized clinics for you
+            </Typography>
+          </Box>
+          
+          <ClinicRecommender treatmentType={treatmentDetails.treatmentType} />
+        </Paper>
       )}
-      
-      <form onSubmit={handleSubmit} className="input-form">
-        <TextField
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Describe your symptoms or medical needs..."
-          variant="outlined"
-          fullWidth
-          aria-label="Chat input"
-        />
-        <Button type="submit" variant="contained" color="primary">
-          Send
-        </Button>
-        {messages.length > 1 && (
-          <Button onClick={resetChat} variant="outlined" color="secondary">
-            Reset
-          </Button>
-        )}
-      </form>
     </Box>
   );
 };
@@ -610,4 +861,4 @@ function sanitizeInput(input) {
   return input;
 }
 
-export default AIChat; 
+export default AIChat;
