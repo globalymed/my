@@ -1,0 +1,38 @@
+import React, { Suspense } from 'react';
+import { Route, Routes, Navigate } from 'react-router-dom';
+import { CircularProgress, Box } from '@mui/material';
+import { db } from '../firebase';
+import Layout from './Layout';
+import { ThemeProvider } from '@mui/material/styles';
+import theme from '../theme';
+
+const AIChat = React.lazy(() => import('./AIChatFixed'));
+const ClinicRecommender = React.lazy(() => import('./ClinicRecommenderEnhanced'));
+const CalendarComponent = React.lazy(() => import('./CalendarComponent'));
+const TimeSlotGrid = React.lazy(() => import('./TimeSlotGrid'));
+const BookingConfirmationForm = React.lazy(() => import('./BookingConfirmationForm'));
+
+function App() {
+  return (
+    <ThemeProvider theme={theme}>
+      <Layout>
+        <Suspense fallback={
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+            <CircularProgress />
+          </Box>
+        }>
+          <Routes>
+            <Route path="/" element={<AIChat />} />
+            <Route path="/clinics" element={<ClinicRecommender />} />
+            <Route path="/calendar" element={<CalendarComponent />} />
+            <Route path="/timeslots" element={<TimeSlotGrid />} />
+            <Route path="/booking" element={<BookingConfirmationForm />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
+      </Layout>
+    </ThemeProvider>
+  );
+}
+
+export default App;

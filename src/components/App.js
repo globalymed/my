@@ -6,7 +6,7 @@ import Layout from './Layout';
 import { ThemeProvider } from '@mui/material/styles';
 import theme from '../theme';
 
-const AIChat = React.lazy(() => import('./AIChatImproved'));
+const AIChat = React.lazy(() => import('./AIChatFinal'));
 const ClinicRecommender = React.lazy(() => import('./ClinicRecommenderEnhanced'));
 const CalendarComponent = React.lazy(() => import('./CalendarComponent'));
 const TimeSlotGrid = React.lazy(() => import('./TimeSlotGrid'));
