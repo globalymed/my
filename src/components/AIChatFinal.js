@@ -25,6 +25,7 @@ import SmartToyIcon from '@mui/icons-material/SmartToy';
 import PersonIcon from '@mui/icons-material/Person';
 import DeleteIcon from '@mui/icons-material/Delete';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import { createChatSession, sendMessage, extractMedicalInfo, determineTreatmentType } from '../services/geminiService';
 
 const FALLBACK_RESPONSE = "I'd like to help you find the right specialist. Could you tell me more about your symptoms or what type of medical treatment you're looking for?";
 
@@ -40,17 +41,32 @@ const AIChatFinal = () => {
   const [bestClinic, setBestClinic] = useState(null);
   const [showExpandedClinicDetails, setShowExpandedClinicDetails] = useState(false);
   const [showTreatmentsInfo, setShowTreatmentsInfo] = useState(false);
-  const [conversationState, setConversationState] = useState({
-    stage: 'initial',
-    detectedType: null,
-    duration: null,
-    severity: null,
-    area: null,
-    patientContext: {},
-    lastQuestion: null // Track the last question asked to avoid repetition
+  const [chatSession, setChatSession] = useState(null);
+  const [extractedInfo, setExtractedInfo] = useState({
+    medicalIssue: null,
+    location: null,
+    appointmentDate: null,
+    treatmentType: null
   });
   const [showRecommendations, setShowRecommendations] = useState(false);
+  
   const theme = useTheme();
+
+  // Initialize Gemini chat session
+  useEffect(() => {
+    const initializeChat = async () => {
+      try {
+        console.log("Initializing Gemini chat session...");
+        const session = await createChatSession();
+        console.log("Chat session initialized:", !!session);
+        setChatSession(session);
+      } catch (error) {
+        console.error("Failed to initialize chat session:", error);
+      }
+    };
+    
+    initializeChat();
+  }, []);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -59,518 +75,237 @@ const AIChatFinal = () => {
     }
   }, [messages]);
 
-  // Enhanced symptom detection with more comprehensive patterns
-  const detectSymptoms = (message) => {
-    const lowerMessage = message.toLowerCase();
-    let detectedType = null;
-    let hasSymptoms = false;
+  // Process the conversation to extract information
+  useEffect(() => {
+    const processConversation = async () => {
+      if (messages.length < 3) return; // Need at least one user message and one AI response
+      
+      // Create a string representation of the conversation
+      const conversationText = messages
+        .map(msg => `${msg.sender === 'user' ? 'User' : 'AI'}: ${msg.text}`)
+        .join('\n');
+      
+      try {
+        const info = await extractMedicalInfo(conversationText);
+        setExtractedInfo(info);
+        
+        // If we have enough information, show clinic recommendations
+        if (info.treatmentType && info.medicalIssue) {
+          // Set treatment details based on extracted information
+          setTreatmentDetails({
+            treatmentType: info.treatmentType,
+            symptoms: info.medicalIssue,
+            duration: info.appointmentDate || "As soon as possible",
+            location: info.location || "Any location"
+          });
+          
+          // Select the best clinic based on the treatment type
+          const clinic = await selectBestClinic(info.treatmentType);
+          if (clinic) {
+            setBestClinic(clinic);
+            setShowRecommendations(true);
+          }
+        }
+      } catch (error) {
+        console.error("Error processing conversation:", error);
+      }
+    };
     
-    // Check for hair-related symptoms - expanded keywords
-    if (/\b(hair\s*loss|bald|thinning\s*hair|receding\s*hairline|hair\s*fall|hair\s*transplant|hair\s*treatment|hair\s*problem|hair\s*issue|scalp|dandruff|hair)\b/i.test(lowerMessage)) {
-      detectedType = 'hair';
-      hasSymptoms = true;
-    }
-    // Check for dental-related symptoms
-    else if (/\b(tooth|teeth|dental|dentist|cavity|filling|crown|root\s*canal|gum|oral|mouth|jaw|braces|invisalign|denture)\b/i.test(lowerMessage)) {
-      detectedType = 'dental';
-      hasSymptoms = true;
-    }
-    // Check for cosmetic-related symptoms
-    else if (/\b(cosmetic|beauty|skin|face|wrinkle|botox|filler|laser|plastic\s*surgery|liposuction|tummy\s*tuck|nose\s*job|facelift)\b/i.test(lowerMessage)) {
-      detectedType = 'cosmetic';
-      hasSymptoms = true;
-    }
-    // Check for IVF-related symptoms
-    else if (/\b(fertility|ivf|in\s*vitro|pregnancy|conceive|conception|sperm|egg|embryo|surrogacy|infertility)\b/i.test(lowerMessage)) {
-      detectedType = 'ivf';
-      hasSymptoms = true;
-    }
-    // Check for general symptoms
-    else if (/\b(pain|ache|discomfort|fever|cough|cold|flu|headache|migraine|nausea|vomit|diarrhea|constipation|rash|allergy|infection|injury|wound|sore|swelling)\b/i.test(lowerMessage)) {
-      detectedType = 'general';
-      hasSymptoms = true;
-    }
-    
-    return { detectedType, hasSymptoms };
-  };
+    processConversation();
+  }, [messages]);
 
-  // Check if user is asking for clarification
-  const isAskingForClarification = (message) => {
-    const lowerMessage = message.toLowerCase();
-    return /what|like what|more info|tell you what|what do you want|what do you need|what should i|how should i|not sure what|what information|what else|what more/i.test(lowerMessage);
-  };
-
-  // Handle form submission with improved conversation flow
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!input.trim() || loading) return;
     
-    const userMessage = sanitizeInput(input);
+    const sanitizedInput = input.trim();
     setInput('');
     
     // Add user message to chat
-    const updatedMessages = [...messages, { text: userMessage, sender: 'user' }];
-    setMessages(updatedMessages);
+    setMessages(prev => [...prev, { text: sanitizedInput, sender: 'user' }]);
     
-    // Set loading state
     setLoading(true);
     
     try {
-      // Check if this message contains symptoms
-      const { detectedType, hasSymptoms } = detectSymptoms(userMessage);
-      let aiResponse = "";
+      let aiResponse;
       
-      // Check if user is asking for clarification about what to say
-      const askingForClarification = isAskingForClarification(userMessage);
-      
-      // First check if we've detected a treatment type
-      if (detectedType) {
-        // Update conversation state with detected type if not already set
-        if (!conversationState.detectedType) {
-          setConversationState(prev => ({
-            ...prev,
-            detectedType,
-            stage: 'asking_details',
-            lastQuestion: 'details'
-          }));
-          
-          // Provide response based on detected type
-          if (detectedType === 'hair') {
-            aiResponse = "I understand you're experiencing hair-related concerns. Could you tell me more about your hair issues? For example, is it gradual thinning, patchy loss, or receding hairline?";
-          } else if (detectedType === 'dental') {
-            aiResponse = "I understand you're having dental issues. Could you describe the dental problem in more detail? For example, is it pain, sensitivity, or cosmetic concerns?";
-          } else if (detectedType === 'cosmetic') {
-            aiResponse = "I understand you're interested in cosmetic procedures. Could you tell me more about what specific treatments you're considering or what concerns you'd like to address?";
-          } else {
-            aiResponse = `I understand you're looking for ${detectedType} treatment. Could you tell me more about your specific concerns?`;
-          }
-        } 
-        // If we already have a detected type, process based on conversation stage
-        else {
-          const treatmentType = conversationState.detectedType;
-          
-          switch (conversationState.stage) {
-            case 'asking_details':
-              setConversationState(prev => ({
-                ...prev,
-                stage: 'asking_duration',
-                patientContext: {
-                  ...prev.patientContext,
-                  details: userMessage
-                },
-                lastQuestion: 'duration'
-              }));
-              
-              aiResponse = `Thank you for sharing that information about your ${treatmentType} concerns. How long have you been experiencing these issues?`;
-              break;
-              
-            case 'asking_duration':
-              setConversationState(prev => ({
-                ...prev,
-                duration: userMessage,
-                stage: 'asking_severity',
-                lastQuestion: 'severity'
-              }));
-              
-              aiResponse = `I understand you've been dealing with this for ${userMessage}. On a scale of 1 to 10, how would you rate the severity of your ${treatmentType} issues?`;
-              break;
-              
-            case 'asking_severity':
-              // Try to parse severity as a number, default to 5 if not found
-              const severityMatch = userMessage.match(/\d+/);
-              const severityRating = severityMatch ? parseInt(severityMatch[0]) : 5;
-              
-              setConversationState(prev => ({
-                ...prev,
-                severity: severityRating,
-                stage: 'asking_area',
-                lastQuestion: 'area'
-              }));
-              
-              if (treatmentType === 'hair') {
-                aiResponse = "Thank you. Could you tell me which areas are most affected? For example, is it the crown, temples, or overall thinning?";
-              } else {
-                aiResponse = "Thank you. Could you specify which areas are most affected?";
-              }
-              break;
-              
-            case 'asking_area':
-              setConversationState(prev => ({
-                ...prev,
-                area: userMessage,
-                stage: 'recommending',
-                lastQuestion: 'recommendations'
-              }));
-              
-              // Create treatment details for recommendation
-              setTreatmentDetails({
-                treatmentType: treatmentType,
-                details: {
-                  duration: conversationState.duration || "recently",
-                  severity: conversationState.severity || 5,
-                  area: userMessage
-                }
-              });
-              
-              // Show recommendations
-              setShowRecommendations(true);
-              
-              aiResponse = `Based on what you've shared about your ${treatmentType} concerns, I recommend seeing a specialist. I've found some highly-rated clinics for you below that specialize in ${treatmentType} treatments.`;
-              break;
-              
-            case 'recommending':
-              // We're already showing recommendations, just acknowledge
-              aiResponse = "Is there anything specific you'd like to know about these clinics? Or would you like me to help you book an appointment?";
-              break;
-              
-            default:
-              // Move to next stage if we're stuck
-              if (conversationState.lastQuestion === 'duration') {
-                setConversationState(prev => ({
-                  ...prev,
-                  duration: userMessage,
-                  stage: 'asking_severity',
-                  lastQuestion: 'severity'
-                }));
-                
-                aiResponse = `Thank you. On a scale of 1 to 10, how would you rate the severity of your ${treatmentType} issues?`;
-              } else if (conversationState.lastQuestion === 'severity') {
-                setConversationState(prev => ({
-                  ...prev,
-                  severity: 5,
-                  stage: 'asking_area',
-                  lastQuestion: 'area'
-                }));
-                
-                if (treatmentType === 'hair') {
-                  aiResponse = "Could you tell me which areas are most affected? For example, is it the crown, temples, or overall thinning?";
-                } else {
-                  aiResponse = "Could you specify which areas are most affected?";
-                }
-              } else if (conversationState.lastQuestion === 'area') {
-                setConversationState(prev => ({
-                  ...prev,
-                  area: userMessage || "not specified",
-                  stage: 'recommending',
-                  lastQuestion: 'recommendations'
-                }));
-                
-                // Create treatment details for recommendation
-                setTreatmentDetails({
-                  treatmentType: treatmentType,
-                  details: {
-                    duration: conversationState.duration || "recently",
-                    severity: conversationState.severity || 5,
-                    area: userMessage || "not specified"
-                  }
-                });
-                
-                // Show recommendations
-                setShowRecommendations(true);
-                
-                aiResponse = `Based on what you've shared about your ${treatmentType} concerns, I recommend seeing a specialist. I've found some highly-rated clinics for you below that specialize in ${treatmentType} treatments.`;
-              } else {
-                // Default response if stage is not recognized
-                aiResponse = `Let me help you find the right specialist for your ${treatmentType} concerns. Could you tell me how long you've been experiencing these issues?`;
-                setConversationState(prev => ({
-                  ...prev,
-                  stage: 'asking_duration',
-                  lastQuestion: 'duration'
-                }));
-              }
-              break;
+      if (chatSession) {
+        // Use Gemini API for response
+        console.log("Using Gemini API for response");
+        aiResponse = await sendMessage(chatSession, sanitizedInput);
+        
+        // If we got a fallback response, try to determine if this is a symptom and provide a more specific response
+        if (aiResponse === FALLBACK_RESPONSE) {
+          const symptomType = determineTreatmentType(sanitizedInput);
+          if (symptomType) {
+            console.log("Detected symptom type:", symptomType);
+            aiResponse = `I see you're mentioning symptoms related to ${symptomType} treatment. Could you tell me more about your specific concerns? This will help me find the best clinic for you.`;
           }
         }
-      }
-      // Handle greetings separately, but check for symptoms in greetings too
-      else if (/^(hi|hello|hey|greetings|namaste)/i.test(userMessage.toLowerCase())) {
-        // Check if greeting also contains symptoms
-        const fullMessageCheck = detectSymptoms(userMessage);
+      } else {
+        // Fallback if chat session isn't available
+        console.log("No chat session available, using fallback response");
         
-        if (fullMessageCheck.detectedType) {
-          // The greeting contains a treatment type
-          setConversationState(prev => ({
-            ...prev,
-            detectedType: fullMessageCheck.detectedType,
-            stage: 'asking_details',
-            lastQuestion: 'details'
-          }));
+        // Try to determine if this is a symptom and provide a more specific response
+        const symptomType = determineTreatmentType(sanitizedInput);
+        if (symptomType) {
+          console.log("Detected symptom type:", symptomType);
+          aiResponse = `I see you're mentioning symptoms related to ${symptomType} treatment. Could you tell me more about your specific concerns? This will help me find the best clinic for you.`;
+        } else {
+          aiResponse = FALLBACK_RESPONSE;
+        }
+      }
+      
+      // Check if the response is a fallback or error message
+      if (aiResponse.includes("having trouble") || aiResponse.includes("error")) {
+        // Try to provide a more helpful response based on detected symptoms
+        const detectedType = determineTreatmentType(sanitizedInput);
+        
+        if (detectedType) {
+          let specializedResponse = "";
           
-          switch (fullMessageCheck.detectedType) {
+          switch (detectedType) {
+            case 'cosmetic':
+              specializedResponse = `I see you're mentioning symptoms related to skin or cosmetic concerns. Would you like me to recommend a cosmetic clinic for your condition?`;
+              break;
             case 'hair':
-              aiResponse = "Hello! I understand you're experiencing hair-related concerns. Could you tell me more about your hair issues? For example, is it gradual thinning, patchy loss, or receding hairline?";
+              specializedResponse = `I see you're mentioning hair-related concerns. Our hair restoration clinics offer treatments for hair loss, thinning hair, and various scalp conditions. Would you like me to recommend a hair treatment specialist for you?`;
               break;
             case 'dental':
-              aiResponse = "Hello! I understand you're having dental issues. Could you describe the dental problem in more detail? For example, is it pain, sensitivity, or cosmetic concerns?";
+              specializedResponse = `I see you're mentioning symptoms related to dental issues. Would you like me to recommend a dental clinic for your condition?`;
+              break;
+            case 'ivf':
+              specializedResponse = `I see you're mentioning fertility-related concerns. Would you like me to recommend an IVF clinic for your needs?`;
               break;
             default:
-              aiResponse = `Hello! I understand you're looking for ${fullMessageCheck.detectedType} treatment. Could you tell me more about your specific concerns?`;
+              specializedResponse = "";
           }
-        } else {
-          // Just a greeting without symptoms
-          aiResponse = "Hello! I'm here to help you find the right medical care. We currently specialize in Hair Restoration, Dental Care, Cosmetic Procedures, and IVF/Fertility treatments. Could you please describe your health concerns or which of these treatments you're interested in?";
+          
+          if (specializedResponse) {
+            aiResponse = specializedResponse;
+            
+            // Update medical info
+            setExtractedInfo(prevInfo => ({
+              ...prevInfo,
+              medicalIssue: sanitizedInput,
+              treatmentType: detectedType
+            }));
+          }
+        } else if (sanitizedInput.toLowerCase().includes("rash") || sanitizedInput.toLowerCase().includes("rashes")) {
+          // Special handling for rashes since they're common
+          aiResponse = "I see you're mentioning rashes, which are typically treated by our cosmetic specialists. Would you like me to recommend a cosmetic clinic for your skin condition?";
+          
+          // Update medical info
+          setExtractedInfo(prevInfo => ({
+            ...prevInfo,
+            medicalIssue: "rashes",
+            treatmentType: "cosmetic"
+          }));
+        } else if (sanitizedInput.toLowerCase().includes("hair") || 
+                  sanitizedInput.toLowerCase().includes("bald") || 
+                  sanitizedInput.toLowerCase().includes("scalp")) {
+          // Special handling for hair issues
+          aiResponse = "I understand you're having hair-related concerns. Our hair restoration clinics offer treatments for hair loss, thinning hair, and various scalp conditions. Would you like me to recommend a hair treatment specialist for you?";
+          
+          // Update medical info
+          setExtractedInfo(prevInfo => ({
+            ...prevInfo,
+            medicalIssue: sanitizedInput,
+            treatmentType: "hair"
+          }));
         }
-      }
-      // Handle clarification questions specifically
-      else if (askingForClarification && conversationState.detectedType) {
-        const treatmentType = conversationState.detectedType;
-        
-        // Provide a helpful response based on the current stage
-        switch (conversationState.stage) {
-          case 'asking_details':
-            aiResponse = `I'd like to know more about your ${treatmentType} concerns. For example, when did you first notice it? Is it getting worse? Any other symptoms?`;
-            break;
-            
-          case 'asking_duration':
-            aiResponse = `I'd like to know approximately how long you've been experiencing these ${treatmentType} issues. Has it been days, weeks, months, or years?`;
-            break;
-            
-          case 'asking_severity':
-            aiResponse = `I'd like to understand how severe your ${treatmentType} issues are. On a scale of 1 to 10, where 1 is very mild and 10 is extremely severe, how would you rate it?`;
-            // Move to next stage if user is confused
-            setConversationState(prev => ({
-              ...prev,
-              stage: 'asking_area',
-              severity: 5,
-              lastQuestion: 'area'
-            }));
-            break;
-            
-          case 'asking_area':
-            if (treatmentType === 'hair') {
-              aiResponse = "I'd like to know which parts of your scalp or hairline are most affected. Is it the crown (top of head), temples, front hairline, or all over?";
-            } else {
-              aiResponse = `I'd like to know which specific areas are affected by your ${treatmentType} condition.`;
-            }
-            break;
-            
-          default:
-            // Move to recommendations if user is still confused
-            setConversationState(prev => ({
-              ...prev,
-              stage: 'recommending',
-              area: "not specified",
-              lastQuestion: 'recommendations'
-            }));
-            
-            // Create treatment details for recommendation
-            setTreatmentDetails({
-              treatmentType: treatmentType,
-              details: {
-                duration: conversationState.duration || "recently",
-                severity: conversationState.severity || 5,
-                area: "not specified"
-              }
-            });
-            
-            // Show recommendations
-            setShowRecommendations(true);
-            
-            // Select the best clinic based on user's needs
-            selectBestClinic(treatmentType);
-            
-            aiResponse = `Based on what you've shared about your ${treatmentType} concerns and clinic availability, the clinic best suited for you is shown below. This specialist clinic is highly rated and offers the treatments you need.`;
-            break;
-        }
-      }
-      // If we already have a treatment type but no specific condition was met
-      else if (conversationState.detectedType) {
-        const treatmentType = conversationState.detectedType;
-        
-        // Progress the conversation based on the current stage
-        switch (conversationState.stage) {
-          case 'asking_details':
-            setConversationState(prev => ({
-              ...prev,
-              stage: 'asking_duration',
-              patientContext: {
-                ...prev.patientContext,
-                details: userMessage
-              },
-              lastQuestion: 'duration'
-            }));
-            
-            aiResponse = `Thank you. How long have you been experiencing these ${treatmentType} issues?`;
-            break;
-            
-          case 'asking_duration':
-            setConversationState(prev => ({
-              ...prev,
-              duration: userMessage,
-              stage: 'asking_severity',
-              lastQuestion: 'severity'
-            }));
-            
-            aiResponse = `I understand. On a scale of 1 to 10, how would you rate the severity of your ${treatmentType} issues?`;
-            break;
-            
-          case 'asking_severity':
-            setConversationState(prev => ({
-              ...prev,
-              severity: 5,
-              stage: 'asking_area',
-              lastQuestion: 'area'
-            }));
-            
-            if (treatmentType === 'hair') {
-              aiResponse = "Thank you. Which areas of your scalp or hairline are most affected? For example, is it the crown, temples, or overall thinning?";
-            } else {
-              aiResponse = "Thank you. Could you specify which areas are most affected?";
-            }
-            break;
-            
-          case 'asking_area':
-            setConversationState(prev => ({
-              ...prev,
-              area: userMessage,
-              stage: 'recommending',
-              lastQuestion: 'recommendations'
-            }));
-            
-            // Create treatment details for recommendation
-            setTreatmentDetails({
-              treatmentType: treatmentType,
-              details: {
-                duration: conversationState.duration || "recently",
-                severity: conversationState.severity || 5,
-                area: userMessage
-              }
-            });
-            
-            // Show recommendations
-            setShowRecommendations(true);
-            
-            // Select the best clinic based on user's needs
-            selectBestClinic(treatmentType);
-            
-            aiResponse = `Based on what you've shared about your ${treatmentType} concerns and clinic availability, the clinic best suited for you is shown below. This specialist clinic is highly rated and offers the treatments you need.`;
-            break;
-            
-          default:
-            // Move to recommendations if we're stuck
-            setConversationState(prev => ({
-              ...prev,
-              stage: 'recommending',
-              lastQuestion: 'recommendations'
-            }));
-            
-            // Create treatment details for recommendation
-            setTreatmentDetails({
-              treatmentType: treatmentType,
-              details: {
-                duration: conversationState.duration || "recently",
-                severity: conversationState.severity || 5,
-                area: conversationState.area || "not specified"
-              }
-            });
-            
-            // Show recommendations
-            setShowRecommendations(true);
-            
-            // Select the best clinic based on user's needs
-            selectBestClinic(treatmentType);
-            
-            aiResponse = `Based on what you've shared about your ${treatmentType} concerns and clinic availability, the clinic best suited for you is shown below. This specialist clinic is highly rated and offers the treatments you need.`;
-            break;
-        }
-      }
-      // General fallback for any other situation
-      else {
-        aiResponse = "I'd like to help you find the right specialist. MedYatra currently offers treatments in Hair Restoration, Dental Care, Cosmetic Procedures, and IVF/Fertility. Could you tell me more about your symptoms or which of these treatments you're interested in?";
       }
       
-      // Add AI response to messages
-      setMessages([...updatedMessages, { text: aiResponse, sender: 'ai' }]);
-      
+      // Add AI response to chat
+      setMessages(prev => [...prev, { text: aiResponse, sender: 'ai' }]);
     } catch (error) {
-      console.error('Error generating response:', error);
-      // Provide a more specific fallback response instead of the generic error
-      setMessages([...updatedMessages, { text: FALLBACK_RESPONSE, sender: 'ai' }]);
+      console.error("Error getting AI response:", error);
+      // Add error message
+      setMessages(prev => [...prev, { 
+        text: "I'm having trouble connecting to my brain right now. Please try again in a moment.", 
+        sender: 'ai' 
+      }]);
     } finally {
       setLoading(false);
     }
   };
 
   const clearChat = () => {
+    // Reset all states
     setMessages([
       { text: "Hello! I'm your MedYatra AI assistant. We currently offer specialized treatments in four areas: Hair Restoration, Dental Care, Cosmetic Procedures, and IVF/Fertility. Please describe your symptoms or medical needs, and I'll help you find the right clinic.", sender: 'ai' }
     ]);
+    setSelectedClinic(null);
     setTreatmentDetails(null);
-    setShowRecommendations(false);
-    setShowExpandedClinicDetails(false);
     setBestClinic(null);
-    setShowTreatmentsInfo(false);
-    setConversationState({
-      stage: 'initial',
-      detectedType: null,
-      duration: null,
-      severity: null,
-      area: null,
-      patientContext: {},
-      lastQuestion: null
+    setShowExpandedClinicDetails(false);
+    setShowRecommendations(false);
+    setExtractedInfo({
+      medicalIssue: null,
+      location: null,
+      appointmentDate: null,
+      treatmentType: null
     });
-  };
-
-  // Function to select the best clinic based on treatment type
-  const selectBestClinic = (treatmentType) => {
-    // Fallback clinics if we can't get real data
-    const fallbackClinics = {
-      hair: {
-        id: 'hair1',
-        name: 'Advanced Hair Clinic',
-        rating: 4.8,
-        services: ['Hair Transplant', 'PRP Therapy', 'Hair Loss Treatment'],
-        location: 'South Delhi',
-        distance: '3.2 km',
-        availability: 'Available Tomorrow',
-        image: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60'
-      },
-      dental: {
-        id: 'dental1',
-        name: 'Smile Dental Care',
-        rating: 4.9,
-        services: ['Root Canal', 'Dental Implants', 'Cosmetic Dentistry'],
-        location: 'Connaught Place',
-        distance: '2.5 km',
-        availability: 'Available Tomorrow',
-        image: 'https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60'
-      },
-      cosmetic: {
-        id: 'cosmetic1',
-        name: 'Elegance Aesthetics',
-        rating: 4.7,
-        services: ['Botox', 'Fillers', 'Laser Treatments'],
-        location: 'Greater Kailash',
-        distance: '4.1 km',
-        availability: 'Available Tomorrow',
-        image: 'https://images.unsplash.com/photo-1560750588-73207b1ef5b8?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60'
-      },
-      ivf: {
-        id: 'ivf1',
-        name: 'New Life Fertility Center',
-        rating: 4.9,
-        services: ['IVF', 'Egg Freezing', 'Fertility Counseling'],
-        location: 'Vasant Vihar',
-        distance: '5.3 km',
-        availability: 'Available Tomorrow',
-        image: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60'
-      },
-      general: {
-        id: 'general1',
-        name: 'City Medical Center',
-        rating: 4.6,
-        services: ['General Medicine', 'Diagnostics', 'Specialist Referrals'],
-        location: 'Central Delhi',
-        distance: '3.0 km',
-        availability: 'Available Tomorrow',
-        image: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60'
+    
+    // Reinitialize chat session
+    const initializeChat = async () => {
+      try {
+        console.log("Reinitializing Gemini chat session...");
+        const session = await createChatSession();
+        console.log("Chat session reinitialized:", !!session);
+        setChatSession(session);
+      } catch (error) {
+        console.error("Failed to initialize chat session:", error);
       }
     };
     
-    // Set the best clinic based on treatment type
-    setBestClinic(fallbackClinics[treatmentType] || fallbackClinics.general);
+    initializeChat();
   };
-  
+
+  const selectBestClinic = async (treatmentType) => {
+    // Sample clinics data (in a real app, this would come from a database or API)
+    const clinics = {
+      ivf: {
+        name: "Fertility Plus",
+        rating: 4.8,
+        location: "Mumbai",
+        distance: "3.2 km away",
+        availability: "Next available: Tomorrow, 10:00 AM",
+        services: ["IVF Treatment", "Fertility Consultation", "Embryo Freezing", "Surrogacy"],
+        image: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80"
+      },
+      cosmetic: {
+        name: "Beauty & Beyond Clinic",
+        rating: 4.7,
+        location: "Delhi",
+        distance: "2.5 km away",
+        availability: "Next available: Today, 4:30 PM",
+        services: ["Botox", "Dermal Fillers", "Rhinoplasty", "Liposuction"],
+        image: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80"
+      },
+      hair: {
+        name: "Hair Restoration Center",
+        rating: 4.6,
+        location: "Bangalore",
+        distance: "4.1 km away",
+        availability: "Next available: Friday, 11:00 AM",
+        services: ["Hair Transplant", "PRP Therapy", "Scalp Micropigmentation", "Hair Loss Treatment"],
+        image: "https://images.unsplash.com/photo-1560750588-73207b1ef5b8?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80"
+      },
+      dental: {
+        name: "Smile Dental Care",
+        rating: 4.9,
+        location: "Chennai",
+        distance: "1.8 km away",
+        availability: "Next available: Tomorrow, 2:00 PM",
+        services: ["Root Canal", "Dental Implants", "Teeth Whitening", "Orthodontics"],
+        image: "https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80"
+      }
+    };
+    
+    return clinics[treatmentType] || null;
+  };
+
   return (
     <Box sx={{ 
       display: 'flex', 
@@ -1038,13 +773,5 @@ const AIChatFinal = () => {
     </Box>
   );
 };
-
-function sanitizeInput(input) {
-  // Basic sanitization to prevent XSS
-  return input
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .trim();
-}
 
 export default AIChatFinal;
