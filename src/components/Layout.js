@@ -27,18 +27,21 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import CloseIcon from '@mui/icons-material/Close';
 import HomeIcon from '@mui/icons-material/Home';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import TreatmentsInfo from './TreatmentsInfo';
 
 const Layout = ({ children }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [showTreatmentsInfo, setShowTreatmentsInfo] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
   const navItems = [
     { name: 'Home', path: '/', icon: <HomeIcon /> },
     { name: 'AI Chat', path: '/chat', icon: <ChatIcon /> },
-    { name: 'Find Clinics', path: '/recommend', icon: <LocalHospitalIcon /> },
+    { name: 'Know Your Treatment', path: null, icon: <InfoOutlinedIcon />, action: () => setShowTreatmentsInfo(true) },
     { name: 'Book Appointment', path: '/book', icon: <CalendarMonthIcon /> }
   ];
 
@@ -52,8 +55,13 @@ const Layout = ({ children }) => {
     setDrawerOpen(!drawerOpen);
   };
 
-  const handleNavigation = (path) => {
-    navigate(path);
+  const handleNavigation = (path, action) => {
+    if (path) {
+      navigate(path);
+    } else if (action) {
+      action();
+    }
+    
     if (isMobile) {
       setDrawerOpen(false);
     }
@@ -87,7 +95,7 @@ const Layout = ({ children }) => {
           <ListItem 
             button 
             key={item.name}
-            onClick={() => handleNavigation(item.path)}
+            onClick={() => handleNavigation(item.path, item.action)}
             sx={{
               mb: 1,
               mx: 1,
@@ -116,7 +124,7 @@ const Layout = ({ children }) => {
       </List>
       <Box sx={{ position: 'absolute', bottom: 0, width: '100%', p: 2 }}>
         <Typography variant="body2" color="text.secondary" align="center">
-          © {new Date().getFullYear()} MedYatra
+          {new Date().getFullYear()} MedYatra
         </Typography>
       </Box>
     </Box>
@@ -173,7 +181,7 @@ const Layout = ({ children }) => {
                 {navItems.map((item) => (
                   <Button
                     key={item.name}
-                    onClick={() => handleNavigation(item.path)}
+                    onClick={() => handleNavigation(item.path, item.action)}
                     sx={{
                       my: 2, 
                       px: 2,
@@ -253,7 +261,7 @@ const Layout = ({ children }) => {
             gap: isMobile ? 2 : 0
           }}>
             <Typography variant="body2" color="text.secondary">
-              © {new Date().getFullYear()} MedYatra. All rights reserved.
+              {new Date().getFullYear()} MedYatra. All rights reserved.
             </Typography>
             <Box sx={{ display: 'flex', gap: 2 }}>
               <Typography variant="body2" color="text.secondary" component={Link} to="/privacy" sx={{ textDecoration: 'none' }}>
@@ -269,6 +277,12 @@ const Layout = ({ children }) => {
           </Box>
         </Container>
       </Box>
+      
+      {/* Render TreatmentsInfo dialog when showTreatmentsInfo is true */}
+      <TreatmentsInfo 
+        open={showTreatmentsInfo} 
+        onClose={() => setShowTreatmentsInfo(false)} 
+      />
     </Box>
   );
 };

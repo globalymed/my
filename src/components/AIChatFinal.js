@@ -18,6 +18,7 @@ import {
 } from '@mui/material';
 import './AIChat.css';
 import ClinicRecommender from './ClinicRecommenderEnhanced';
+import TreatmentsInfo from './TreatmentsInfo';
 import SendIcon from '@mui/icons-material/Send';
 import MicIcon from '@mui/icons-material/Mic';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
@@ -38,6 +39,7 @@ const AIChatFinal = () => {
   const [treatmentDetails, setTreatmentDetails] = useState(null);
   const [bestClinic, setBestClinic] = useState(null);
   const [showExpandedClinicDetails, setShowExpandedClinicDetails] = useState(false);
+  const [showTreatmentsInfo, setShowTreatmentsInfo] = useState(false);
   const [conversationState, setConversationState] = useState({
     stage: 'initial',
     detectedType: null,
@@ -497,6 +499,7 @@ const AIChatFinal = () => {
     setShowRecommendations(false);
     setShowExpandedClinicDetails(false);
     setBestClinic(null);
+    setShowTreatmentsInfo(false);
     setConversationState({
       stage: 'initial',
       detectedType: null,
@@ -572,30 +575,31 @@ const AIChatFinal = () => {
     <Box sx={{ 
       display: 'flex', 
       flexDirection: 'column', 
-      height: '100%', 
-      gap: 3
+      height: '100%',
+      maxWidth: 800,
+      mx: 'auto',
+      p: 2,
+      gap: 2
     }}>
       <Paper 
         elevation={0} 
         sx={{ 
-          p: 3, 
-          borderRadius: 3,
-          background: `linear-gradient(135deg, ${theme.palette.primary.light}20, ${theme.palette.primary.main}10)`,
-          border: '1px solid',
-          borderColor: `${theme.palette.primary.light}30`,
-          display: 'flex',
+          p: 2, 
+          display: 'flex', 
           justifyContent: 'space-between',
-          alignItems: 'center'
+          alignItems: 'center',
+          borderRadius: 3,
+          border: '1px solid',
+          borderColor: 'rgba(0, 0, 0, 0.08)',
+          bgcolor: 'background.paper'
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <Avatar 
             sx={{ 
-              bgcolor: theme.palette.primary.main, 
-              width: 48, 
-              height: 48,
-              mr: 2,
-              boxShadow: theme.shadows[2]
+              bgcolor: theme.palette.primary.main,
+              width: 48,
+              height: 48
             }}
           >
             <SmartToyIcon />
@@ -625,7 +629,7 @@ const AIChatFinal = () => {
           </span>
         </Tooltip>
       </Paper>
-
+      
       <Paper 
         elevation={0} 
         sx={{ 
@@ -1025,6 +1029,12 @@ const AIChatFinal = () => {
           </Card>
         </Paper>
       )}
+      
+      {/* Render TreatmentsInfo dialog when showTreatmentsInfo is true */}
+      <TreatmentsInfo 
+        open={showTreatmentsInfo} 
+        onClose={() => setShowTreatmentsInfo(false)} 
+      />
     </Box>
   );
 };
