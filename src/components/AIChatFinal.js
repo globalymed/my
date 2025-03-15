@@ -36,6 +36,7 @@ const AIChatFinal = () => {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const chatRef = useRef(null);
+  const inputRef = useRef(null);
   const [selectedClinic, setSelectedClinic] = useState(null);
   const [treatmentDetails, setTreatmentDetails] = useState(null);
   const [bestClinic, setBestClinic] = useState(null);
@@ -74,6 +75,13 @@ const AIChatFinal = () => {
       chatRef.current.scrollTop = chatRef.current.scrollHeight;
     }
   }, [messages]);
+
+  // Focus input field after sending a message
+  useEffect(() => {
+    if (inputRef.current && !loading) {
+      inputRef.current.focus();
+    }
+  }, [loading, messages]);
 
   // Process the conversation to extract information
   useEffect(() => {
@@ -513,6 +521,7 @@ const AIChatFinal = () => {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             disabled={loading}
+            inputRef={inputRef}
             InputProps={{
               sx: { 
                 borderRadius: 3,
