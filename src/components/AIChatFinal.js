@@ -26,6 +26,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import DeleteIcon from '@mui/icons-material/Delete';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { createChatSession, sendMessage, extractMedicalInfo, determineTreatmentType } from '../services/geminiService';
+import { getClinicsByTreatmentType } from '../firebase';
 
 const FALLBACK_RESPONSE = "I'd like to help you find the right specialist. Could you tell me more about your symptoms or what type of medical treatment you're looking for?";
 
@@ -50,6 +51,8 @@ const AIChatFinal = () => {
     treatmentType: null
   });
   const [showRecommendations, setShowRecommendations] = useState(false);
+  const [allParametersCollected, setAllParametersCollected] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   
   const theme = useTheme();
 
@@ -83,39 +86,106 @@ const AIChatFinal = () => {
     }
   }, [loading, messages]);
 
-  // Process the conversation to extract information
+  // Process the conversation to extract information but DON'T add AI responses directly
   useEffect(() => {
+    // Skip processing if we're already in the middle of handling a response
+    // or if the last message is from the AI (not the user)
+    const lastMessage = messages[messages.length - 1];
+    if (isProcessing || (lastMessage && lastMessage.sender === 'ai')) {
+      return;
+    }
+    
     const processConversation = async () => {
-      if (messages.length < 3) return; // Need at least one user message and one AI response
-      
-      // Create a string representation of the conversation
-      const conversationText = messages
-        .map(msg => `${msg.sender === 'user' ? 'User' : 'AI'}: ${msg.text}`)
-        .join('\n');
-      
       try {
-        const info = await extractMedicalInfo(conversationText);
+        // Set processing flag to prevent infinite loops
+        setIsProcessing(true);
+        
+        // Only process if we have at least 2 messages (AI greeting + user response)
+        // AND if the last message is from the user (not the AI)
+        if (messages.length < 2 || lastMessage.sender !== 'user') {
+          setIsProcessing(false);
+          return;
+        }
+        
+        // Extract medical information from the conversation
+        const info = await extractMedicalInfo(messages);
+        console.log("Extracted medical info:", info);
+        
+        // Update the extracted info state
         setExtractedInfo(info);
         
-        // If we have enough information, show clinic recommendations
-        if (info.treatmentType && info.medicalIssue) {
+        // Check if we have enough information to recommend a clinic
+        const hasAllParameters = !!info.treatmentType && !!info.medicalIssue && !!info.location;
+        setAllParametersCollected(hasAllParameters);
+        
+        if (hasAllParameters) {
+          console.log("All parameters collected, ready to recommend clinic");
           // Set treatment details based on extracted information
           setTreatmentDetails({
             treatmentType: info.treatmentType,
             symptoms: info.medicalIssue,
-            duration: info.appointmentDate || "As soon as possible",
-            location: info.location || "Any location"
+            duration: info.appointmentDate || 'As soon as possible',
+            location: info.location
           });
           
-          // Select the best clinic based on the treatment type
-          const clinic = await selectBestClinic(info.treatmentType);
+          // Select the best clinic based on the treatment type and location
+          const clinic = await selectBestClinic(info.treatmentType, info.location);
           if (clinic) {
+            console.log("Found best clinic:", clinic);
             setBestClinic(clinic);
             setShowRecommendations(true);
+            
+            // DO NOT add a message here - let the Gemini API handle responses
+            // The clinic recommendations will be shown in the UI separately
+          } else {
+            console.log("No clinic found for the given parameters");
+            // DO NOT add a message here - let the Gemini API handle responses
+          }
+        } else {
+          console.log("Not all parameters collected yet, continuing conversation");
+          // Reset recommendations if parameters are incomplete
+          if (showRecommendations) {
+            setShowRecommendations(false);
+            setBestClinic(null);
+          }
+          
+          // DO NOT add hardcoded AI messages here - the Gemini API will handle responses
+          // Just log the missing info for debugging
+          if (!info.medicalIssue) {
+            console.log("Missing medical issue, Gemini should ask the user");
+          } else if (!info.location) {
+            console.log("Missing location, Gemini should ask the user");
+          } else if (!info.treatmentType) {
+            console.log("Missing treatment type, determining from medical issue");
+            // Try to determine treatment type from medical issue
+            const inferredType = determineTreatmentType(info.medicalIssue);
+            if (inferredType) {
+              console.log("Inferred treatment type:", inferredType);
+              setExtractedInfo(prev => ({ ...prev, treatmentType: inferredType }));
+              
+              // Now process with the inferred treatment type
+              const clinic = await selectBestClinic(inferredType, info.location);
+              if (clinic) {
+                console.log("Found clinic with inferred treatment type:", clinic);
+                setTreatmentDetails({
+                  treatmentType: inferredType,
+                  symptoms: info.medicalIssue,
+                  duration: info.appointmentDate || 'As soon as possible',
+                  location: info.location
+                });
+                setBestClinic(clinic);
+                setShowRecommendations(true);
+                
+                // DO NOT add a message here - let the Gemini API handle responses
+              }
+            }
           }
         }
       } catch (error) {
         console.error("Error processing conversation:", error);
+      } finally {
+        // Always reset the processing flag when done
+        setIsProcessing(false);
       }
     };
     
@@ -136,11 +206,37 @@ const AIChatFinal = () => {
     
     try {
       let aiResponse;
+
+      // Check if we found a clinic first
+      const info = extractedInfo;
+      const clinicInfo = bestClinic ? {
+        name: bestClinic.name,
+        location: bestClinic.location,
+        treatment: bestClinic.treatmentType || (info && info.treatmentType),
+        issue: info && info.medicalIssue
+      } : null;
       
       if (chatSession) {
         // Use Gemini API for response
         console.log("Using Gemini API for response");
-        aiResponse = await sendMessage(chatSession, sanitizedInput);
+        console.log("Current extracted info:", info);
+        console.log("Clinic info:", clinicInfo);
+        
+        // Send conversation context to Gemini including clinic details if available
+        let context = "";
+        if (clinicInfo) {
+          context = `You've helped the user find a clinic called ${clinicInfo.name} in ${clinicInfo.location} for their ${clinicInfo.treatment} treatment. Remember to keep your response brief and focused on their medical issue: ${clinicInfo.issue}.`;
+        } else if (info) {
+          // We have some extracted info but not a full clinic match yet
+          if (info.medicalIssue && !info.location) {
+            context = `The user has mentioned they have an issue with: ${info.medicalIssue}. Ask them which city they prefer for treatment. Keep your response brief and friendly.`;
+          } else if (info.medicalIssue && info.location && !info.treatmentType) {
+            context = `The user has mentioned they have an issue with: ${info.medicalIssue} and they want treatment in ${info.location}. Ask any follow-up questions needed to recommend a clinic. Keep your response brief.`;
+          }
+        }
+        
+        // Send the context along with the user's message
+        aiResponse = await sendMessage(chatSession, sanitizedInput, context);
         
         // If we got a fallback response, try to determine if this is a symptom and provide a more specific response
         if (aiResponse === FALLBACK_RESPONSE) {
@@ -164,73 +260,13 @@ const AIChatFinal = () => {
         }
       }
       
-      // Check if the response is a fallback or error message
-      if (aiResponse.includes("having trouble") || aiResponse.includes("error")) {
-        // Try to provide a more helpful response based on detected symptoms
-        const detectedType = determineTreatmentType(sanitizedInput);
-        
-        if (detectedType) {
-          let specializedResponse = "";
-          
-          switch (detectedType) {
-            case 'cosmetic':
-              specializedResponse = `I see you're mentioning symptoms related to skin or cosmetic concerns. Would you like me to recommend a cosmetic clinic for your condition?`;
-              break;
-            case 'hair':
-              specializedResponse = `I see you're mentioning hair-related concerns. Our hair restoration clinics offer treatments for hair loss, thinning hair, and various scalp conditions. Would you like me to recommend a hair treatment specialist for you?`;
-              break;
-            case 'dental':
-              specializedResponse = `I see you're mentioning symptoms related to dental issues. Would you like me to recommend a dental clinic for your condition?`;
-              break;
-            case 'ivf':
-              specializedResponse = `I see you're mentioning fertility-related concerns. Would you like me to recommend an IVF clinic for your needs?`;
-              break;
-            default:
-              specializedResponse = "";
-          }
-          
-          if (specializedResponse) {
-            aiResponse = specializedResponse;
-            
-            // Update medical info
-            setExtractedInfo(prevInfo => ({
-              ...prevInfo,
-              medicalIssue: sanitizedInput,
-              treatmentType: detectedType
-            }));
-          }
-        } else if (sanitizedInput.toLowerCase().includes("rash") || sanitizedInput.toLowerCase().includes("rashes")) {
-          // Special handling for rashes since they're common
-          aiResponse = "I see you're mentioning rashes, which are typically treated by our cosmetic specialists. Would you like me to recommend a cosmetic clinic for your skin condition?";
-          
-          // Update medical info
-          setExtractedInfo(prevInfo => ({
-            ...prevInfo,
-            medicalIssue: "rashes",
-            treatmentType: "cosmetic"
-          }));
-        } else if (sanitizedInput.toLowerCase().includes("hair") || 
-                  sanitizedInput.toLowerCase().includes("bald") || 
-                  sanitizedInput.toLowerCase().includes("scalp")) {
-          // Special handling for hair issues
-          aiResponse = "I understand you're having hair-related concerns. Our hair restoration clinics offer treatments for hair loss, thinning hair, and various scalp conditions. Would you like me to recommend a hair treatment specialist for you?";
-          
-          // Update medical info
-          setExtractedInfo(prevInfo => ({
-            ...prevInfo,
-            medicalIssue: sanitizedInput,
-            treatmentType: "hair"
-          }));
-        }
-      }
-      
       // Add AI response to chat
       setMessages(prev => [...prev, { text: aiResponse, sender: 'ai' }]);
+      
     } catch (error) {
-      console.error("Error getting AI response:", error);
-      // Add error message
+      console.error("Error in AI response:", error);
       setMessages(prev => [...prev, { 
-        text: "I'm having trouble connecting to my brain right now. Please try again in a moment.", 
+        text: "I'm sorry, I'm having trouble processing your request right now. Please try again later.", 
         sender: 'ai' 
       }]);
     } finally {
@@ -239,7 +275,7 @@ const AIChatFinal = () => {
   };
 
   const clearChat = () => {
-    // Reset all states
+    // Reset chat to initial state
     setMessages([
       { text: "Hello! I'm your MedYatra AI assistant. We currently offer specialized treatments in four areas: Hair Restoration, Dental Care, Cosmetic Procedures, and IVF/Fertility. Please describe your symptoms or medical needs, and I'll help you find the right clinic.", sender: 'ai' }
     ]);
@@ -254,6 +290,7 @@ const AIChatFinal = () => {
       appointmentDate: null,
       treatmentType: null
     });
+    setAllParametersCollected(false);
     
     // Reinitialize chat session
     const initializeChat = async () => {
@@ -270,48 +307,78 @@ const AIChatFinal = () => {
     initializeChat();
   };
 
-  const selectBestClinic = async (treatmentType) => {
-    // Sample clinics data (in a real app, this would come from a database or API)
-    const clinics = {
-      ivf: {
-        name: "Fertility Plus",
-        rating: 4.8,
-        location: "Mumbai",
-        distance: "3.2 km away",
-        availability: "Next available: Tomorrow, 10:00 AM",
-        services: ["IVF Treatment", "Fertility Consultation", "Embryo Freezing", "Surrogacy"],
-        image: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80"
-      },
-      cosmetic: {
-        name: "Beauty & Beyond Clinic",
-        rating: 4.7,
-        location: "Delhi",
-        distance: "2.5 km away",
-        availability: "Next available: Today, 4:30 PM",
-        services: ["Botox", "Dermal Fillers", "Rhinoplasty", "Liposuction"],
-        image: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80"
-      },
-      hair: {
-        name: "Hair Restoration Center",
-        rating: 4.6,
-        location: "Bangalore",
-        distance: "4.1 km away",
-        availability: "Next available: Friday, 11:00 AM",
-        services: ["Hair Transplant", "PRP Therapy", "Scalp Micropigmentation", "Hair Loss Treatment"],
-        image: "https://images.unsplash.com/photo-1560750588-73207b1ef5b8?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80"
-      },
-      dental: {
-        name: "Smile Dental Care",
-        rating: 4.9,
-        location: "Chennai",
-        distance: "1.8 km away",
-        availability: "Next available: Tomorrow, 2:00 PM",
-        services: ["Root Canal", "Dental Implants", "Teeth Whitening", "Orthodontics"],
-        image: "https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80"
+  const selectBestClinic = async (treatmentType, location) => {
+    try {
+      console.log(`Searching for clinics with treatment type: ${treatmentType}, location: ${location}`);
+      
+      // Query Firestore database for clinics matching treatment type and location
+      const clinics = await getClinicsByTreatmentType(treatmentType, location);
+      
+      if (clinics && clinics.length > 0) {
+        console.log(`Found ${clinics.length} clinics matching criteria`);
+        
+        // Sort by rating (highest first)
+        const sortedClinics = clinics.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+        
+        // Get the top clinic
+        const topClinic = sortedClinics[0];
+        
+        // Add any missing properties needed for UI rendering
+        const enhancedClinic = {
+          ...topClinic,
+          services: topClinic.services || ['Consultation', 'Treatment', 'Follow-up'],
+          availability: topClinic.availability || 'Contact for availability',
+          distance: topClinic.distance || 'Nearby',
+          rating: topClinic.rating || 4.5,
+          treatmentType: topClinic.treatmentType || treatmentType
+        };
+        
+        // Log the clinic name to the console as requested
+        console.log(`MATCHED CLINIC: ${enhancedClinic.name} (${enhancedClinic.location}) - Specializes in ${treatmentType}`);
+        console.log('Clinic details:', enhancedClinic);
+        
+        return enhancedClinic;
       }
-    };
-    
-    return clinics[treatmentType] || null;
+      
+      // If no clinics found with the specific location, try just by treatment type
+      if ((!clinics || clinics.length === 0) && location) {
+        console.log(`No clinics found for ${treatmentType} in ${location}, searching without location filter`);
+        const allClinics = await getClinicsByTreatmentType(treatmentType);
+        
+        if (allClinics && allClinics.length > 0) {
+          console.log(`Found ${allClinics.length} clinics for ${treatmentType} without location filter`);
+          
+          // Sort by rating (highest first)
+          const sortedClinics = allClinics.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+          
+          // Get the top clinic
+          const topClinic = sortedClinics[0];
+          
+          // Add any missing properties needed for UI rendering
+          const enhancedClinic = {
+            ...topClinic,
+            services: topClinic.services || ['Consultation', 'Treatment', 'Follow-up'],
+            availability: topClinic.availability || 'Contact for availability',
+            distance: topClinic.distance || 'Nearby',
+            rating: topClinic.rating || 4.5,
+            treatmentType: topClinic.treatmentType || treatmentType
+          };
+          
+          // Log the clinic name to the console, noting it's not an exact location match
+          console.log(`FALLBACK CLINIC MATCH: ${enhancedClinic.name} (${enhancedClinic.location}) - Specializes in ${treatmentType}`);
+          console.log('Note: This clinic matches the treatment type but not the exact location');
+          console.log('Clinic details:', enhancedClinic);
+          
+          return enhancedClinic;
+        }
+      }
+      
+      console.log(`No clinics found for treatment type: ${treatmentType}`);
+      return null;
+    } catch (error) {
+      console.error("Error selecting best clinic:", error);
+      return null;
+    }
   };
 
   return (
@@ -626,17 +693,17 @@ const AIChatFinal = () => {
                 <Typography variant="h6" fontWeight="bold">{bestClinic.name}</Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                   <Rating value={bestClinic.rating} precision={0.1} readOnly size="small" />
-                  <Typography variant="body2">{bestClinic.rating}</Typography>
+                  <Typography variant="body2">{bestClinic.rating || 'N/A'}</Typography>
                 </Box>
               </Box>
             </Box>
             <CardContent>
               <Box sx={{ mb: 2 }}>
                 <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Location: {bestClinic.location} ({bestClinic.distance})
+                  Location: {bestClinic.location} {bestClinic.distance ? `(${bestClinic.distance})` : ''}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Availability: {bestClinic.availability}
+                  Availability: {bestClinic.availability || 'Contact for availability'}
                 </Typography>
               </Box>
               
@@ -644,7 +711,7 @@ const AIChatFinal = () => {
                 Services:
               </Typography>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-                {bestClinic.services.map((service, index) => (
+                {(bestClinic.services || []).map((service, index) => (
                   <Chip 
                     key={index}
                     label={service}
@@ -693,7 +760,7 @@ const AIChatFinal = () => {
                 <Box sx={{ mb: 3 }}>
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom>About the Clinic</Typography>
                   <Typography variant="body2" paragraph>
-                    {bestClinic.name} is a premier healthcare facility specializing in {treatmentDetails.treatmentType} treatments. 
+                    {bestClinic.name} is a premier healthcare facility specializing in {treatmentDetails?.treatmentType || 'specialized'} treatments. 
                     With state-of-the-art equipment and experienced specialists, they provide personalized care 
                     tailored to each patient's unique needs.
                   </Typography>
@@ -703,7 +770,7 @@ const AIChatFinal = () => {
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom>Doctors</Typography>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <Avatar sx={{ width: 50, height: 50 }}>{bestClinic.name[0]}</Avatar>
+                      <Avatar sx={{ width: 50, height: 50 }}>{bestClinic.name ? bestClinic.name[0] : 'D'}</Avatar>
                       <Box>
                         <Typography variant="subtitle2">Dr. Rajesh Sharma</Typography>
                         <Typography variant="body2" color="text.secondary">Senior Specialist, 15+ years experience</Typography>

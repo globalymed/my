@@ -6,131 +6,152 @@ const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-
 console.log("Gemini API Key available:", !!API_KEY);
 
 // Function to create a chat session with Gemini
-export const createChatSession = async () => {
-  try {
-    // Create a simple chat session object to track conversation history
-    const chatSession = {
-      history: [
-        {
-          role: "user",
-          parts: [{ text: "I need help finding medical treatment." }]
-        },
-        {
-          role: "model",
-          parts: [{ text: "Hi there! I'm your MedYatra assistant. I'm here to help you find the right care for your needs. Could you share what brings you here today?" }]
-        }
-      ],
-      // Track conversation state
-      state: {
-        medicalIssue: null,
-        location: null,
-        appointmentDate: null,
-        treatmentType: null,
-        currentQuestion: "symptoms", // Start by asking about symptoms
-        askedQuestions: new Set(["greeting"]), // Track questions we've already asked
-        previousResponses: [], // Track previous AI responses to avoid repetition
-        missingParameters: ["medicalIssue", "treatmentType", "location", "appointmentDate"] // Track missing parameters
-      },
-      // Method to add a message to history
-      addMessage: function(role, text) {
-        this.history.push({
-          role,
-          parts: [{ text }]
-        });
-        
-        // If this is an AI response, add it to the previous responses
-        if (role === "model") {
-          this.state.previousResponses.push(text);
-          // Keep only the last 5 responses to avoid memory issues
-          if (this.state.previousResponses.length > 5) {
-            this.state.previousResponses.shift();
-          }
-        }
-      },
-      // Method to get full conversation history
-      getHistory: function() {
-        return this.history;
-      },
-      // Method to update state
-      updateState: function(updates) {
-        // Merge updates with current state
-        this.state = { ...this.state, ...updates };
-        
-        // If updates include askedQuestions, merge the sets instead of replacing
-        if (updates.askedQuestions) {
-          this.state.askedQuestions = new Set([
-            ...Array.from(this.state.askedQuestions || []),
-            ...Array.from(updates.askedQuestions || [])
-          ]);
-          delete updates.askedQuestions; // Remove from updates to avoid double processing
-        }
-        
-        // Update missing parameters based on current state
-        this.updateMissingParameters();
-      },
-      // Method to update missing parameters
-      updateMissingParameters: function() {
-        const missing = [];
-        if (!this.state.medicalIssue) missing.push("medicalIssue");
-        if (!this.state.treatmentType) missing.push("treatmentType");
-        if (!this.state.location) missing.push("location");
-        if (!this.state.appointmentDate) missing.push("appointmentDate");
-        this.state.missingParameters = missing;
-      },
-      // Method to get current state
-      getState: function() {
-        return this.state;
-      },
-      // Method to check if a question has been asked
-      hasAskedQuestion: function(questionType) {
-        return this.state.askedQuestions.has(questionType);
-      },
-      // Method to mark a question as asked
-      markQuestionAsked: function(questionType) {
-        this.state.askedQuestions.add(questionType);
-      },
-      // Method to check if a response is too similar to previous responses
-      isResponseRepetitive: function(response) {
-        if (!response || this.state.previousResponses.length === 0) return false;
-        
-        return this.state.previousResponses.some(prevResponse => {
-          // Check for exact match
-          if (prevResponse === response) return true;
-          
-          // Check for high similarity (80% of words are the same)
-          const prevWords = new Set(prevResponse.toLowerCase().split(/\s+/).filter(w => w.length > 3));
-          const newWords = new Set(response.toLowerCase().split(/\s+/).filter(w => w.length > 3));
-          
-          // Count common words
-          let commonWords = 0;
-          for (const word of newWords) {
-            if (prevWords.has(word)) commonWords++;
-          }
-          
-          // Calculate similarity
-          const similarity = commonWords / Math.max(prevWords.size, newWords.size);
-          return similarity > 0.8; // 80% similarity threshold
-        });
-      },
-      // Method to check if all required parameters are collected
-      hasAllRequiredParameters: function() {
-        return this.state.missingParameters.length === 0;
-      }
-    };
+export const createChatSession = () => {
+  // Initialize chat history and state
+  let chatHistory = [];
+  
+  // State to track conversation progress and parameters collected
+  let state = {
+    medicalIssue: null,
+    location: null, 
+    appointmentDate: null,
+    treatmentType: null,
+    currentQuestion: "symptoms",  // Start by asking about symptoms
+    previousResponses: [],
+    askedQuestions: new Set(["symptoms"]),  // Track which questions we've asked
+    repetitionCount: {}, // Track how many times we've asked each question
+    questionAskedCount: 0,
+    missingParameters: ["medicalIssue", "location", "appointmentDate", "treatmentType"]
+  };
+  
+  // First greeting message from the assistant
+  const greeting = "Hello! I'm your MedYatra AI assistant. We currently offer specialized treatments in four areas: Hair Restoration, Dental Care, Cosmetic Procedures, and IVF/Fertility. Please describe your symptoms or medical needs, and I'll help you find the right clinic.";
+  
+  // Add greeting to history
+  chatHistory.push({
+    sender: 'assistant',
+    text: greeting
+  });
+  
+  // Return chat session interface
+  return {
+    // Get the current chat history
+    getHistory: () => chatHistory,
     
-    console.log("Chat session created successfully");
-    return chatSession;
-  } catch (error) {
-    console.error("Error creating chat session:", error);
-    return null;
-  }
+    // Get a formatted history for API requests
+    getFormattedHistory: () => {
+      return chatHistory.map(msg => ({
+        role: msg.sender === 'assistant' ? 'model' : 'user',
+        content: msg.text
+      }));
+    },
+    
+    // Add a message to the history
+    addMessage: (sender, text) => {
+      if (!text) return;
+      
+      chatHistory.push({
+        sender: sender === 'model' ? 'assistant' : 'user',
+        text: text
+      });
+      
+      // If it's an assistant message, save it to previous responses to avoid repetition
+      if (sender === 'model' || sender === 'assistant') {
+        state.previousResponses.push(text);
+        // Keep only the last 5 responses
+        if (state.previousResponses.length > 5) {
+          state.previousResponses.shift();
+        }
+      }
+    },
+    
+    // Get the current state
+    getState: () => ({ ...state }),
+    
+    // Update state with new information
+    updateState: (newState) => {
+      state = { ...state, ...newState };
+      
+      // Update missing parameters based on what we've collected
+      state.missingParameters = [];
+      if (!state.medicalIssue) state.missingParameters.push("medicalIssue");
+      if (!state.location) state.missingParameters.push("location");
+      if (!state.appointmentDate) state.missingParameters.push("appointmentDate");
+      if (!state.treatmentType) state.missingParameters.push("treatmentType");
+    },
+    
+    // Mark a question as asked to avoid repetition
+    markQuestionAsked: (questionType) => {
+      state.askedQuestions.add(questionType);
+      state.questionAskedCount++;
+      
+      // Track repetition
+      if (!state.repetitionCount[questionType]) {
+        state.repetitionCount[questionType] = 1;
+      } else {
+        state.repetitionCount[questionType]++;
+      }
+    },
+    
+    // Check if we've asked this question before
+    hasAskedQuestion: (questionType) => {
+      return state.askedQuestions.has(questionType);
+    },
+    
+    // Check if we have all required parameters
+    hasAllRequiredParameters: () => {
+      return (
+        state.medicalIssue !== null &&
+        state.location !== null &&
+        state.appointmentDate !== null &&
+        state.treatmentType !== null
+      );
+    },
+    
+    // Check if a response is too repetitive (similar to previous responses)
+    isResponseRepetitive: (response) => {
+      // Only check the last 3 responses
+      const recentResponses = state.previousResponses.slice(-3);
+      
+      for (const prevResponse of recentResponses) {
+        // Calculate similarity
+        const similarity = calculateStringSimilarity(response, prevResponse);
+        if (similarity > 0.7) {
+          return true;
+        }
+      }
+      
+      // If we've asked the same question type more than 3 times, consider it repetitive
+      const currentQuestionType = state.currentQuestion;
+      return state.repetitionCount[currentQuestionType] > 3;
+    },
+    
+    // Store current state for external reference
+    state
+  };
 };
 
-// Helper function to extract information from a message
-const extractInfoFromMessage = (message) => {
+// Helper function to calculate string similarity (Jaccard index)
+function calculateStringSimilarity(str1, str2) {
+  if (!str1 || !str2) return 0;
+  
+  // Convert to lowercase and split into words
+  const words1 = new Set(str1.toLowerCase().split(/\W+/).filter(word => word.length > 0));
+  const words2 = new Set(str2.toLowerCase().split(/\W+/).filter(word => word.length > 0));
+  
+  // Calculate intersection and union sizes
+  const intersection = new Set([...words1].filter(word => words2.has(word)));
+  const union = new Set([...words1, ...words2]);
+  
+  // Calculate Jaccard index
+  return intersection.size / union.size;
+}
+
+// Helper function to extract information from a message using Gemini API
+const extractInfoFromMessage = async (message, conversationHistory = []) => {
   if (!message) return {};
   
-  const lowerMessage = message.toLowerCase();
+  // Default result structure
   const result = {
     medicalIssue: null,
     location: null,
@@ -138,42 +159,114 @@ const extractInfoFromMessage = (message) => {
     treatmentType: null
   };
   
-  // Extract treatment type
-  result.treatmentType = determineTreatmentType(message);
-  
-  // Extract medical issue (if not already determined by treatment type)
-  if (!result.medicalIssue) {
-    // Look for phrases like "I have [issue]" or "I'm experiencing [issue]"
-    const medicalIssueMatches = lowerMessage.match(/(?:i have|i am having|i'm having|i am experiencing|i'm experiencing|suffering from|problem with|issues with|concerned about)\s+([^.!?]+)/i);
-    if (medicalIssueMatches && medicalIssueMatches[1]) {
-      result.medicalIssue = medicalIssueMatches[1].trim();
-    } else if (lowerMessage.length < 100) {
-      // If the message is short and doesn't match our patterns, treat the whole message as the medical issue
-      // This helps with messages like "hair loss" or "dental pain"
-      result.medicalIssue = lowerMessage;
+  try {
+    // First try simple pattern matching for treatment type since it's more straightforward
+    result.treatmentType = determineTreatmentType(message);
+    
+    // For more complex extraction (especially dates and locations), use Gemini
+    // Format the conversation history + current message for context
+    const contextMessages = [...conversationHistory.slice(-5), { role: 'user', content: message }];
+    const conversationText = contextMessages.map(msg => `${msg.role}: ${msg.content}`).join('\n');
+    
+    // Create structured prompt for Gemini to extract specific information
+    const extractionPrompt = `
+      Extract the following information from this conversation:
+      
+      Conversation:
+      ${conversationText}
+      
+      Please extract ONLY these parameters:
+      1. Medical Issue: What health problem is the user experiencing?
+      2. Location: What geographical location (city, area, etc.) is mentioned for treatment?
+      3. Appointment Date and Time: When does the user want to schedule an appointment?
+      
+      Return a VALID JSON object with ONLY these exact keys. Do NOT include markdown code block formatting (no code blocks). ONLY return the raw JSON:
+      {
+        'medicalIssue': 'extracted issue or null if not found',
+        'location': 'geographical location or null if not found',
+        'appointmentDate': 'full appointment date and time or null if not found'
+      }
+    `;
+    
+    // Prepare the request payload
+    const payload = {
+      contents: [
+        {
+          role: "user",
+          parts: [{ text: extractionPrompt }]
+        }
+      ],
+      generationConfig: {
+        temperature: 0.1, // Lower temperature for more structured, predictable output
+        topK: 40,
+        topP: 0.95,
+        maxOutputTokens: 200
+      }
+    };
+    
+    // Make the API request
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API request failed with status ${response.status}`);
     }
-  }
-  
-  // Extract location - improved to catch more location formats and Indian cities
-  const locationMatches = lowerMessage.match(/(?:in|at|near|around|prefer|like|from)\s+([a-z\s]+(?:city|town|area|district|neighborhood|locality|village|mumbai|delhi|bangalore|hyderabad|chennai|kolkata|pune|ahmedabad|jaipur|lucknow|kanpur|nagpur|indore|thane|bhopal|visakhapatnam|patna|vadodara|ghaziabad|ludhiana|coimbatore|kochi|noida|gurgaon))/i);
-  if (locationMatches && locationMatches[1]) {
-    result.location = locationMatches[1].trim();
-  } else if (/(mumbai|delhi|bangalore|hyderabad|chennai|kolkata|pune|ahmedabad|jaipur|new delhi|lucknow|kanpur|nagpur|indore|thane|bhopal|visakhapatnam|patna|vadodara|ghaziabad|ludhiana|coimbatore|kochi|noida|gurgaon)/i.test(lowerMessage)) {
-    // Direct city mentions without prepositions
-    const cityMatch = lowerMessage.match(/(mumbai|delhi|bangalore|hyderabad|chennai|kolkata|pune|ahmedabad|jaipur|new delhi|lucknow|kanpur|nagpur|indore|thane|bhopal|visakhapatnam|patna|vadodara|ghaziabad|ludhiana|coimbatore|kochi|noida|gurgaon)/i);
-    if (cityMatch) {
-      result.location = cityMatch[0].trim();
+    
+    const data = await response.json();
+    
+    // Extract the response text
+    let responseText = "";
+    if (data.candidates && data.candidates[0] && data.candidates[0].content && 
+        data.candidates[0].content.parts && data.candidates[0].content.parts[0]) {
+      responseText = data.candidates[0].content.parts[0].text;
+    } else {
+      throw new Error("Unexpected API response format");
     }
+    
+    // Parse the JSON response - handle common markdown formatting issues
+    try {
+      // Clean up potential markdown formatting from the response
+      const cleanedResponse = responseText
+        .replace(/```json\s*/g, '') // Remove ```json
+        .replace(/```/g, '')         // Remove ``` closing tags
+        .trim();                     // Trim whitespace
+      
+      // Try to parse the cleaned JSON
+      const parsedResponse = JSON.parse(cleanedResponse);
+      
+      // Only update fields if the API returned something
+      if (parsedResponse.medicalIssue && parsedResponse.medicalIssue !== "null") {
+        result.medicalIssue = parsedResponse.medicalIssue;
+      }
+      if (parsedResponse.location && parsedResponse.location !== "null") {
+        result.location = parsedResponse.location;
+      }
+      if (parsedResponse.appointmentDate && parsedResponse.appointmentDate !== "null") {
+        result.appointmentDate = parsedResponse.appointmentDate;
+      }
+      if (parsedResponse.treatmentType && parsedResponse.treatmentType !== "null") {
+        result.treatmentType = parsedResponse.treatmentType;
+      }
+    } catch (error) {
+      console.error("Error parsing Gemini response:", error, "\nResponse was:", responseText);
+    }
+    
+    console.log("Extracted info from message:", result);
+    return result;
+  } catch (error) {
+    console.error("Error in extractInfoFromMessage:", error);
+    return {
+      medicalIssue: null,
+      location: null,
+      appointmentDate: null,
+      treatmentType: null
+    };
   }
-  
-  // Extract date
-  const dateMatches = lowerMessage.match(/(?:on|at|this|next|coming)\s+([a-z]+day|tomorrow|weekend|month|[a-z]+\s+\d{1,2}(?:st|nd|rd|th)?|january|february|march|april|may|june|july|august|september|october|november|december)/i);
-  if (dateMatches && dateMatches[1]) {
-    result.appointmentDate = dateMatches[1].trim();
-  }
-  
-  console.log("Extracted info from message:", result);
-  return result;
 };
 
 // Helper function to find an alternative question when we've already asked something
@@ -239,21 +332,19 @@ const findAlternativeQuestion = (questionType, state, userMessage) => {
 };
 
 // Function to send a message to the Gemini API and get a response
-export const sendMessage = async (chatSession, message) => {
+export const sendMessage = async (chatSession, userMessage, context = '') => {
   try {
-    // Check if chat session exists
+    // Check if we have a valid chat session
     if (!chatSession) {
-      console.error("No active chat session available");
+      console.error('No chat session available');
       return getEmpathicResponse("fallback", null);
     }
-
-    console.log("Sending message to Gemini:", message);
     
-    // Add user message to chat history
-    chatSession.addMessage("user", message);
+    // Add the user message to chat history
+    chatSession.addMessage('user', userMessage);
     
-    // First, try to extract information from the user message
-    const extractedInfo = extractInfoFromMessage(message);
+    // First, try to extract information from the message
+    const extractedInfo = await extractInfoFromMessage(userMessage, chatSession.getFormattedHistory());
     const currentState = chatSession.getState();
     
     // Log the extracted information and current state
@@ -278,19 +369,19 @@ export const sendMessage = async (chatSession, message) => {
     
     // Log the current state to help with debugging
     console.log("Updated state after extraction:", updatedState);
-    console.log("Missing parameters:", chatSession.state.missingParameters);
+    console.log("Missing parameters:", chatSession.getState().missingParameters);
     
     // Determine what information we still need based on the missing parameters
     let nextQuestion;
     
     // STRICT ENFORCEMENT: Enforce strict parameter collection sequence
-    if (chatSession.state.missingParameters.includes("medicalIssue")) {
+    if (chatSession.getState().missingParameters.includes("medicalIssue")) {
       nextQuestion = "symptoms";
-    } else if (chatSession.state.missingParameters.includes("treatmentType")) {
+    } else if (chatSession.getState().missingParameters.includes("treatmentType")) {
       nextQuestion = "treatmentType";
-    } else if (chatSession.state.missingParameters.includes("location")) {
+    } else if (chatSession.getState().missingParameters.includes("location")) {
       nextQuestion = "location";
-    } else if (chatSession.state.missingParameters.includes("appointmentDate")) {
+    } else if (chatSession.getState().missingParameters.includes("appointmentDate")) {
       nextQuestion = "appointmentDate";
     } else {
       // Only if we have all parameters
@@ -305,9 +396,11 @@ export const sendMessage = async (chatSession, message) => {
       if (!chatSession.hasAllRequiredParameters()) {
         console.error("Attempted to recommend clinic without all parameters!");
         // Force asking for the first missing parameter
-        const missingParam = chatSession.state.missingParameters[0];
+        const missingParam = chatSession.getState().missingParameters[0];
         nextQuestion = missingParamToQuestion(missingParam);
         console.log("Redirecting to ask for missing parameter:", nextQuestion);
+      } else {
+        console.log("All parameters collected, ready to recommend clinic");
       }
     }
     
@@ -316,37 +409,39 @@ export const sendMessage = async (chatSession, message) => {
     const previousQuestion = currentState.currentQuestion;
     if (chatSession.hasAskedQuestion(nextQuestion) && nextQuestion !== "complete" && 
         nextQuestion === previousQuestion && 
-        !hasProvidedRequestedInfo(extractedInfo, previousQuestion)) {
+        !(await hasProvidedRequestedInfo(extractedInfo, previousQuestion))) {
       
       console.log("User didn't provide requested info for:", previousQuestion);
       
       // Find an alternative question or rephrase
-      const alternativeQuestion = findAlternativeQuestion(nextQuestion, updatedState, message);
+      const alternativeQuestion = findAlternativeQuestion(nextQuestion, updatedState, userMessage);
       chatSession.updateState({ currentQuestion: alternativeQuestion });
       chatSession.markQuestionAsked(alternativeQuestion);
       
       console.log("Using alternative question:", alternativeQuestion);
       
       // Double-check that we're not recommending a clinic prematurely
-      if (alternativeQuestion === "complete" && chatSession.hasAllRequiredParameters()) {
-        const response = getEmpathicResponse("complete", updatedState);
-        chatSession.addMessage("model", response);
-        return response;
-      } else if (alternativeQuestion === "complete") {
-        // If we don't have all information but somehow got "complete", ask for missing info
-        const missingParam = chatSession.state.missingParameters[0];
-        const fallbackQuestion = missingParamToQuestion(missingParam);
-        const response = getEmpathicResponse(fallbackQuestion, updatedState, message);
-        chatSession.addMessage("model", response);
-        return response;
+      if (alternativeQuestion === "complete") {
+        if (chatSession.hasAllRequiredParameters()) {
+          const response = getEmpathicResponse("complete", updatedState);
+          chatSession.addMessage("model", response);
+          return response;
+        } else {
+          // If we don't have all information but somehow got "complete", ask for missing info
+          const missingParam = chatSession.getState().missingParameters[0];
+          const fallbackQuestion = missingParamToQuestion(missingParam);
+          const response = getEmpathicResponse(fallbackQuestion, updatedState, userMessage);
+          chatSession.addMessage("model", response);
+          return response;
+        }
       }
       
-      const response = getEmpathicResponse(alternativeQuestion, updatedState, message);
+      const response = getEmpathicResponse(alternativeQuestion, updatedState, userMessage);
       
       // Check if the response is too repetitive
       if (chatSession.isResponseRepetitive(response)) {
         console.log("Generated response is too repetitive, creating a variation");
-        const variedResponse = createResponseVariation(alternativeQuestion, updatedState, message);
+        const variedResponse = createResponseVariation(alternativeQuestion, updatedState, userMessage);
         chatSession.addMessage("model", variedResponse);
         return variedResponse;
       }
@@ -368,9 +463,9 @@ export const sendMessage = async (chatSession, message) => {
       } else {
         // If we don't have all information but somehow got "complete", ask for missing info
         console.error("Attempted to recommend clinic without all parameters!");
-        const missingParam = chatSession.state.missingParameters[0];
+        const missingParam = chatSession.getState().missingParameters[0];
         const fallbackQuestion = missingParamToQuestion(missingParam);
-        const response = getEmpathicResponse(fallbackQuestion, updatedState, message);
+        const response = getEmpathicResponse(fallbackQuestion, updatedState, userMessage);
         chatSession.addMessage("model", response);
         return response;
       }
@@ -382,7 +477,7 @@ export const sendMessage = async (chatSession, message) => {
       const systemInstruction = `
         You are a medical assistant for MedYatra. Be empathetic, warm, and human-like in your responses.
         
-        The user has shared: "${message}"
+        The user has shared: "${userMessage}"
         
         Current information:
         - Medical Issue: ${updatedState.medicalIssue || "Unknown"}
@@ -398,13 +493,13 @@ export const sendMessage = async (chatSession, message) => {
         
         Your next task is to ask about: ${nextQuestion}
         
-        Missing parameters: ${chatSession.state.missingParameters.join(", ")}
+        Missing parameters: ${chatSession.getState().missingParameters.join(", ")}
         
         Guidelines:
         1. Keep your response brief (50-80 words)
         2. First acknowledge what the user said with 1-2 empathetic sentences
         3. Then ask ONE clear question about ${nextQuestion} in a conversational way
-        4. DO NOT recommend a clinic yet - we still need to collect: ${chatSession.state.missingParameters.join(", ")}
+        4. DO NOT recommend a clinic yet - we still need to collect: ${chatSession.getState().missingParameters.join(", ")}
         5. DO NOT ask questions they've already answered
         6. If asking about treatment type, don't expect them to know specific treatments - ask about their goals instead
         7. Be warm and supportive
@@ -413,7 +508,9 @@ export const sendMessage = async (chatSession, message) => {
         10. CRITICAL: ALL parameters (medical issue, treatment type, location, appointment date) MUST be collected before recommending a clinic
         
         Previous questions asked: ${Array.from(chatSession.getState().askedQuestions).join(", ")}
-        Previous responses (to avoid repetition): ${chatSession.state.previousResponses.slice(-2).join(" | ")}
+        Previous responses (to avoid repetition): ${chatSession.getState().previousResponses.slice(-2).join(" | ")}
+        
+        Additional context: ${context}
       `;
       
       // Prepare the request payload
@@ -428,7 +525,7 @@ export const sendMessage = async (chatSession, message) => {
           temperature: 0.7, // Higher temperature for more natural responses
           topK: 40,
           topP: 0.95,
-          maxOutputTokens: 200, // Allow slightly longer responses for empathy
+          maxOutputTokens: 200 // Allow slightly longer responses for empathy
         }
       };
       
@@ -465,7 +562,7 @@ export const sendMessage = async (chatSession, message) => {
           const alternativeSystemInstruction = `
             You are a medical assistant for MedYatra. Be empathetic, warm, and human-like in your responses.
             
-            The user has shared: "${message}"
+            The user has shared: "${userMessage}"
             
             Current information:
             - Medical Issue: ${updatedState.medicalIssue || "Unknown"}
@@ -501,7 +598,7 @@ export const sendMessage = async (chatSession, message) => {
               temperature: 0.7, // Higher temperature for more natural responses
               topK: 40,
               topP: 0.95,
-              maxOutputTokens: 200, // Allow slightly longer responses for empathy
+              maxOutputTokens: 200 // Allow slightly longer responses for empathy
             }
           };
           
@@ -537,7 +634,7 @@ export const sendMessage = async (chatSession, message) => {
         } catch (apiError) {
           console.error("Error getting alternative response from Gemini API:", apiError);
           // Fall back to structured response
-          const response = getEmpathicResponse(nextQuestion, updatedState, message);
+          const response = getEmpathicResponse(nextQuestion, updatedState, userMessage);
           chatSession.addMessage("model", response);
           return response;
         }
@@ -551,12 +648,12 @@ export const sendMessage = async (chatSession, message) => {
     } catch (apiError) {
       console.error("Error getting response from Gemini API:", apiError);
       // Fall back to structured response
-      const response = getEmpathicResponse(nextQuestion, updatedState, message);
+      const response = getEmpathicResponse(nextQuestion, updatedState, userMessage);
       
       // Check if the response is too repetitive
       if (chatSession.isResponseRepetitive(response)) {
         console.log("Fallback response is too repetitive, creating a variation");
-        const variedResponse = createResponseVariation(nextQuestion, updatedState, message);
+        const variedResponse = createResponseVariation(nextQuestion, updatedState, userMessage);
         chatSession.addMessage("model", variedResponse);
         return variedResponse;
       }
@@ -571,7 +668,7 @@ export const sendMessage = async (chatSession, message) => {
 };
 
 // Helper function to check if the user has provided the requested information
-function hasProvidedRequestedInfo(extractedInfo, previousQuestion) {
+async function hasProvidedRequestedInfo(extractedInfo, previousQuestion) {
   switch (previousQuestion) {
     case "symptoms":
       return !!extractedInfo.medicalIssue;
@@ -591,13 +688,11 @@ function hasProvidedRequestedInfo(extractedInfo, previousQuestion) {
     case "locationAlternative":
       return !!extractedInfo.location;
     case "appointmentDate":
-      return !!extractedInfo.appointmentDate;
-    case "appointmentDateAlternative":
+    case "appointmentTime":
+    case "appointmentPreference":
       return !!extractedInfo.appointmentDate;
     default:
-      // For any other question type, check if they provided any information at all
-      return !!(extractedInfo.medicalIssue || extractedInfo.treatmentType || 
-                extractedInfo.location || extractedInfo.appointmentDate);
+      return false;
   }
 }
 
@@ -806,7 +901,7 @@ const createResponseVariation = (questionType, state, userMessage) => {
     appointmentDate: [
       "When would be a good time for you to start treatment?",
       "Do you have a preferred timeframe for your appointment?",
-      "Is there a particular date or day of the week that works best for your schedule?",
+      "Is there a particular day of the week or time of month that works best for your schedule?",
       "When were you hoping to schedule your first appointment?"
     ],
     appointmentDateAlternative: [
@@ -818,7 +913,7 @@ const createResponseVariation = (questionType, state, userMessage) => {
     fallback: [
       "I'm here to help you find the right care. Could you tell me more about your health concerns?",
       "To better assist you, I'd like to understand what brought you to MedYatra today.",
-      "I want to make sure I find the right care for you. Could you share what health issues you're experiencing?",
+      "I want to make sure I find the right care for your needs. Could you share what health issues you're experiencing?",
       "Let's make sure we find the perfect care for your needs. Could you share a bit more about your situation?"
     ]
   };
@@ -832,58 +927,81 @@ const createResponseVariation = (questionType, state, userMessage) => {
 };
 
 // Function to extract medical information from the conversation
-export const extractMedicalInfo = async (conversation) => {
+export const extractMedicalInfo = async (messages) => {
   try {
-    console.log("Extracting medical info from conversation");
+    if (!messages || messages.length === 0) {
+      return {
+        medicalIssue: null,
+        location: null,
+        appointmentDate: null,
+        treatmentType: null
+      };
+    }
     
-    // First try to extract info using our local function
-    const lastUserMessage = conversation.split('\n').filter(line => 
-      line.startsWith('User:') || line.includes(': ') && !line.startsWith('AI:')
-    ).pop();
+    // Initialize extraction object
+    const extractedInfo = {
+      medicalIssue: null,
+      location: null,
+      appointmentDate: null,
+      treatmentType: null
+    };
     
-    if (lastUserMessage) {
-      const userText = lastUserMessage.replace(/^.*?: /, '').trim();
-      const localExtraction = extractInfoFromMessage(userText);
-      
-      // If we found something locally, return it
-      if (localExtraction.medicalIssue || localExtraction.location || 
-          localExtraction.appointmentDate || localExtraction.treatmentType) {
-        console.log("Locally extracted medical info:", localExtraction);
-        return localExtraction;
+    // First process the messages locally to accumulate information
+    for (const message of messages) {
+      if (message.sender === 'user') {
+        const userText = message.text.trim();
+        const localExtraction = await extractInfoFromMessage(userText, messages.slice(0, messages.indexOf(message)));
+        
+        // Update extraction with any new information found
+        if (localExtraction.medicalIssue) extractedInfo.medicalIssue = localExtraction.medicalIssue;
+        if (localExtraction.location) extractedInfo.location = localExtraction.location;
+        if (localExtraction.appointmentDate) extractedInfo.appointmentDate = localExtraction.appointmentDate;
+        if (localExtraction.treatmentType) extractedInfo.treatmentType = localExtraction.treatmentType;
       }
     }
     
-    // If local extraction failed, try the API
+    // If we have a medical issue but no treatment type, try to infer it
+    if (extractedInfo.medicalIssue && !extractedInfo.treatmentType) {
+      extractedInfo.treatmentType = determineTreatmentType(extractedInfo.medicalIssue);
+    }
+    
+    // Now try an overall extraction using the full conversation context
     try {
-      // Prepare the request payload
+      // Format messages for Gemini
+      const conversationText = messages
+        .map(msg => `${msg.sender}: ${msg.text}`)
+        .join('\n');
+      
+      // Create a structured prompt for more accurate extraction
+      const prompt = `
+        Extract key medical information from this conversation:
+        
+        ${conversationText}
+        
+        Please carefully extract ONLY the following information:
+        1. Medical Issue: What specific health problem or symptoms is the user experiencing?
+        2. Treatment Location: What city or geographical area is mentioned for treatment?
+        3. Appointment Date: When does the user want to schedule their appointment?
+        
+        Return a VALID JSON object with ONLY these keys. Do NOT include markdown code block formatting (no code blocks). ONLY return the raw JSON:
+        {
+          'medicalIssue': 'extracted issue or null if not found',
+          'location': 'geographical location or null if not found',
+          'appointmentDate': 'full date and time or null if not found'
+        }
+      `;
+      
+      // Prepare the request payload for Gemini
       const payload = {
         contents: [
           {
             role: "user",
-            parts: [{ 
-              text: `
-                Based on this conversation, extract ONLY these fields:
-                1. Medical problem/symptoms
-                2. Desired location for treatment
-                3. Preferred appointment date
-                
-                Return ONLY a JSON object with these fields:
-                {
-                  "medicalIssue": "extracted issue or null",
-                  "location": "extracted location or null",
-                  "appointmentDate": "extracted date or null",
-                  "treatmentType": "one of: 'ivf', 'cosmetic', 'hair', 'dental' or null"
-                }
-                
-                Conversation:
-                ${conversation}
-              `
-            }]
+            parts: [{ text: prompt }]
           }
         ],
         generationConfig: {
-          temperature: 0.1,
-          maxOutputTokens: 200,
+          temperature: 0.1, // Lower temperature for more factual responses
+          maxOutputTokens: 200
         }
       };
       
@@ -896,60 +1014,45 @@ export const extractMedicalInfo = async (conversation) => {
         body: JSON.stringify(payload)
       });
       
-      if (!response.ok) {
-        throw new Error(`API request failed with status ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      // Extract the response text
-      let responseText = "";
-      if (data.candidates && data.candidates[0] && data.candidates[0].content && 
-          data.candidates[0].content.parts && data.candidates[0].content.parts[0]) {
-        responseText = data.candidates[0].content.parts[0].text;
-      } else {
-        throw new Error("Unexpected API response format");
-      }
-      
-      // Parse the JSON response
-      try {
-        // Find JSON in the response (in case there's additional text)
-        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-        let parsedInfo;
+      if (response.ok) {
+        const data = await response.json();
+        const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
         
-        if (jsonMatch) {
-          parsedInfo = JSON.parse(jsonMatch[0]);
-        } else {
-          parsedInfo = JSON.parse(responseText);
+        if (responseText) {
+          try {
+            // Clean up potential markdown formatting from the response
+            const cleanedResponse = responseText
+              .replace(/```json\s*/g, '') // Remove ```json
+              .replace(/```/g, '')         // Remove ``` closing tags
+              .trim();                     // Trim whitespace
+            
+            // Parse the JSON response
+            const geminiResponseData = JSON.parse(cleanedResponse);
+            
+            // Only update fields if they're not already set and the API returned something
+            if (!extractedInfo.medicalIssue && geminiResponseData.medicalIssue && geminiResponseData.medicalIssue !== "null") {
+              extractedInfo.medicalIssue = geminiResponseData.medicalIssue;
+            }
+            
+            if (!extractedInfo.location && geminiResponseData.location && geminiResponseData.location !== "null") {
+              extractedInfo.location = geminiResponseData.location;
+            }
+            
+            if (!extractedInfo.appointmentDate && geminiResponseData.appointmentDate && geminiResponseData.appointmentDate !== "null") {
+              extractedInfo.appointmentDate = geminiResponseData.appointmentDate;
+            }
+          } catch (parseError) {
+            console.error("Error parsing Gemini response:", parseError, "\nResponse was:", responseText);
+          }
         }
-        
-        console.log("API extracted medical info:", parsedInfo);
-        return parsedInfo;
-      } catch (parseError) {
-        console.error("Error parsing JSON from Gemini response:", parseError);
-        throw parseError;
       }
     } catch (apiError) {
-      console.error("API extraction failed:", apiError);
-      // If API extraction fails, fall back to local extraction
-      if (lastUserMessage) {
-        const userText = lastUserMessage.replace(/^.*?: /, '').trim();
-        return {
-          medicalIssue: userText,
-          location: null,
-          appointmentDate: null,
-          treatmentType: determineTreatmentType(userText)
-        };
-      }
+      console.error("Error with Gemini API extraction:", apiError);
+      // Continue with what we've extracted so far
     }
     
-    // If all extraction methods fail
-    return {
-      medicalIssue: null,
-      location: null,
-      appointmentDate: null,
-      treatmentType: null
-    };
+    console.log("Final extracted medical info:", extractedInfo);
+    return extractedInfo;
   } catch (error) {
     console.error("Error in extractMedicalInfo:", error);
     return {
