@@ -26,7 +26,8 @@ import PersonIcon from '@mui/icons-material/Person';
 import DeleteIcon from '@mui/icons-material/Delete';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { createChatSession, sendMessage, extractMedicalInfo, determineTreatmentType } from '../services/geminiService';
-import { getClinicsByTreatmentType } from '../firebase';
+import { getClinicsByTreatmentType, getAvailability } from '../firebase';
+import ChatCalendarComponent from './CalendarComponent';
 
 const FALLBACK_RESPONSE = "I'd like to help you find the right specialist. Could you tell me more about your symptoms or what type of medical treatment you're looking for?";
 
@@ -53,6 +54,7 @@ const AIChatFinal = () => {
   const [showRecommendations, setShowRecommendations] = useState(false);
   const [allParametersCollected, setAllParametersCollected] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
   
   const theme = useTheme();
 
@@ -114,8 +116,23 @@ const AIChatFinal = () => {
         // Update the extracted info state
         setExtractedInfo(info);
         
+        // Check if we've asked for the location and need to show the calendar
+        if (info.location && !info.appointmentDate && !showCalendar) {
+          console.log("Location provided, need appointment date. Showing calendar.");
+          setShowCalendar(true);
+          
+          // Generate an AI message asking for the appointment date with the calendar
+          const dateRequestMessage = "When would you like to schedule your appointment? Please select a date from the calendar below:";
+          // Mark this message with a special flag to indicate it has a calendar
+          setMessages(prev => [...prev, { text: dateRequestMessage, sender: 'ai', showCalendar: true }]);
+          
+          // Tell the system we're still processing so it doesn't generate another date request message
+          setIsProcessing(true);
+          return;
+        }
+        
         // Check if we have enough information to recommend a clinic
-        const hasAllParameters = !!info.treatmentType && !!info.medicalIssue && !!info.location;
+        const hasAllParameters = !!info.treatmentType && !!info.medicalIssue && !!info.location && !!info.appointmentDate;
         setAllParametersCollected(hasAllParameters);
         
         if (hasAllParameters) {
@@ -128,8 +145,8 @@ const AIChatFinal = () => {
             location: info.location
           });
           
-          // Select the best clinic based on the treatment type and location
-          const clinic = await selectBestClinic(info.treatmentType, info.location);
+          // Select the best clinic based on the treatment type, location, and date
+          const clinic = await selectBestClinic(info.treatmentType, info.location, info.appointmentDate);
           if (clinic) {
             console.log("Found best clinic:", clinic);
             setBestClinic(clinic);
@@ -139,7 +156,11 @@ const AIChatFinal = () => {
             // The clinic recommendations will be shown in the UI separately
           } else {
             console.log("No clinic found for the given parameters");
-            // DO NOT add a message here - let the Gemini API handle responses
+            // Add message that no clinics are available for the selected date
+            setMessages(prev => [...prev, { 
+              text: `I'm sorry, but there are no clinics available in ${info.location} for ${info.treatmentType} treatment on ${info.appointmentDate}. Would you like to try another date or location?`, 
+              sender: 'ai' 
+            }]);
           }
         } else {
           console.log("Not all parameters collected yet, continuing conversation");
@@ -155,6 +176,8 @@ const AIChatFinal = () => {
             console.log("Missing medical issue, Gemini should ask the user");
           } else if (!info.location) {
             console.log("Missing location, Gemini should ask the user");
+          } else if (!info.appointmentDate) {
+            console.log("Missing appointment date, should show calendar");
           } else if (!info.treatmentType) {
             console.log("Missing treatment type, determining from medical issue");
             // Try to determine treatment type from medical issue
@@ -164,13 +187,13 @@ const AIChatFinal = () => {
               setExtractedInfo(prev => ({ ...prev, treatmentType: inferredType }));
               
               // Now process with the inferred treatment type
-              const clinic = await selectBestClinic(inferredType, info.location);
+              const clinic = await selectBestClinic(inferredType, info.location, info.appointmentDate);
               if (clinic) {
                 console.log("Found clinic with inferred treatment type:", clinic);
                 setTreatmentDetails({
                   treatmentType: inferredType,
                   symptoms: info.medicalIssue,
-                  duration: info.appointmentDate || 'As soon as possible',
+                  duration: info.appointmentDate,
                   location: info.location
                 });
                 setBestClinic(clinic);
@@ -191,6 +214,79 @@ const AIChatFinal = () => {
     
     processConversation();
   }, [messages]);
+
+  // Handle date selection from the calendar
+  const handleDateSelect = (date) => {
+    console.log("Selected date:", date);
+    // Hide the calendar after selection
+    setShowCalendar(false);
+    
+    // Add a user message with the selected date
+    setMessages(prev => [...prev, { 
+      text: `I'd like an appointment on ${date}`, 
+      sender: 'user' 
+    }]);
+    
+    // Update extracted info with the selected date
+    const updatedInfo = {...extractedInfo, appointmentDate: date};
+    setExtractedInfo(updatedInfo);
+    
+    // Add a confirmation message from AI
+    setMessages(prev => [...prev, { 
+      text: `Thanks for selecting ${date}. Let me check clinic availability for this date...`, 
+      sender: 'ai' 
+    }]);
+    
+    // Now check for clinic availability immediately rather than waiting for the next message cycle
+    const processClinicSelection = async () => {
+      try {
+        if (updatedInfo.treatmentType && updatedInfo.medicalIssue && updatedInfo.location) {
+          console.log("All parameters collected, searching for clinic now...");
+          
+          // Set treatment details based on extracted information
+          setTreatmentDetails({
+            treatmentType: updatedInfo.treatmentType || determineTreatmentType(updatedInfo.medicalIssue),
+            symptoms: updatedInfo.medicalIssue,
+            duration: date,
+            location: updatedInfo.location
+          });
+          
+          // Select the best clinic based on all parameters
+          const clinic = await selectBestClinic(
+            updatedInfo.treatmentType || determineTreatmentType(updatedInfo.medicalIssue), 
+            updatedInfo.location, 
+            date
+          );
+          
+          // Add a short delay to ensure messages appear in proper sequence
+          setTimeout(() => {
+            if (clinic) {
+              console.log("Found available clinic:", clinic);
+              setBestClinic(clinic);
+              setShowRecommendations(true);
+              setAllParametersCollected(true);
+              
+              // Add clinic recommendation message
+              setMessages(prev => [...prev, { 
+                text: `Great news! I've found a clinic that matches your requirements in ${updatedInfo.location} for your ${clinic.treatmentType} needs. The clinic "${clinic.name}" is available on ${date} and has great reviews. Would you like more information about this clinic?`, 
+                sender: 'ai' 
+              }]);
+            } else {
+              console.log("No available clinics found for the selected date and location");
+              setMessages(prev => [...prev, { 
+                text: `I'm sorry, but there are no clinics available in ${updatedInfo.location} for ${updatedInfo.treatmentType || determineTreatmentType(updatedInfo.medicalIssue)} treatment on ${date}. Would you like to try another date or location?`, 
+                sender: 'ai' 
+              }]);
+            }
+          }, 500);
+        }
+      } catch (error) {
+        console.error("Error finding clinic after date selection:", error);
+      }
+    };
+    
+    processClinicSelection();
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -307,9 +403,9 @@ const AIChatFinal = () => {
     initializeChat();
   };
 
-  const selectBestClinic = async (treatmentType, location) => {
+  const selectBestClinic = async (treatmentType, location, appointmentDate) => {
     try {
-      console.log(`Searching for clinics with treatment type: ${treatmentType}, location: ${location}`);
+      console.log(`Searching for clinics with treatment type: ${treatmentType}, location: ${location}, date: ${appointmentDate}`);
       
       // Query Firestore database for clinics matching treatment type and location
       const clinics = await getClinicsByTreatmentType(treatmentType, location);
@@ -317,8 +413,25 @@ const AIChatFinal = () => {
       if (clinics && clinics.length > 0) {
         console.log(`Found ${clinics.length} clinics matching criteria`);
         
+        // Filter clinics by availability on the selected date
+        const availableClinics = [];
+        
+        for (const clinic of clinics) {
+          const availabilityData = await getAvailability(clinic.id, appointmentDate);
+          if (availabilityData && availabilityData.length > 0 && availabilityData[0].available) {
+            availableClinics.push(clinic);
+          }
+        }
+        
+        console.log(`Found ${availableClinics.length} clinics available on ${appointmentDate}`);
+        
+        if (availableClinics.length === 0) {
+          console.log(`No clinics available on ${appointmentDate}`);
+          return null;
+        }
+        
         // Sort by rating (highest first)
-        const sortedClinics = clinics.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+        const sortedClinics = availableClinics.sort((a, b) => (b.rating || 0) - (a.rating || 0));
         
         // Get the top clinic
         const topClinic = sortedClinics[0];
@@ -327,56 +440,25 @@ const AIChatFinal = () => {
         const enhancedClinic = {
           ...topClinic,
           services: topClinic.services || ['Consultation', 'Treatment', 'Follow-up'],
-          availability: topClinic.availability || 'Contact for availability',
+          availability: appointmentDate,
           distance: topClinic.distance || 'Nearby',
           rating: topClinic.rating || 4.5,
           treatmentType: topClinic.treatmentType || treatmentType
         };
         
         // Log the clinic name to the console as requested
-        console.log(`MATCHED CLINIC: ${enhancedClinic.name} (${enhancedClinic.location}) - Specializes in ${treatmentType}`);
+        console.log(`MATCHED CLINIC: ${enhancedClinic.name} (${enhancedClinic.location}) - Specializes in ${treatmentType} - Available on ${appointmentDate}`);
         console.log('Clinic details:', enhancedClinic);
         
         return enhancedClinic;
       }
       
-      // If no clinics found with the specific location, try just by treatment type
-      if ((!clinics || clinics.length === 0) && location) {
-        console.log(`No clinics found for ${treatmentType} in ${location}, searching without location filter`);
-        const allClinics = await getClinicsByTreatmentType(treatmentType);
-        
-        if (allClinics && allClinics.length > 0) {
-          console.log(`Found ${allClinics.length} clinics for ${treatmentType} without location filter`);
-          
-          // Sort by rating (highest first)
-          const sortedClinics = allClinics.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-          
-          // Get the top clinic
-          const topClinic = sortedClinics[0];
-          
-          // Add any missing properties needed for UI rendering
-          const enhancedClinic = {
-            ...topClinic,
-            services: topClinic.services || ['Consultation', 'Treatment', 'Follow-up'],
-            availability: topClinic.availability || 'Contact for availability',
-            distance: topClinic.distance || 'Nearby',
-            rating: topClinic.rating || 4.5,
-            treatmentType: topClinic.treatmentType || treatmentType
-          };
-          
-          // Log the clinic name to the console, noting it's not an exact location match
-          console.log(`FALLBACK CLINIC MATCH: ${enhancedClinic.name} (${enhancedClinic.location}) - Specializes in ${treatmentType}`);
-          console.log('Note: This clinic matches the treatment type but not the exact location');
-          console.log('Clinic details:', enhancedClinic);
-          
-          return enhancedClinic;
-        }
-      }
-      
-      console.log(`No clinics found for treatment type: ${treatmentType}`);
+      // If no clinics found, return null
+      console.log(`No clinics found matching criteria`);
       return null;
+      
     } catch (error) {
-      console.error("Error selecting best clinic:", error);
+      console.error('Error finding best clinic:', error);
       return null;
     }
   };
@@ -527,6 +609,11 @@ const AIChatFinal = () => {
                 <Typography variant="body1">
                   {message.text}
                 </Typography>
+                {message.sender === 'ai' && message.showCalendar && (
+                  <Box mt={2} mb={1}>
+                    <ChatCalendarComponent onSelectDate={handleDateSelect} />
+                  </Box>
+                )}
               </Paper>
             </Box>
           ))}
