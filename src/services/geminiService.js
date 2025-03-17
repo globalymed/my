@@ -25,7 +25,7 @@ export const createChatSession = () => {
   };
   
   // First greeting message from the assistant
-  const greeting = "Hello! I'm your MedYatra AI assistant. We currently offer specialized treatments in four areas: Hair Restoration, Dental Care, Cosmetic Procedures, and IVF/Fertility. Please describe your symptoms or medical needs, and I'll help you find the right clinic.";
+  const greeting = "Hello! I'm your MedYatra AI assistant. We currently offer specialized treatments in four areas: Hair, Dental Care, Cosmetic Procedures, and IVF/Fertility. Please describe your symptoms or medical needs, and I'll help you find the right clinic.";
   
   // Add greeting to history
   chatHistory.push({
@@ -392,15 +392,16 @@ export const sendMessage = async (chatSession, userMessage, context = '') => {
     
     // STRICT ENFORCEMENT: Double-check that we're not recommending a clinic prematurely
     if (nextQuestion === "complete") {
-      // Verify all required parameters are present
-      if (!chatSession.hasAllRequiredParameters()) {
+      if (chatSession.hasAllRequiredParameters()) {
+        const response = getEmpathicResponse("complete", updatedState);
+        chatSession.addMessage("model", response);
+        return response;
+      } else {
         console.error("Attempted to recommend clinic without all parameters!");
         // Force asking for the first missing parameter
         const missingParam = chatSession.getState().missingParameters[0];
         nextQuestion = missingParamToQuestion(missingParam);
         console.log("Redirecting to ask for missing parameter:", nextQuestion);
-      } else {
-        console.log("All parameters collected, ready to recommend clinic");
       }
     }
     
@@ -461,13 +462,11 @@ export const sendMessage = async (chatSession, userMessage, context = '') => {
         chatSession.addMessage("model", response);
         return response;
       } else {
-        // If we don't have all information but somehow got "complete", ask for missing info
         console.error("Attempted to recommend clinic without all parameters!");
+        // Force asking for the first missing parameter
         const missingParam = chatSession.getState().missingParameters[0];
-        const fallbackQuestion = missingParamToQuestion(missingParam);
-        const response = getEmpathicResponse(fallbackQuestion, updatedState, userMessage);
-        chatSession.addMessage("model", response);
-        return response;
+        nextQuestion = missingParamToQuestion(missingParam);
+        console.log("Redirecting to ask for missing parameter:", nextQuestion);
       }
     }
     
@@ -703,32 +702,46 @@ export const determineTreatmentType = (symptoms) => {
   const lowerSymptoms = symptoms.toLowerCase();
   
   // Hair-related keywords
-  if (/\b(hair\s*loss|bald|thinning\s*hair|receding\s*hairline|hair\s*fall|hair\s*transplant|hair\s*treatment|hair\s*problem|hair\s*issue|scalp|dandruff|alopecia)\b/i.test(lowerSymptoms)) {
+  if (lowerSymptoms.includes('hair loss') || 
+      lowerSymptoms.includes('bald') || 
+      lowerSymptoms.includes('receding') || 
+      lowerSymptoms.includes('thinning hair') ||
+      lowerSymptoms.includes('hair fall') ||
+      lowerSymptoms.includes('hair thinning') ||
+      lowerSymptoms.includes('hair problem')) {
     return 'hair';
   }
   
   // Dental-related keywords
-  if (/\b(tooth|teeth|dental|dentist|cavity|filling|crown|root\s*canal|gum|oral|mouth|jaw|braces|invisalign|denture|toothache|extraction|implant|bridge|orthodontic)\b/i.test(lowerSymptoms)) {
+  if (lowerSymptoms.includes('tooth') || 
+      lowerSymptoms.includes('teeth') || 
+      lowerSymptoms.includes('dental') ||
+      lowerSymptoms.includes('gum') ||
+      lowerSymptoms.includes('mouth pain')) {
     return 'dental';
   }
   
   // Cosmetic-related keywords
-  if (/\b(cosmetic|beauty|skin|face|wrinkle|botox|filler|laser|plastic\s*surgery|liposuction|tummy\s*tuck|nose\s*job|facelift|rash|facial|appearance|look|acne|scar|pigmentation|dark\s*spots|dark\s*circles|anti-aging|rejuvenation|dermatology|dermatologist)\b/i.test(lowerSymptoms)) {
+  if (lowerSymptoms.includes('cosmetic') || 
+      lowerSymptoms.includes('botox') || 
+      lowerSymptoms.includes('wrinkle') || 
+      lowerSymptoms.includes('acne') ||
+      lowerSymptoms.includes('skin') ||
+      lowerSymptoms.includes('face') ||
+      lowerSymptoms.includes('nose') ||
+      lowerSymptoms.includes('beauty')) {
     return 'cosmetic';
   }
   
   // IVF-related keywords
-  if (/\b(fertility|ivf|in\s*vitro|pregnancy|conceive|conception|sperm|egg|embryo|surrogacy|infertility|pregnant|baby|trying|conceiving|miscarriage|period|menstrual|ovulation|pcos|endometriosis|gynecologist|gynecology|obstetrics)\b/i.test(lowerSymptoms)) {
+  if (lowerSymptoms.includes('fertil') || 
+      lowerSymptoms.includes('pregnan') || 
+      lowerSymptoms.includes('ivf') || 
+      lowerSymptoms.includes('conceive') ||
+      lowerSymptoms.includes('birth') ||
+      lowerSymptoms.includes('baby') ||
+      lowerSymptoms.includes('sperm')) {
     return 'ivf';
-  }
-  
-  // General medical keywords - attempt to categorize based on common conditions
-  if (/\b(eye|vision|glasses|cataract|lasik|ophthalmology|ophthalmologist|optometry|optometrist)\b/i.test(lowerSymptoms)) {
-    return 'vision';
-  }
-  
-  if (/\b(orthopedic|bone|joint|knee|hip|shoulder|fracture|sprain|arthritis|osteoporosis|physiotherapy|physical\s*therapy)\b/i.test(lowerSymptoms)) {
-    return 'orthopedic';
   }
   
   return null;
@@ -786,7 +799,7 @@ const getEmpathicResponse = (questionType, state, userMessage = "") => {
       
       switch (state.treatmentType) {
         case "hair":
-          clinicType = "hair restoration";
+          clinicType = "hair";
           specializedInfo = "specializes in advanced hair transplant techniques and non-surgical treatments";
           break;
         case "dental":
@@ -978,10 +991,10 @@ export const extractMedicalInfo = async (messages) => {
         
         ${conversationText}
         
-        Please carefully extract ONLY the following information:
+        Please carefully extract ONLY these information:
         1. Medical Issue: What specific health problem or symptoms is the user experiencing?
-        2. Treatment Location: What city or geographical area is mentioned for treatment?
-        3. Appointment Date: When does the user want to schedule their appointment?
+        2. Treatment Location: What geographical location (city, area, etc.) is mentioned for treatment?
+        3. Appointment Date and Time: When does the user want to schedule an appointment?
         
         Return a VALID JSON object with ONLY these keys. Do NOT include markdown code block formatting (no code blocks). ONLY return the raw JSON:
         {
@@ -1026,20 +1039,20 @@ export const extractMedicalInfo = async (messages) => {
               .replace(/```/g, '')         // Remove ``` closing tags
               .trim();                     // Trim whitespace
             
-            // Parse the JSON response
-            const geminiResponseData = JSON.parse(cleanedResponse);
+            // Try to parse the cleaned JSON
+            const parsedResponse = JSON.parse(cleanedResponse);
             
             // Only update fields if they're not already set and the API returned something
-            if (!extractedInfo.medicalIssue && geminiResponseData.medicalIssue && geminiResponseData.medicalIssue !== "null") {
-              extractedInfo.medicalIssue = geminiResponseData.medicalIssue;
+            if (!extractedInfo.medicalIssue && parsedResponse.medicalIssue && parsedResponse.medicalIssue !== "null") {
+              extractedInfo.medicalIssue = parsedResponse.medicalIssue;
             }
             
-            if (!extractedInfo.location && geminiResponseData.location && geminiResponseData.location !== "null") {
-              extractedInfo.location = geminiResponseData.location;
+            if (!extractedInfo.location && parsedResponse.location && parsedResponse.location !== "null") {
+              extractedInfo.location = parsedResponse.location;
             }
             
-            if (!extractedInfo.appointmentDate && geminiResponseData.appointmentDate && geminiResponseData.appointmentDate !== "null") {
-              extractedInfo.appointmentDate = geminiResponseData.appointmentDate;
+            if (!extractedInfo.appointmentDate && parsedResponse.appointmentDate && parsedResponse.appointmentDate !== "null") {
+              extractedInfo.appointmentDate = parsedResponse.appointmentDate;
             }
           } catch (parseError) {
             console.error("Error parsing Gemini response:", parseError, "\nResponse was:", responseText);
@@ -1063,3 +1076,220 @@ export const extractMedicalInfo = async (messages) => {
     };
   }
 };
+
+// Add a function to create calendar-related prompts and explanations
+export const createCalendarPrompt = (extractedInfo) => {
+  const { medicalIssue, location, treatmentType } = extractedInfo;
+  
+  // Format the medical issue and location for the prompt
+  const medicalDescription = medicalIssue || "your medical needs";
+  const locationDescription = location || "your preferred location";
+  const treatmentDescription = treatmentType || "the required treatment";
+  
+  // Create a clear explanation of the calendar system that will be used by Gemini
+  return `
+When asking the user to select an appointment date, please explain the calendar availability system as follows:
+
+"Please select your preferred appointment date from the calendar below:
+- Green dates indicate days when clinics are available for ${treatmentDescription} in ${locationDescription}.
+- Red dates indicate days when no clinics are available.
+- You can only select available (green) dates.
+
+This real-time availability is based on clinic schedules for ${medicalDescription} in ${locationDescription}."
+
+If the user selects an unavailable date, respond with:
+"I'm sorry, but there are no clinics available on that date for ${treatmentDescription} in ${locationDescription}. Please select a date marked in green from the calendar."
+
+If the user selects an available date, confirm their selection with:
+"Thank you for selecting [SELECTED_DATE]. I've confirmed that clinics are available on this date for ${treatmentDescription} in ${locationDescription}."
+
+After they've selected a valid date, proceed to recommend specific clinics that are available on their chosen date.
+`;
+};
+
+// Helper function to improve the calendar date selection process
+export const generateCalendarResponse = async (chatSession, userMessage, context = '') => {
+  if (!chatSession) {
+    console.error("Chat session not initialized");
+    return FALLBACK_RESPONSE;
+  }
+  
+  try {
+    console.log("Generating calendar-focused response for:", userMessage);
+    console.log("With context:", context);
+    
+    // Add user message to chat history
+    chatSession.addMessage('user', userMessage);
+    
+    // Try to extract any information from the message
+    const extractedInfo = await extractInfoFromMessage(userMessage, chatSession.getFormattedHistory());
+    console.log("Extracted info from message:", extractedInfo);
+    
+    // Update chat session state with any extracted information
+    const currentState = chatSession.getState();
+    const updatedState = {
+      ...currentState,
+      ...extractedInfo
+    };
+    
+    // First determine what information we're missing
+    // (medical issue, location, appointment date, treatment type)
+    const currentQuestion = determineNextQuestion(updatedState);
+    updatedState.currentQuestion = currentQuestion;
+    chatSession.updateState(updatedState);
+    
+    // Mark this question as asked to avoid repetition
+    chatSession.markQuestionAsked(currentQuestion);
+    
+    // Check if we have all required parameters to recommend a clinic
+    // If yes, we'll focus on generating a response about the clinic
+    const hasAllParams = chatSession.hasAllRequiredParameters();
+    
+    // Generate response based on current state
+    let response;
+    
+    // Prepare the prompt for Gemini
+    // If we're supposed to be showing the calendar, provide specific guidance
+    let promptText;
+    if (currentQuestion === 'appointmentDate') {
+      // Use the calendar prompt when asking about dates
+      const calendarPrompt = createCalendarPrompt(updatedState);
+      promptText = `The user is looking for medical treatment. ${context}\n\n${calendarPrompt}\n\nUser message: ${userMessage}\n\nGenerate a very brief, conversational response that asks them to select a date from the calendar.`;
+    } else if (hasAllParams) {
+      // If we have all parameters, generate a clinic recommendation
+      promptText = `The user is looking for medical treatment. ${context}\n\nYou've collected all required information from the user:\n- Medical issue: ${updatedState.medicalIssue}\n- Location: ${updatedState.location}\n- Appointment date: ${updatedState.appointmentDate}\n- Treatment type: ${updatedState.treatmentType}\n\nNow respond with a short, conversational message about the available clinic. Keep it brief and friendly. If they're asking a question about the clinic, answer it clearly.\n\nUser message: ${userMessage}`;
+    } else {
+      // Otherwise, focus on getting the missing information
+      // Add our specific prompt for the next required information
+      const nextQuestionPrompt = getQuestionPrompt(currentQuestion, updatedState);
+      promptText = `The user is looking for medical treatment. ${context}\n\n${nextQuestionPrompt}\n\nUser message: ${userMessage}\n\nGenerate a very brief, conversational response that asks for this information. Do not be repetitive. Keep the response under 3 sentences.`;
+    }
+    
+    // Make API request to Gemini
+    try {
+      const payload = {
+        contents: [{
+          role: "user",
+          parts: [{ text: promptText }]
+        }],
+        generationConfig: {
+          temperature: 0.2,
+          topK: 40,
+          topP: 0.95,
+          maxOutputTokens: 1024,
+        },
+      };
+      
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.candidates && data.candidates.length > 0) {
+        // Extract the text from the response
+        const aiText = data.candidates[0].content.parts[0].text;
+        console.log("Gemini API response:", aiText);
+        
+        // Add AI response to chat history
+        chatSession.addMessage('model', aiText);
+        
+        // Return the response
+        return aiText;
+      } else {
+        console.error("Gemini API error:", data);
+        
+        // Try to use a fallback response based on the current question
+        // This ensures the conversation can continue even if the API fails
+        response = getEmpathicResponse(currentQuestion, updatedState, userMessage);
+        
+        // Add fallback response to chat history
+        chatSession.addMessage('model', response);
+        
+        return response;
+      }
+    } catch (error) {
+      console.error("Error calling Gemini API:", error);
+      
+      // Use a fallback response
+      response = getEmpathicResponse(currentQuestion, updatedState, userMessage);
+      
+      // Add fallback response to chat history
+      chatSession.addMessage('model', response);
+      
+      return response;
+    }
+  } catch (error) {
+    console.error("Error in generateCalendarResponse:", error);
+    return FALLBACK_RESPONSE;
+  }
+};
+
+// Helper function to get a prompt for a specific question
+const getQuestionPrompt = (questionType, state) => {
+  switch(questionType) {
+    case 'symptoms':
+      return "Ask the user about their symptoms or medical concerns. Be empathetic and gentle in your questions.";
+    
+    case 'location':
+      return `The user has mentioned they have issue with: ${state.medicalIssue}. Now ask them about their preferred location for treatment. Be brief and friendly.`;
+    
+    case 'appointmentDate':
+      return `The user is seeking treatment for ${state.medicalIssue} in ${state.location}. Ask them to select an appointment date using the calendar component. Explain that green dates show available clinic slots, and red dates indicate no availability. Keep the explanation brief but clear.`;
+    
+    case 'treatmentType':
+      return `Based on the user's medical issues (${state.medicalIssue}), ask any follow-up questions needed to recommend a specific treatment type.`;
+    
+    default:
+      return "Ask the user how you can help them find medical treatment. Be brief and friendly.";
+  }
+};
+
+// Helper function to determine what question to ask next
+const determineNextQuestion = (state) => {
+  // This function determines what information we should ask for next
+  // based on what we already know
+  
+  // Check what information we have and what we need
+  if (!state.medicalIssue) {
+    return 'symptoms';
+  } else if (!state.location) {
+    return 'location';
+  } else if (!state.appointmentDate) {
+    return 'appointmentDate';
+  } else if (!state.treatmentType && !determineTreatmentType(state.medicalIssue)) {
+    return 'treatmentType';
+  }
+  
+  // If we have everything, just focus on general conversation
+  return 'general';
+};
+
+// Initial greeting message to show in the chat
+export const GREETING_MESSAGE = 
+  "Hello! I'm your MedYatra AI assistant. We currently offer specialized treatments in four areas: Hair, Dental Care, Cosmetic Procedures, and IVF/Fertility. Please describe your symptoms or medical needs, and I'll help you find the right clinic.";
+
+// Fallback response when we can't generate a real response
+export const FALLBACK_RESPONSE = 
+  "I understand your concerns. To help you better, could you please provide more details about your medical needs?";
+
+// Basic context for the AI to understand its role
+const SYSTEM_INSTRUCTIONS = `
+You are MedYatra's AI health assistant. Your role is to help users find appropriate medical tourism options based on their needs.
+You should gather three key pieces of information:
+1. The user's medical issue
+2. Their preferred location for treatment
+3. When they would like to schedule their appointment
+
+Key treatment types offered:
+- Hair (for hair loss treatments, transplants, etc.)
+- Dental Care (for teeth, gums, etc.)
+- Cosmetic Procedures (for skin treatments, plastic surgery, etc.)
+- IVF/Fertility (for fertility treatments, pregnancy support, etc.)
+
+Keep your responses brief, friendly, and focused on gathering these details.
+`;
