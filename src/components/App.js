@@ -11,6 +11,7 @@ const ClinicRecommender = React.lazy(() => import('./ClinicRecommenderEnhanced')
 const CalendarComponent = React.lazy(() => import('./CalendarComponent'));
 const TimeSlotGrid = React.lazy(() => import('./TimeSlotGrid'));
 const BookingConfirmationForm = React.lazy(() => import('./BookingConfirmationForm'));
+const AppointmentBookingPage = React.lazy(() => import('./AppointmentBookingPage'));
 
 const LoadingFallback = () => (
   <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
@@ -34,6 +35,7 @@ const App = () => {
                 <BookingConfirmationForm />
               </Box>
             } />
+            <Route path="/appointment-booking" element={<AppointmentBookingPage />} />
           </Routes>
         </Layout>
       </Suspense>

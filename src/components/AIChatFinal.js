@@ -5,17 +5,22 @@ import {
   Typography, 
   Box, 
   Paper, 
-  IconButton, 
-  CircularProgress, 
   Avatar, 
+  Card, 
+  CardContent, 
+  CardMedia,
   Chip,
-  Tooltip,
+  Rating,
   Divider,
-  useTheme,
-  Card,
-  CardContent,
-  Rating
+  IconButton,
+  CircularProgress,
+  Fade,
+  Alert,
+  Collapse,
+  Tooltip,
+  useTheme
 } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import './AIChat.css';
 import ClinicRecommender from './ClinicRecommenderEnhanced';
 import TreatmentsInfo from './TreatmentsInfo';
@@ -58,6 +63,7 @@ const AIChatFinal = () => {
   const [showCalendar, setShowCalendar] = useState(false);
   
   const theme = useTheme();
+  const navigate = useNavigate();
 
   // Initialize chat session
   useEffect(() => {
@@ -964,6 +970,13 @@ const AIChatFinal = () => {
               <Box sx={{ display: 'flex', gap: 2 }}>
                 <Button 
                   variant="contained" 
+                  onClick={() => navigate('/appointment-booking', { 
+                    state: { 
+                      clinic: bestClinic, 
+                      date: extractedInfo.appointmentDate || '',
+                      time: '10:00 AM' // Default time, can be changed later
+                    }
+                  })}
                   sx={{ 
                     mt: 1, 
                     borderRadius: 2,
