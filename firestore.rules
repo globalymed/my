@@ -13,9 +13,19 @@ service cloud.firestore {
       allow write: if false;
     }
     
+    // Allow read and write access to appointments collection
+    match /appointments/{appointmentId} {
+      allow read, write: if true;
+    }
+    
+    // Allow read and write access to users collection
+    match /users/{userId} {
+      allow read, write: if true;
+    }
+    
     // Deny access to all other collections
     match /{document=**} {
       allow read, write: if false;
     }
   }
-} 
+}

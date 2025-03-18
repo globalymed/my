@@ -1,39 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
-  Box, 
-  Container, 
-  Typography, 
-  TextField, 
-  Button, 
-  Grid, 
-  Paper, 
-  Stepper, 
-  Step, 
-  StepLabel,
-  FormHelperText,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Divider,
-  Alert,
-  CircularProgress,
-  Card,
-  CardContent,
-  CardMedia,
-  Chip,
-  IconButton,
-  Fade
+  Container, Box, Typography, Button, Stepper, 
+  Step, StepLabel, Paper, TextField, Grid, 
+  MenuItem, FormControl, FormHelperText, 
+  InputLabel, Select, CircularProgress,
+  Card, CardContent, Divider, Fade, Alert,
+  IconButton, Chip, TextareaAutosize, CardMedia
 } from '@mui/material';
-import { styled } from '@mui/material/styles';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../firebase';
+import { styled } from '@mui/material/styles';
 import { isValidPhoneNumber } from 'libphonenumber-js';
+import { createAppointment, getAvailability } from '../firebase';
 
 // List of countries for the dropdown
 const countries = [
@@ -54,6 +35,21 @@ const VisuallyHiddenInput = styled('input')({
   width: 1,
 });
 
+// Styled TextArea component
+const StyledTextArea = styled(TextareaAutosize)(({ theme }) => ({
+  width: '100%',
+  minHeight: '100px',
+  padding: '10px',
+  fontFamily: theme.typography.fontFamily,
+  fontSize: '1rem',
+  borderRadius: '4px',
+  border: '1px solid #ccc',
+  '&:focus': {
+    outline: 'none',
+    border: `1px solid ${theme.palette.primary.main}`,
+  },
+}));
+
 // Steps for the booking process
 const steps = ['Personal Details', 'Review & Confirm'];
 
@@ -63,6 +59,12 @@ const AppointmentBookingPage = () => {
   const [activeStep, setActiveStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bookingComplete, setBookingComplete] = useState(false);
+  const [appointmentId, setAppointmentId] = useState(null);
+  const [uploadInfo, setUploadInfo] = useState({
+    hasFileUploads: false,
+    fileUploadError: null,
+    isDevelopmentEnvironment: false
+  });
   
   // Form state
   const [formData, setFormData] = useState({
@@ -72,12 +74,15 @@ const AppointmentBookingPage = () => {
     phone: '',
     city: '',
     country: 'India', // Default to India
+    symptoms: '',
+    notes: ''
   });
   
   // Clinic and appointment details from navigation state
   const [clinicData, setClinicData] = useState(null);
   const [appointmentDate, setAppointmentDate] = useState('');
   const [appointmentTime, setAppointmentTime] = useState('');
+  const [availabilityId, setAvailabilityId] = useState('');
   
   // File upload state
   const [files, setFiles] = useState([]);
@@ -88,10 +93,11 @@ const AppointmentBookingPage = () => {
   // Load clinic data from navigation state
   useEffect(() => {
     if (location.state) {
-      const { clinic, date, time } = location.state;
+      const { clinic, date, time, availabilityId } = location.state;
       if (clinic) setClinicData(clinic);
       if (date) setAppointmentDate(date);
       if (time) setAppointmentTime(time);
+      if (availabilityId) setAvailabilityId(availabilityId);
     }
   }, [location]);
   
@@ -140,9 +146,22 @@ const AppointmentBookingPage = () => {
     }
   };
   
-  // Remove a file from the list
+  // Handle removing a file
   const handleRemoveFile = (index) => {
-    setFiles(prev => prev.filter((_, i) => i !== index));
+    setFiles(prevFiles => {
+      const newFiles = [...prevFiles];
+      newFiles.splice(index, 1);
+      return newFiles;
+    });
+    // Clear any file-related errors
+    setErrors(prev => ({ ...prev, files: '', submit: '' }));
+  };
+
+  // Handle removing all files
+  const handleRemoveAllFiles = () => {
+    setFiles([]);
+    // Clear any file-related errors
+    setErrors(prev => ({ ...prev, files: '', submit: '' }));
   };
   
   // Clear all form fields
@@ -154,9 +173,19 @@ const AppointmentBookingPage = () => {
       phone: '',
       city: '',
       country: 'India',
+      symptoms: '',
+      notes: ''
     });
     setFiles([]);
     setErrors({});
+  };
+  
+  // Reset the form
+  const handleReset = () => {
+    // Reset all form data and state
+    handleClearForm();
+    setActiveStep(0);
+    setBookingComplete(false);
   };
   
   // Validate form fields
@@ -196,6 +225,11 @@ const AppointmentBookingPage = () => {
       newErrors.country = 'Country is required';
     }
     
+    // Validate symptoms
+    if (!formData.symptoms.trim()) {
+      newErrors.symptoms = 'Please describe your symptoms';
+    }
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -220,32 +254,60 @@ const AppointmentBookingPage = () => {
   // Submit the form
   const handleSubmit = async () => {
     setIsSubmitting(true);
+    setErrors(prev => ({ ...prev, submit: '', files: '' }));
     
     try {
-      // Prepare file names for storage (in a real app, you'd upload these to storage)
-      const fileNames = files.map(file => file.name);
+      // Parse symptoms into an array
+      const symptomsList = formData.symptoms.split(/[,;.]/).filter(s => s.trim()).map(s => s.trim());
       
-      // Add document to Firestore
-      await addDoc(collection(db, 'appointments'), {
+      // Prepare appointment data
+      const appointmentData = {
         ...formData,
+        symptoms: symptomsList,
         clinicId: clinicData?.id || '',
         clinicName: clinicData?.name || '',
         treatmentType: clinicData?.treatmentType || '',
         appointmentDate,
         appointmentTime,
-        medicalRecords: fileNames,
-        status: 'pending',
-        createdAt: serverTimestamp(),
-      });
+        availabilityId: availabilityId || null
+      };
       
-      // Show success state
-      setBookingComplete(true);
+      // Create appointment in Firestore
+      const result = await createAppointment(appointmentData, files);
+      
+      if (result.success) {
+        // Show success state
+        setAppointmentId(result.id);
+        setBookingComplete(true);
+        
+        // Store info about file uploads for success message
+        setUploadInfo({
+          hasFileUploads: files.length > 0,
+          fileUploadError: result.fileUploadError,
+          isDevelopmentEnvironment: result.isDevelopmentEnvironment
+        });
+        
+        // If there was a file upload error but the appointment was still created
+        if (result.fileUploadError) {
+          console.warn('Appointment created but file upload had issues:', result.fileUploadError);
+        }
+      } else {
+        throw new Error(result.error || 'Failed to create appointment');
+      }
       
     } catch (error) {
       console.error('Error booking appointment:', error);
+      // Show a more specific error message based on the error
+      let errorMessage = 'An error occurred while booking your appointment. Please try again.';
+      
+      // Check if it's a CORS error related to file upload
+      if (error.message && (error.message.includes('CORS') || error.message.includes('storage'))) {
+        errorMessage = 'Unable to upload files due to browser security restrictions. Your appointment can still be created without attaching files. Please remove the files and try again.';
+      }
+      
       setErrors(prev => ({ 
         ...prev, 
-        submit: 'An error occurred while booking your appointment. Please try again.' 
+        submit: errorMessage
       }));
     } finally {
       setIsSubmitting(false);
@@ -254,6 +316,8 @@ const AppointmentBookingPage = () => {
   
   // Navigate back to home
   const handleReturnHome = () => {
+    // Reset the form and return to the first step
+    handleReset();
     navigate('/');
   };
   
@@ -363,6 +427,43 @@ const AppointmentBookingPage = () => {
         </Grid>
         <Grid item xs={12}>
           <Typography variant="subtitle1" gutterBottom>
+            Symptoms/Medical Concerns
+          </Typography>
+          <TextField
+            required
+            fullWidth
+            id="symptoms"
+            name="symptoms"
+            label="Describe your symptoms or medical concerns"
+            multiline
+            rows={4}
+            value={formData.symptoms}
+            onChange={handleChange}
+            error={!!errors.symptoms}
+            helperText={errors.symptoms || "Please describe your symptoms in detail"}
+            placeholder="E.g., I have been experiencing persistent headaches for the past week..."
+            inputProps={{ 'aria-label': 'Symptoms' }}
+          />
+        </Grid>
+        <Grid item xs={12}>
+          <Typography variant="subtitle1" gutterBottom>
+            Additional Notes (Optional)
+          </Typography>
+          <TextField
+            fullWidth
+            id="notes"
+            name="notes"
+            label="Any additional information you'd like to share"
+            multiline
+            rows={3}
+            value={formData.notes}
+            onChange={handleChange}
+            placeholder="E.g., Allergies, current medications, etc."
+            inputProps={{ 'aria-label': 'Additional Notes' }}
+          />
+        </Grid>
+        <Grid item xs={12}>
+          <Typography variant="subtitle1" gutterBottom>
             Medical Records (Optional)
           </Typography>
           <Button
@@ -379,6 +480,11 @@ const AppointmentBookingPage = () => {
               accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx"
             />
           </Button>
+          {window.location.hostname.includes('localhost') && (
+            <Typography variant="caption" color="warning.main" sx={{ display: 'block', mb: 1 }}>
+              Note: File uploads may not work in the development environment due to CORS restrictions.
+            </Typography>
+          )}
           {errors.files && (
             <FormHelperText error>{errors.files}</FormHelperText>
           )}
@@ -480,19 +586,48 @@ const AppointmentBookingPage = () => {
           </Typography>
         </Grid>
         
+        <Grid item xs={12}>
+          <Typography variant="subtitle1" gutterBottom>
+            Medical Information
+          </Typography>
+          <Typography variant="body1">
+            <strong>Symptoms:</strong> {formData.symptoms}
+          </Typography>
+          {formData.notes && (
+            <Typography variant="body1">
+              <strong>Additional Notes:</strong> {formData.notes}
+            </Typography>
+          )}
+        </Grid>
+        
         {files.length > 0 && (
           <Grid item xs={12}>
-            <Typography variant="subtitle1" gutterBottom>
-              Medical Records
-            </Typography>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-              {files.map((file, index) => (
-                <Chip 
-                  key={index}
-                  label={file.name}
-                  size="small"
-                />
-              ))}
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Typography variant="subtitle1" gutterBottom>
+                  Medical Records
+                </Typography>
+                {errors.submit && errors.submit.includes('files') && (
+                  <Button 
+                    variant="outlined" 
+                    color="error" 
+                    size="small" 
+                    onClick={handleRemoveAllFiles}
+                  >
+                    Remove All Files
+                  </Button>
+                )}
+              </Box>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                {files.map((file, index) => (
+                  <Chip 
+                    key={index}
+                    label={file.name}
+                    size="small"
+                    onDelete={errors.submit && errors.submit.includes('files') ? () => handleRemoveFile(index) : undefined}
+                  />
+                ))}
+              </Box>
             </Box>
           </Grid>
         )}
@@ -509,37 +644,45 @@ const AppointmentBookingPage = () => {
   // Render success message
   const renderSuccessMessage = () => (
     <Fade in={bookingComplete}>
-      <Box 
-        component={Paper} 
-        elevation={3} 
-        sx={{ 
-          p: 4, 
-          borderRadius: 2,
-          textAlign: 'center',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: 2
-        }}
-      >
-        <CheckCircleIcon color="success" sx={{ fontSize: 60 }} />
+      <Box component={Paper} elevation={3} sx={{ p: 4, borderRadius: 2, textAlign: 'center' }}>
+        <CheckCircleIcon color="success" sx={{ fontSize: 60, mb: 2 }} />
         <Typography variant="h5" gutterBottom>
-          Appointment Booked Successfully!
+          Appointment Confirmed!
         </Typography>
         <Typography variant="body1" paragraph>
-          Your appointment has been confirmed for {appointmentDate} at {appointmentTime}.
+          Your appointment has been successfully booked at <strong>{clinicData?.name}</strong> on <strong>{appointmentDate}</strong> at <strong>{appointmentTime}</strong>.
         </Typography>
         <Typography variant="body1" paragraph>
           You will receive a confirmation email at {formData.email} with all the details.
         </Typography>
-        <Button 
-          variant="contained" 
-          color="primary" 
-          onClick={handleReturnHome}
-          sx={{ mt: 2 }}
-        >
-          Return to Home
-        </Button>
+        
+        {/* Show different messages based on file upload status */}
+        {uploadInfo.hasFileUploads && !uploadInfo.fileUploadError && !uploadInfo.isDevelopmentEnvironment && (
+          <Alert severity="success" sx={{ mb: 2 }}>
+            Your medical records have been successfully uploaded and attached to your appointment.
+          </Alert>
+        )}
+        
+        {uploadInfo.hasFileUploads && (uploadInfo.fileUploadError || uploadInfo.isDevelopmentEnvironment) && (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            Your appointment has been created, but there may have been issues with file uploads. 
+            The clinic staff will contact you if additional documents are needed.
+          </Alert>
+        )}
+        
+        <Typography variant="body2" color="text.secondary">
+          Appointment ID: {appointmentId}
+        </Typography>
+        
+        <Box sx={{ mt: 4 }}>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleReturnHome}
+          >
+            Book Another Appointment
+          </Button>
+        </Box>
       </Box>
     </Fade>
   );
@@ -600,7 +743,7 @@ const AppointmentBookingPage = () => {
               {isSubmitting ? (
                 <CircularProgress size={24} />
               ) : activeStep === steps.length - 1 ? (
-                'Confirm Booking'
+                'Confirm Appointment'
               ) : (
                 'Next'
               )}
