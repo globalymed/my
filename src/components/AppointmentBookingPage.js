@@ -653,7 +653,7 @@ const AppointmentBookingPage = () => {
           Your appointment has been successfully booked at <strong>{clinicData?.name}</strong> on <strong>{appointmentDate}</strong> at <strong>{appointmentTime}</strong>.
         </Typography>
         <Typography variant="body1" paragraph>
-          You will receive a confirmation email at {formData.email} with all the details.
+          A confirmation email has been sent to <strong>{formData.email}</strong>. Please check your inbox (and spam folder) for all the details.
         </Typography>
         
         {/* Show different messages based on file upload status */}

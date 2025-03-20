@@ -1,0 +1,23 @@
+{
+  "name": "mediyatra-functions",
+  "version": "1.0.0",
+  "description": "Cloud Functions for MediYatra application",
+  "main": "index.js",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "18"
+  },
+  "dependencies": {
+    "firebase-admin": "^11.10.1",
+    "firebase-functions": "^4.5.0",
+    "sib-api-v3-sdk": "^8.5.0",
+    "node-fetch": "^3.3.2"
+  },
+  "private": true
+}
