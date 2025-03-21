@@ -13,6 +13,25 @@ const TimeSlotGrid = React.lazy(() => import('./TimeSlotGrid'));
 const BookingConfirmationForm = React.lazy(() => import('./BookingConfirmationForm'));
 const AppointmentBookingPage = React.lazy(() => import('./AppointmentBookingPage'));
 
+// Create a component to render the doctor dashboard in an iframe
+const DoctorDashboard = () => {
+  return (
+    <Box sx={{ width: '100%', height: 'calc(100vh - 150px)' }}>
+      <iframe 
+        src="/patient-dashboard-ai/index.html" 
+        title="Doctor Dashboard"
+        style={{ 
+          width: '100%', 
+          height: '100%', 
+          border: 'none',
+          borderRadius: '8px',
+          boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+        }}
+      />
+    </Box>
+  );
+};
+
 const LoadingFallback = () => (
   <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
     <CircularProgress />
@@ -36,6 +55,7 @@ const App = () => {
               </Box>
             } />
             <Route path="/appointment-booking" element={<AppointmentBookingPage />} />
+            <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
           </Routes>
         </Layout>
       </Suspense>

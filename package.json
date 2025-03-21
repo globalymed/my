@@ -27,7 +27,12 @@
     "start": "react-scripts start",
     "dev": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test"
+    "test": "react-scripts test",
+    "build:dashboard": "cd patient-dashboard-ai && npm run build",
+    "postbuild:dashboard": "if not exist public\\patient-dashboard-ai mkdir public\\patient-dashboard-ai && xcopy /E /Y patient-dashboard-ai\\dist\\* public\\patient-dashboard-ai\\",
+    "predeploy:all": "npm install && cd patient-dashboard-ai && npm install",
+    "deploy:all": "npm run build:dashboard && npm run postbuild:dashboard && npm run build",
+    "setup-dev": "node scripts/setup-dev-environment.js"
   },
   "browserslist": {
     "production": [

@@ -8,7 +8,7 @@ const SibApiV3Sdk = require('sib-api-v3-sdk');
 // Initialize Brevo API
 const defaultClient = SibApiV3Sdk.ApiClient.instance;
 const apiKey = defaultClient.authentications['api-key'];
-apiKey.apiKey = "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";
+apiKey.apiKey = "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";
 
 // Template ID for confirmation emails
 const BREVO_TEMPLATE_ID = 3;

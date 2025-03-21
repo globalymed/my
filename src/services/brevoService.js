@@ -2,7 +2,7 @@
 // This service handles sending emails using Brevo API
 
 // Using fetch for direct API integration
-const BREVO_API_KEY = "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";
+const BREVO_API_KEY = "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";
 // Using the correct template ID from Brevo account
 const BREVO_TEMPLATE_ID = 3;
 

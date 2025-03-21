@@ -42,7 +42,8 @@ const Layout = ({ children }) => {
     { name: 'Home', path: '/', icon: <HomeIcon /> },
     { name: 'AI Chat', path: '/chat', icon: <ChatIcon /> },
     { name: 'Know Your Treatment', path: null, icon: <InfoOutlinedIcon />, action: () => setShowTreatmentsInfo(true) },
-    { name: 'Book Appointment', path: '/book', icon: <CalendarMonthIcon /> }
+    { name: 'Book Appointment', path: '/book', icon: <CalendarMonthIcon /> },
+    { name: 'Doctor Dashboard', path: '/doctor-dashboard', icon: <LocalHospitalIcon /> }
   ];
 
   const isActive = (path) => {
