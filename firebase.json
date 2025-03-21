@@ -1,0 +1,14 @@
+{
+  "functions": {
+    "source": "functions",
+    "predeploy": [
+      "echo \"No build step configured\""
+    ]
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  }
+} 
