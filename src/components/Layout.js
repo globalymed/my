@@ -160,11 +160,33 @@ const Layout = ({ children }) => {
                   MedYatra
                 </Typography>
               </Box>
-              <IconButton color="inherit">
-                <Badge badgeContent={2} color="error">
-                  <NotificationsIcon />
-                </Badge>
-              </IconButton>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Tooltip title="Notifications">
+                  <IconButton color="inherit">
+                    <Badge badgeContent={2} color="error">
+                      <NotificationsIcon />
+                    </Badge>
+                  </IconButton>
+                </Tooltip>
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  onClick={() => navigate('/login')}
+                  startIcon={<AccountCircleIcon />}
+                  sx={{
+                    ml: 1,
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    fontWeight: 500,
+                    px: 2,
+                    '&:hover': {
+                      backgroundColor: 'rgba(37, 99, 235, 0.04)',
+                    }
+                  }}
+                >
+                  Login
+                </Button>
+              </Box>
             </>
           ) : (
             <>
@@ -214,11 +236,23 @@ const Layout = ({ children }) => {
                     </Badge>
                   </IconButton>
                 </Tooltip>
-                <Tooltip title="Profile">
-                  <IconButton color="inherit">
-                    <AccountCircleIcon />
-                  </IconButton>
-                </Tooltip>
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  onClick={() => navigate('/login')}
+                  startIcon={<AccountCircleIcon />}
+                  sx={{
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    fontWeight: 500,
+                    px: 2,
+                    '&:hover': {
+                      backgroundColor: 'rgba(37, 99, 235, 0.04)',
+                    }
+                  }}
+                >
+                  Login
+                </Button>
               </Box>
             </>
           )}

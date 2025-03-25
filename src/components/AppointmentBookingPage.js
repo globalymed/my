@@ -644,44 +644,78 @@ const AppointmentBookingPage = () => {
   // Render success message
   const renderSuccessMessage = () => (
     <Fade in={bookingComplete}>
-      <Box component={Paper} elevation={3} sx={{ p: 4, borderRadius: 2, textAlign: 'center' }}>
-        <CheckCircleIcon color="success" sx={{ fontSize: 60, mb: 2 }} />
-        <Typography variant="h5" gutterBottom>
+      <Box 
+        component={Paper} 
+        elevation={3} 
+        sx={{ 
+          p: 6, 
+          borderRadius: 2, 
+          textAlign: 'center',
+          maxWidth: 600,
+          mx: 'auto'
+        }}
+      >
+        <CheckCircleIcon color="success" sx={{ fontSize: 80, mb: 3 }} />
+        <Typography variant="h4" gutterBottom sx={{ mb: 3, fontWeight: 'bold' }}>
           Appointment Confirmed!
         </Typography>
-        <Typography variant="body1" paragraph>
-          Your appointment has been successfully booked at <strong>{clinicData?.name}</strong> on <strong>{appointmentDate}</strong> at <strong>{appointmentTime}</strong>.
-        </Typography>
-        <Typography variant="body1" paragraph>
-          A confirmation email has been sent to <strong>{formData.email}</strong>. Please check your inbox (and spam folder) for all the details.
-        </Typography>
+        
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="body1" paragraph>
+            Your appointment has been successfully booked at <strong>{clinicData?.name}</strong> on <strong>{appointmentDate}</strong> at <strong>{appointmentTime}</strong>.
+          </Typography>
+          <Typography variant="body1" paragraph>
+            A confirmation email has been sent to <strong>{formData.email}</strong>. Please check your inbox (and spam folder) for all the details.
+          </Typography>
+        </Box>
         
         {/* Show different messages based on file upload status */}
         {uploadInfo.hasFileUploads && !uploadInfo.fileUploadError && !uploadInfo.isDevelopmentEnvironment && (
-          <Alert severity="success" sx={{ mb: 2 }}>
+          <Alert severity="success" sx={{ mb: 3 }}>
             Your medical records have been successfully uploaded and attached to your appointment.
           </Alert>
         )}
         
         {uploadInfo.hasFileUploads && (uploadInfo.fileUploadError || uploadInfo.isDevelopmentEnvironment) && (
-          <Alert severity="info" sx={{ mb: 2 }}>
+          <Alert severity="info" sx={{ mb: 3 }}>
             Your appointment has been created, but there may have been issues with file uploads. 
             The clinic staff will contact you if additional documents are needed.
           </Alert>
         )}
         
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
           Appointment ID: {appointmentId}
         </Typography>
         
-        <Box sx={{ mt: 4 }}>
+        <Box sx={{ 
+          display: 'flex', 
+          gap: 2, 
+          justifyContent: 'center',
+          flexWrap: 'wrap',
+          flexDirection: 'column',
+          alignItems: 'center'
+        }}>
           <Button
             variant="contained"
             color="primary"
             onClick={handleReturnHome}
+            sx={{ minWidth: 200 }}
           >
             Book Another Appointment
           </Button>
+          <Box sx={{ textAlign: 'center' }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              Log in using the credentials sent to your email
+            </Typography>
+            <Button
+              variant="outlined"
+              color="primary"
+              onClick={() => navigate('/login')}
+              sx={{ minWidth: 200 }}
+            >
+              Login
+            </Button>
+          </Box>
         </Box>
       </Box>
     </Fade>

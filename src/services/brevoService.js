@@ -53,7 +53,7 @@ export const sendBookingConfirmationEmail = async (bookingData) => {
   <div style="background: #e6f7ff; padding: 15px; border-radius: 5px; margin: 20px 0; border: 1px solid #91d5ff;">
     <h3 style="margin-top: 0; color: #0050b3;">Your Account Credentials</h3>
     <p>To manage your appointment, access medical records, and receive important updates, please log in to your Med-Yatra account using the credentials below:</p>
-    <p><strong>🔹 Username:</strong> ${bookingData.userId}</p>
+    <p><strong>🔹 Username:</strong> ${bookingData.email}</p>
     <p><strong>🔹 Password:</strong> ${bookingData.password}</p>
     <p><strong>🔗 Login Here:</strong> <a href="https://patient.mediyatra.com/login" style="color: #1890ff;">https://patient.mediyatra.com/login</a></p>
     <p style="color: #f5222d; font-size: 0.9em;">For security reasons, we recommend changing your password after your first login.</p>
