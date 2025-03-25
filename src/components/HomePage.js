@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Container,
@@ -23,11 +23,37 @@ import {
   Person as PersonIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  Add as AddIcon
+  Add as AddIcon,
+  Login as LoginIcon,
+  Logout as LogoutIcon
 } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 
 const HomePage = () => {
   const theme = useTheme();
+  const navigate = useNavigate();
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // Check if user is logged in
+  useEffect(() => {
+    const userData = localStorage.getItem('userData');
+    if (userData) {
+      setUser(JSON.parse(userData));
+    }
+    setLoading(false);
+  }, []);
+
+  // Handle logout
+  const handleLogout = () => {
+    localStorage.removeItem('userData');
+    setUser(null);
+  };
+
+  // Handle login redirect
+  const handleLoginRedirect = () => {
+    navigate('/login');
+  };
 
   // Mock data for demonstration
   const appointments = [
@@ -40,7 +66,7 @@ const HomePage = () => {
       hospital: "MedYatra Hospital",
       location: "123 Healthcare Ave, Medical District",
       status: "Confirmed",
-      patientName: "John Doe"
+      patientName: user ? `${user.firstName} ${user.lastName}` : "John Doe"
     },
     {
       id: 2,
@@ -51,7 +77,7 @@ const HomePage = () => {
       hospital: "MedYatra Hospital",
       location: "123 Healthcare Ave, Medical District",
       status: "Pending",
-      patientName: "John Doe"
+      patientName: user ? `${user.firstName} ${user.lastName}` : "John Doe"
     }
   ];
 
@@ -68,16 +94,114 @@ const HomePage = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '70vh' }}>
+        <Typography>Loading...</Typography>
+      </Box>
+    );
+  }
+
+  // Unauthenticated view
+  if (!user) {
+    return (
+      <Box 
+        sx={{ 
+          py: 6,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '70vh'
+        }}
+      >
+        <Card
+          sx={{
+            maxWidth: 500,
+            width: '100%',
+            textAlign: 'center',
+            borderRadius: 3,
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)',
+            p: 2
+          }}
+        >
+          <CardContent sx={{ p: 4 }}>
+            <CalendarIcon sx={{ fontSize: 60, color: theme.palette.primary.main, mb: 2 }} />
+            <Typography variant="h5" component="h1" gutterBottom sx={{ fontWeight: 700 }}>
+              Welcome to MedYatra
+            </Typography>
+            <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+              Please log in to view your appointment details and manage your healthcare journey.
+            </Typography>
+            <Box sx={{ 
+              p: 2, 
+              mb: 3, 
+              backgroundColor: 'rgba(0, 127, 255, 0.05)', 
+              borderRadius: 2,
+              border: '1px solid rgba(0, 127, 255, 0.2)'
+            }}>
+              <Typography variant="body2" sx={{ fontStyle: 'italic', mb: 1 }}>
+                New to MedYatra? Book an appointment to receive your login credentials via email.
+              </Typography>
+              <Button
+                variant="outlined"
+                onClick={() => navigate('/chat')}
+                sx={{
+                  mt: 1,
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  fontSize: '0.9rem',
+                  fontWeight: 500
+                }}
+              >
+                Chat with AI to Book Appointment
+              </Button>
+            </Box>
+            <Button
+              variant="contained"
+              startIcon={<LoginIcon />}
+              onClick={handleLoginRedirect}
+              sx={{
+                py: 1.5,
+                px: 4,
+                borderRadius: 2,
+                textTransform: 'none',
+                fontSize: '1rem',
+                fontWeight: 600
+              }}
+            >
+              Log In
+            </Button>
+          </CardContent>
+        </Card>
+      </Box>
+    );
+  }
+
+  // Authenticated view
   return (
     <Box sx={{ py: 4 }}>
       {/* Header Section */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 700 }}>
-          Welcome back, John
-        </Typography>
-        <Typography variant="subtitle1" color="text.secondary">
-          Here's an overview of your upcoming appointments
-        </Typography>
+      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box>
+          <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 700 }}>
+            Welcome back, {user.firstName}
+          </Typography>
+          <Typography variant="subtitle1" color="text.secondary">
+            Here's an overview of your upcoming appointments
+          </Typography>
+        </Box>
+        <Button
+          variant="outlined"
+          color="primary"
+          startIcon={<LogoutIcon />}
+          onClick={handleLogout}
+          sx={{
+            borderRadius: 2,
+            textTransform: 'none'
+          }}
+        >
+          Log Out
+        </Button>
       </Box>
 
       {/* Quick Actions */}
