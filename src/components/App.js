@@ -14,6 +14,7 @@ const BookingConfirmationForm = React.lazy(() => import('./BookingConfirmationFo
 const AppointmentBookingPage = React.lazy(() => import('./AppointmentBookingPage'));
 const LoginPage = React.lazy(() => import('./LoginPage'));
 const HomePage = React.lazy(() => import('./HomePage'));
+const LandingPage = React.lazy(() => import('./LandingPage'));
 
 // Create a component to render the doctor dashboard in an iframe
 const DoctorDashboard = () => {
@@ -46,8 +47,8 @@ const App = () => {
       <Suspense fallback={<LoadingFallback />}>
         <Layout>
           <Routes>
-            <Route path="/" element={<Navigate to="/home" replace />} />
-            <Route path="/home" element={<HomePage />} />
+            <Route path="/" element={<HomePage />} />
+            <Route path="/home" element={<LandingPage />} />
             <Route path="/chat" element={<AIChat />} />
             <Route path="/recommend" element={<ClinicRecommender />} />
             <Route path="/book" element={

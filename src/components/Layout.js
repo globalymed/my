@@ -28,6 +28,7 @@ import NotificationsIcon from '@mui/icons-material/Notifications';
 import CloseIcon from '@mui/icons-material/Close';
 import HomeIcon from '@mui/icons-material/Home';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import DashboardIcon from '@mui/icons-material/Dashboard';
 import TreatmentsInfo from './TreatmentsInfo';
 
 const Layout = ({ children }) => {
@@ -38,11 +39,22 @@ const Layout = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const navItems = [
-    { name: 'Home', path: '/', icon: <HomeIcon /> },
+  // Modified navItems - Doctor Dashboard removed from main navigation
+  const mainNavItems = [
+    { name: 'Home', path: '/home', icon: <HomeIcon /> },
     { name: 'AI Chat', path: '/chat', icon: <ChatIcon /> },
     { name: 'Know Your Treatment', path: null, icon: <InfoOutlinedIcon />, action: () => setShowTreatmentsInfo(true) },
     { name: 'Book Appointment', path: '/book', icon: <CalendarMonthIcon /> },
+    { name: 'Dashboard', path: '/', icon: <DashboardIcon /> },
+  ];
+
+  // Items for the hamburger menu
+  const drawerItems = [
+    { name: 'Home', path: '/home', icon: <HomeIcon /> },
+    { name: 'AI Chat', path: '/chat', icon: <ChatIcon /> },
+    { name: 'Know Your Treatment', path: null, icon: <InfoOutlinedIcon />, action: () => setShowTreatmentsInfo(true) },
+    { name: 'Book Appointment', path: '/book', icon: <CalendarMonthIcon /> },
+    { name: 'Dashboard', path: '/', icon: <DashboardIcon /> },
     { name: 'Doctor Dashboard', path: '/doctor-dashboard', icon: <LocalHospitalIcon /> }
   ];
 
@@ -92,7 +104,7 @@ const Layout = ({ children }) => {
         </IconButton>
       </Box>
       <List sx={{ pt: 2 }}>
-        {navItems.map((item) => (
+        {drawerItems.map((item) => (
           <ListItem 
             button 
             key={item.name}
@@ -139,17 +151,19 @@ const Layout = ({ children }) => {
         borderBottom: '1px solid rgba(0,0,0,0.08)'
       }}>
         <Toolbar>
+          {/* Hamburger menu for both mobile and desktop */}
+          <IconButton
+            color="inherit"
+            aria-label="open drawer"
+            edge="start"
+            onClick={toggleDrawer}
+            sx={{ mr: 2 }}
+          >
+            <MenuIcon />
+          </IconButton>
+          
           {isMobile ? (
             <>
-              <IconButton
-                color="inherit"
-                aria-label="open drawer"
-                edge="start"
-                onClick={toggleDrawer}
-                sx={{ mr: 2 }}
-              >
-                <MenuIcon />
-              </IconButton>
               <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1, justifyContent: 'center' }}>
                 <Avatar 
                   src="/logo192.png" 
@@ -201,7 +215,7 @@ const Layout = ({ children }) => {
                 </Typography>
               </Box>
               <Box sx={{ flexGrow: 1, display: 'flex', gap: 1 }}>
-                {navItems.map((item) => (
+                {mainNavItems.map((item) => (
                   <Button
                     key={item.name}
                     onClick={() => handleNavigation(item.path, item.action)}

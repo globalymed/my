@@ -176,8 +176,8 @@ const LoginPage = () => {
         lastName: userData.lastName
       }));
 
-      // Navigate to home page
-      navigate('/home');
+      // Navigate to dashboard
+      navigate('/');
     } catch (error) {
       console.error('Login error:', error);
       setError('An error occurred during login. Please try again.');
