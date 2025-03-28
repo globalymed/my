@@ -41,20 +41,20 @@ const Layout = ({ children }) => {
 
   // Modified navItems - Doctor Dashboard removed from main navigation
   const mainNavItems = [
-    { name: 'Home', path: '/home', icon: <HomeIcon /> },
+    { name: 'Home', path: '/', icon: <HomeIcon /> },
     { name: 'AI Chat', path: '/chat', icon: <ChatIcon /> },
     { name: 'Know Your Treatment', path: null, icon: <InfoOutlinedIcon />, action: () => setShowTreatmentsInfo(true) },
     { name: 'Book Appointment', path: '/book', icon: <CalendarMonthIcon /> },
-    { name: 'Dashboard', path: '/', icon: <DashboardIcon /> },
+    { name: 'Dashboard', path: '/dashboard', icon: <DashboardIcon /> },
   ];
 
   // Items for the hamburger menu
   const drawerItems = [
-    { name: 'Home', path: '/home', icon: <HomeIcon /> },
+    { name: 'Home', path: '/', icon: <HomeIcon /> },
     { name: 'AI Chat', path: '/chat', icon: <ChatIcon /> },
     { name: 'Know Your Treatment', path: null, icon: <InfoOutlinedIcon />, action: () => setShowTreatmentsInfo(true) },
     { name: 'Book Appointment', path: '/book', icon: <CalendarMonthIcon /> },
-    { name: 'Dashboard', path: '/', icon: <DashboardIcon /> },
+    { name: 'Dashboard', path: '/dashboard', icon: <DashboardIcon /> },
     { name: 'Doctor Dashboard', path: '/doctor-dashboard', icon: <LocalHospitalIcon /> }
   ];
 

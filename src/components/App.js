@@ -1,5 +1,5 @@
-import React, { Suspense } from 'react';
-import { Route, Routes, Navigate } from 'react-router-dom';
+import React, { Suspense, useEffect } from 'react';
+import { Route, Routes, Navigate, useNavigate } from 'react-router-dom';
 import { CircularProgress, Box } from '@mui/material';
 import { db } from '../firebase';
 import Layout from './Layout';
@@ -14,7 +14,7 @@ const BookingConfirmationForm = React.lazy(() => import('./BookingConfirmationFo
 const AppointmentBookingPage = React.lazy(() => import('./AppointmentBookingPage'));
 const LoginPage = React.lazy(() => import('./LoginPage'));
 const HomePage = React.lazy(() => import('./HomePage'));
-const LandingPage = React.lazy(() => import('./LandingPage'));
+const DashboardPage = React.lazy(() => import('./DashboardPage'));
 
 // Create a component to render the doctor dashboard in an iframe
 const DoctorDashboard = () => {
@@ -41,6 +41,36 @@ const LoadingFallback = () => (
   </Box>
 );
 
+// Protected route component
+const ProtectedRoute = ({ children }) => {
+  const navigate = useNavigate();
+  const isAuthenticated = localStorage.getItem('userData') !== null;
+  
+  useEffect(() => {
+    // If user is not authenticated, redirect to login
+    if (!isAuthenticated) {
+      navigate('/login');
+    }
+  }, [isAuthenticated, navigate]);
+  
+  return isAuthenticated ? children : <LoadingFallback />;
+};
+
+// Auth route component - redirects to dashboard if already logged in
+const AuthRoute = ({ children }) => {
+  const navigate = useNavigate();
+  const isAuthenticated = localStorage.getItem('userData') !== null;
+  
+  useEffect(() => {
+    // If user is already authenticated, redirect to dashboard
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, navigate]);
+  
+  return !isAuthenticated ? children : <LoadingFallback />;
+};
+
 const App = () => {
   return (
     <ThemeProvider theme={theme}>
@@ -48,7 +78,11 @@ const App = () => {
         <Layout>
           <Routes>
             <Route path="/" element={<HomePage />} />
-            <Route path="/home" element={<LandingPage />} />
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <DashboardPage />
+              </ProtectedRoute>
+            } />
             <Route path="/chat" element={<AIChat />} />
             <Route path="/recommend" element={<ClinicRecommender />} />
             <Route path="/book" element={
@@ -58,9 +92,18 @@ const App = () => {
                 <BookingConfirmationForm />
               </Box>
             } />
-            <Route path="/appointment-booking" element={<AppointmentBookingPage />} />
+            <Route path="/appointment-booking" element={
+              <ProtectedRoute>
+                <AppointmentBookingPage />
+              </ProtectedRoute>
+            } />
             <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
-            <Route path="/login" element={<LoginPage />} />
+            <Route path="/login" element={
+              <AuthRoute>
+                <LoginPage />
+              </AuthRoute>
+            } />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Layout>
       </Suspense>

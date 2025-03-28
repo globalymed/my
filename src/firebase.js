@@ -478,19 +478,56 @@ const updateAvailabilityStatus = async (availabilityId, status, appointmentId = 
 // Get appointments for a specific user
 export const getUserAppointments = async (userId) => {
   try {
+    console.log(`Fetching appointments for user ID: ${userId}`);
+    
+    // Get all appointments from the appointments collection
     const appointmentsCollection = collection(db, 'appointments');
+    
+    // Query appointments where userId field equals the provided userId
     const q = query(
       appointmentsCollection,
-      where('userId', '==', userId),
-      orderBy('appointmentDate', 'desc')
+      where('userId', '==', userId)
     );
     
+    console.log('Executing query for appointments');
     const appointmentsSnapshot = await getDocs(q);
     
     if (appointmentsSnapshot.empty) {
-      return [];
+      console.log(`No appointments found for user ID: ${userId}`);
+      
+      // Fallback: Try to get all appointments and filter manually
+      // in case the userId is stored in a different format
+      console.log('Attempting fallback: fetching all appointments');
+      const allAppointmentsQuery = query(appointmentsCollection);
+      const allAppointmentsSnapshot = await getDocs(allAppointmentsQuery);
+      
+      if (allAppointmentsSnapshot.empty) {
+        console.log('No appointments found in the database');
+        return [];
+      }
+      
+      // Filter manually to see if any appointment's userId matches our userId
+      const filteredAppointments = allAppointmentsSnapshot.docs.filter(doc => {
+        const data = doc.data();
+        // Check if userId exists and if it matches (as string)
+        return data.userId && (data.userId === userId || 
+                              data.userId.toString() === userId ||
+                              (data.userId.id && data.userId.id === userId));
+      });
+      
+      if (filteredAppointments.length === 0) {
+        console.log('No matching appointments found after manual filtering');
+        return [];
+      }
+      
+      console.log(`Found ${filteredAppointments.length} appointments after manual filtering`);
+      return filteredAppointments.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
     }
     
+    console.log(`Found ${appointmentsSnapshot.docs.length} appointments for user ID: ${userId}`);
     return appointmentsSnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
@@ -551,15 +588,31 @@ export const getClinicAppointments = async (clinicId, startDate = null, endDate 
 // Update appointment status
 export const updateAppointmentStatus = async (appointmentId, status, notes = '') => {
   try {
+    console.log(`Updating appointment ${appointmentId} status to ${status}`);
     const appointmentRef = doc(db, 'appointments', appointmentId);
-    await updateDoc(appointmentRef, {
+    
+    // First check if the appointment exists
+    const appointmentSnapshot = await getDoc(appointmentRef);
+    if (!appointmentSnapshot.exists()) {
+      console.error(`Appointment ${appointmentId} does not exist`);
+      return false;
+    }
+    
+    const updateData = {
       status: status,
-      notes: notes || '',
       updatedAt: serverTimestamp()
-    });
+    };
+    
+    // Only update notes if provided
+    if (notes) {
+      updateData.notes = notes;
+    }
+    
+    await updateDoc(appointmentRef, updateData);
+    console.log(`Successfully updated appointment ${appointmentId} status to ${status}`);
     return true;
   } catch (error) {
-    console.error('Error updating appointment status:', error);
+    console.error(`Error updating appointment ${appointmentId} status:`, error);
     return false;
   }
 };
@@ -567,16 +620,32 @@ export const updateAppointmentStatus = async (appointmentId, status, notes = '')
 // Delete appointment
 export const deleteAppointment = async (appointmentId, availabilityId = null) => {
   try {
+    console.log(`Attempting to delete/cancel appointment ${appointmentId}`);
+    
     // Update availability status if provided
     if (availabilityId) {
-      await updateAvailabilityStatus(availabilityId, 'available', null);
+      console.log(`Updating availability ${availabilityId} to available`);
+      const success = await updateAvailabilityStatus(availabilityId, 'available', null);
+      if (!success) {
+        console.warn(`Failed to update availability ${availabilityId}, but continuing with appointment deletion`);
+      }
     }
     
     // Delete appointment
-    await deleteDoc(doc(db, 'appointments', appointmentId));
+    const appointmentRef = doc(db, 'appointments', appointmentId);
+    
+    // First check if the appointment exists
+    const appointmentSnapshot = await getDoc(appointmentRef);
+    if (!appointmentSnapshot.exists()) {
+      console.error(`Appointment ${appointmentId} does not exist, cannot delete`);
+      return false;
+    }
+    
+    await deleteDoc(appointmentRef);
+    console.log(`Successfully deleted appointment ${appointmentId}`);
     return true;
   } catch (error) {
-    console.error('Error deleting appointment:', error);
+    console.error(`Error deleting appointment ${appointmentId}:`, error);
     return false;
   }
 };

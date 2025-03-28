@@ -1,358 +1,318 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   Box,
   Container,
   Typography,
+  Grid,
   Card,
   CardContent,
-  Grid,
-  Avatar,
-  Chip,
-  Divider,
   Button,
-  IconButton,
-  Tooltip,
+  Avatar,
+  useTheme,
   Paper,
-  useTheme
+  Divider
 } from '@mui/material';
 import {
-  CalendarMonth as CalendarIcon,
+  HealthAndSafety as HealthIcon,
+  MedicalServices as MedicalIcon,
   AccessTime as TimeIcon,
-  LocationOn as LocationIcon,
-  LocalHospital as HospitalIcon,
-  Person as PersonIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Add as AddIcon,
-  Login as LoginIcon,
-  Logout as LogoutIcon
+  CalendarMonth as CalendarIcon,
+  Chat as ChatIcon,
+  Psychology as AIIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
 const HomePage = () => {
   const theme = useTheme();
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
 
-  // Check if user is logged in
-  useEffect(() => {
-    const userData = localStorage.getItem('userData');
-    if (userData) {
-      setUser(JSON.parse(userData));
-    }
-    setLoading(false);
-  }, []);
-
-  // Handle logout
-  const handleLogout = () => {
-    localStorage.removeItem('userData');
-    setUser(null);
-  };
-
-  // Handle login redirect
-  const handleLoginRedirect = () => {
-    navigate('/login');
-  };
-
-  // Mock data for demonstration
-  const appointments = [
+  const features = [
     {
-      id: 1,
-      doctorName: "Dr. Sarah Johnson",
-      specialization: "Cardiologist",
-      date: "2024-03-25",
-      time: "10:30 AM",
-      hospital: "MedYatra Hospital",
-      location: "123 Healthcare Ave, Medical District",
-      status: "Confirmed",
-      patientName: user ? `${user.firstName} ${user.lastName}` : "John Doe"
+      title: 'AI-Powered Chat',
+      description: 'Get instant answers to your health queries and book appointments with our smart AI assistant.',
+      icon: <AIIcon sx={{ fontSize: 40, color: theme.palette.primary.main }} />,
+      action: () => navigate('/chat')
     },
     {
-      id: 2,
-      doctorName: "Dr. Michael Chen",
-      specialization: "Dermatologist",
-      date: "2024-03-28",
-      time: "2:00 PM",
-      hospital: "MedYatra Hospital",
-      location: "123 Healthcare Ave, Medical District",
-      status: "Pending",
-      patientName: user ? `${user.firstName} ${user.lastName}` : "John Doe"
+      title: 'Easy Appointment Booking',
+      description: 'Book appointments with doctors at your preferred time slots with just a few clicks.',
+      icon: <CalendarIcon sx={{ fontSize: 40, color: theme.palette.primary.main }} />,
+      action: () => navigate('/book')
+    },
+    {
+      title: 'Medical Information',
+      description: 'Access comprehensive information about various treatments and medical procedures.',
+      icon: <MedicalIcon sx={{ fontSize: 40, color: theme.palette.primary.main }} />,
+      action: null
+    },
+    {
+      title: 'Patient Dashboard',
+      description: 'View and manage all your appointments and medical records in one place.',
+      icon: <HealthIcon sx={{ fontSize: 40, color: theme.palette.primary.main }} />,
+      action: () => navigate('/dashboard')
     }
   ];
 
-  const getStatusColor = (status) => {
-    switch (status.toLowerCase()) {
-      case 'confirmed':
-        return 'success';
-      case 'pending':
-        return 'warning';
-      case 'cancelled':
-        return 'error';
-      default:
-        return 'default';
-    }
-  };
-
-  if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '70vh' }}>
-        <Typography>Loading...</Typography>
-      </Box>
-    );
-  }
-
-  // Unauthenticated view
-  if (!user) {
-    return (
-      <Box 
-        sx={{ 
-          py: 6,
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: '70vh'
-        }}
-      >
-        <Card
-          sx={{
-            maxWidth: 500,
-            width: '100%',
-            textAlign: 'center',
-            borderRadius: 3,
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)',
-            p: 2
-          }}
-        >
-          <CardContent sx={{ p: 4 }}>
-            <CalendarIcon sx={{ fontSize: 60, color: theme.palette.primary.main, mb: 2 }} />
-            <Typography variant="h5" component="h1" gutterBottom sx={{ fontWeight: 700 }}>
-              Welcome to MedYatra
-            </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-              Please log in to view your appointment details and manage your healthcare journey.
-            </Typography>
-            <Box sx={{ 
-              p: 2, 
-              mb: 3, 
-              backgroundColor: 'rgba(0, 127, 255, 0.05)', 
-              borderRadius: 2,
-              border: '1px solid rgba(0, 127, 255, 0.2)'
-            }}>
-              <Typography variant="body2" sx={{ fontStyle: 'italic', mb: 1 }}>
-                New to MedYatra? Book an appointment to receive your login credentials via email.
-              </Typography>
-              <Button
-                variant="outlined"
-                onClick={() => navigate('/chat')}
-                sx={{
-                  mt: 1,
-                  borderRadius: 2,
-                  textTransform: 'none',
-                  fontSize: '0.9rem',
-                  fontWeight: 500
-                }}
-              >
-                Chat with AI to Book Appointment
-              </Button>
-            </Box>
-            <Button
-              variant="contained"
-              startIcon={<LoginIcon />}
-              onClick={handleLoginRedirect}
-              sx={{
-                py: 1.5,
-                px: 4,
-                borderRadius: 2,
-                textTransform: 'none',
-                fontSize: '1rem',
-                fontWeight: 600
-              }}
-            >
-              Log In
-            </Button>
-          </CardContent>
-        </Card>
-      </Box>
-    );
-  }
-
-  // Authenticated view
   return (
     <Box sx={{ py: 4 }}>
-      {/* Header Section */}
-      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Box>
-          <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 700 }}>
-            Welcome back, {user.firstName}
-          </Typography>
-          <Typography variant="subtitle1" color="text.secondary">
-            Here's an overview of your upcoming appointments
-          </Typography>
-        </Box>
-        <Button
-          variant="outlined"
-          color="primary"
-          startIcon={<LogoutIcon />}
-          onClick={handleLogout}
+      {/* Hero Section */}
+      <Paper
+        elevation={0}
+        sx={{
+          p: 4,
+          mb: 6,
+          borderRadius: 4,
+          backgroundImage: 'linear-gradient(135deg, #e0f2fe 0%, #bfdbfe 100%)',
+          position: 'relative',
+          overflow: 'hidden'
+        }}
+      >
+        <Box
           sx={{
-            borderRadius: 2,
-            textTransform: 'none'
+            position: 'absolute',
+            top: -100,
+            right: -100,
+            width: 300,
+            height: 300,
+            borderRadius: '50%',
+            backgroundColor: 'rgba(255,255,255,0.15)',
+            zIndex: 0
           }}
-        >
-          Log Out
-        </Button>
-      </Box>
-
-      {/* Quick Actions */}
-      <Paper sx={{ p: 2, mb: 4, background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)' }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            Quick Actions
-          </Typography>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            sx={{
-              borderRadius: 2,
-              textTransform: 'none',
-              px: 3,
-              '&:hover': {
-                backgroundColor: theme.palette.primary.dark,
-              }
-            }}
-          >
-            Book New Appointment
-          </Button>
-        </Box>
+        />
+        <Box
+          sx={{
+            position: 'absolute',
+            bottom: -80,
+            left: -80,
+            width: 200,
+            height: 200,
+            borderRadius: '50%',
+            backgroundColor: 'rgba(255,255,255,0.1)',
+            zIndex: 0
+          }}
+        />
+        <Grid container spacing={4} alignItems="center" sx={{ position: 'relative', zIndex: 1 }}>
+          <Grid item xs={12} md={7}>
+            <Typography variant="h2" component="h1" sx={{ fontWeight: 800, mb: 2, color: '#1e3a8a' }}>
+              MedYatra
+            </Typography>
+            <Typography variant="h5" sx={{ mb: 3, color: '#334155', fontWeight: 500 }}>
+              Your Healthcare Journey Made Simple
+            </Typography>
+            <Typography variant="body1" sx={{ mb: 4, color: '#475569', fontSize: '1.1rem', maxWidth: '600px' }}>
+              MedYatra is a comprehensive healthcare platform designed to seamlessly connect
+              patients with healthcare services. Our AI-powered tools, appointment scheduling,
+              and personalized dashboards make healthcare access easier than ever.
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+              <Button
+                variant="contained"
+                size="large"
+                onClick={() => navigate('/chat')}
+                startIcon={<ChatIcon />}
+                sx={{
+                  py: 1.5,
+                  px: 3,
+                  borderRadius: 2,
+                  backgroundColor: '#1e40af',
+                  '&:hover': { backgroundColor: '#1e3a8a' },
+                  textTransform: 'none',
+                  fontSize: '1rem',
+                  fontWeight: 600
+                }}
+              >
+                Chat with AI Assistant
+              </Button>
+              <Button
+                variant="outlined"
+                size="large"
+                onClick={() => navigate('/book')}
+                startIcon={<CalendarIcon />}
+                sx={{
+                  py: 1.5,
+                  px: 3,
+                  borderRadius: 2,
+                  borderColor: '#1e40af',
+                  color: '#1e40af',
+                  '&:hover': { borderColor: '#1e3a8a', backgroundColor: 'rgba(30, 64, 175, 0.04)' },
+                  textTransform: 'none',
+                  fontSize: '1rem',
+                  fontWeight: 600
+                }}
+              >
+                Book Appointment
+              </Button>
+            </Box>
+          </Grid>
+          <Grid item xs={12} md={5} sx={{ display: { xs: 'none', md: 'block' } }}>
+            <Box
+              component="img"
+              src="/logo192.png"
+              alt="MedYatra"
+              sx={{
+                width: '80%',
+                maxWidth: 350,
+                mx: 'auto',
+                display: 'block',
+                filter: 'drop-shadow(0 20px 30px rgba(0, 0, 0, 0.15))'
+              }}
+            />
+          </Grid>
+        </Grid>
       </Paper>
 
-      {/* Appointments Grid */}
-      <Grid container spacing={3}>
-        {appointments.map((appointment) => (
-          <Grid item xs={12} md={6} key={appointment.id}>
-            <Card 
-              sx={{ 
+      {/* Features Section */}
+      <Typography variant="h4" component="h2" sx={{ mb: 4, fontWeight: 700, color: '#1e3a8a', textAlign: 'center' }}>
+        Our Healthcare Features
+      </Typography>
+      <Grid container spacing={3} sx={{ mb: 6 }}>
+        {features.map((feature, index) => (
+          <Grid item xs={12} sm={6} md={3} key={index}>
+            <Card
+              sx={{
                 height: '100%',
-                borderRadius: 2,
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                borderRadius: 3,
+                transition: 'all 0.3s ease',
                 '&:hover': {
-                  boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-                  transform: 'translateY(-2px)',
-                  transition: 'all 0.2s ease-in-out'
-                }
+                  transform: 'translateY(-8px)',
+                  boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+                },
+                cursor: feature.action ? 'pointer' : 'default'
               }}
+              onClick={feature.action}
             >
-              <CardContent>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <Avatar 
-                      sx={{ 
-                        width: 56, 
-                        height: 56,
-                        backgroundColor: theme.palette.primary.light,
-                        color: theme.palette.primary.main
-                      }}
-                    >
-                      <HospitalIcon />
-                    </Avatar>
-                    <Box>
-                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                        {appointment.doctorName}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {appointment.specialization}
-                      </Typography>
-                    </Box>
-                  </Box>
-                  <Chip
-                    label={appointment.status}
-                    color={getStatusColor(appointment.status)}
-                    size="small"
-                    sx={{ borderRadius: 1 }}
-                  />
+              <CardContent sx={{ p: 3, textAlign: 'center' }}>
+                <Box sx={{ mb: 2, display: 'flex', justifyContent: 'center' }}>
+                  {feature.icon}
                 </Box>
-
-                <Divider sx={{ my: 2 }} />
-
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <CalendarIcon color="action" fontSize="small" />
-                      <Typography variant="body2">
-                        {new Date(appointment.date).toLocaleDateString('en-US', {
-                          weekday: 'long',
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        })}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <TimeIcon color="action" fontSize="small" />
-                      <Typography variant="body2">{appointment.time}</Typography>
-                    </Box>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <LocationIcon color="action" fontSize="small" />
-                      <Typography variant="body2">{appointment.hospital}</Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <PersonIcon color="action" fontSize="small" />
-                      <Typography variant="body2">{appointment.patientName}</Typography>
-                    </Box>
-                  </Grid>
-                </Grid>
-
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 2 }}>
-                  <Tooltip title="Edit Appointment">
-                    <IconButton size="small" color="primary">
-                      <EditIcon />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title="Cancel Appointment">
-                    <IconButton size="small" color="error">
-                      <DeleteIcon />
-                    </IconButton>
-                  </Tooltip>
-                </Box>
+                <Typography variant="h6" component="h3" sx={{ mb: 1.5, fontWeight: 600 }}>
+                  {feature.title}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {feature.description}
+                </Typography>
               </CardContent>
             </Card>
           </Grid>
         ))}
       </Grid>
 
-      {/* Empty State */}
-      {appointments.length === 0 && (
-        <Box 
-          sx={{ 
-            textAlign: 'center', 
-            py: 8,
-            background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-            borderRadius: 2
-          }}
-        >
-          <CalendarIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
-          <Typography variant="h6" color="text.secondary" gutterBottom>
-            No appointments scheduled
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Book your first appointment to get started
-          </Typography>
+      {/* About Section */}
+      <Paper elevation={0} sx={{ p: 4, mb: 6, borderRadius: 4, bgcolor: '#f8fafc' }}>
+        <Typography variant="h4" component="h2" sx={{ mb: 4, fontWeight: 700, color: '#1e3a8a', textAlign: 'center' }}>
+          About MedYatra
+        </Typography>
+        <Grid container spacing={4} alignItems="center">
+          <Grid item xs={12} md={6}>
+            <Typography variant="body1" sx={{ mb: 2, color: '#334155' }}>
+              MedYatra is built on the mission of making healthcare accessible, transparent, and efficient for everyone. Our platform is designed to simplify the healthcare journey from finding the right doctor to booking appointments and managing health records.
+            </Typography>
+            <Typography variant="body1" sx={{ mb: 2, color: '#334155' }}>
+              With our AI-powered chat assistant, you can get instant answers to your health queries and book appointments with suitable doctors based on your symptoms and preferences.
+            </Typography>
+            <Typography variant="body1" sx={{ color: '#334155' }}>
+              Our dashboard provides a comprehensive view of your healthcare journey, allowing you to manage appointments, access medical records, and stay on top of your health.
+            </Typography>
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <Box sx={{ p: 2, bgcolor: '#fff', borderRadius: 3, boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
+              <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: '#1e3a8a' }}>
+                Why Choose MedYatra?
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {[
+                  { title: 'AI-Powered Health Assistance', desc: 'Get instant answers to your health queries and personalized recommendations.' },
+                  { title: 'Quick Appointment Booking', desc: 'Book appointments with doctors at your preferred time slots with just a few clicks.' },
+                  { title: 'Comprehensive Health Information', desc: 'Access detailed information about various treatments and medical procedures.' },
+                  { title: 'Secure & Private', desc: 'Your health data is securely stored and your privacy is our top priority.' }
+                ].map((item, i) => (
+                  <Box key={i} sx={{ display: 'flex', gap: 2 }}>
+                    <Box sx={{ 
+                      width: 24, 
+                      height: 24, 
+                      borderRadius: '50%', 
+                      bgcolor: theme.palette.primary.main,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#fff',
+                      fontWeight: 'bold',
+                      fontSize: '0.8rem',
+                      flexShrink: 0,
+                      mt: 0.5
+                    }}>
+                      {i+1}
+                    </Box>
+                    <Box>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#334155' }}>
+                        {item.title}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {item.desc}
+                      </Typography>
+                    </Box>
+                  </Box>
+                ))}
+              </Box>
+            </Box>
+          </Grid>
+        </Grid>
+      </Paper>
+
+      {/* Call to Action */}
+      <Box sx={{ 
+        p: 4, 
+        textAlign: 'center',
+        bgcolor: theme.palette.primary.main,
+        borderRadius: 4,
+        color: '#fff'
+      }}>
+        <Typography variant="h5" sx={{ mb: 2, fontWeight: 600 }}>
+          Ready to Start Your Healthcare Journey?
+        </Typography>
+        <Typography variant="body1" sx={{ mb: 3, maxWidth: 700, mx: 'auto' }}>
+          Join MedYatra today and experience the future of healthcare. Book appointments, chat with our AI assistant, and manage your health records all in one place.
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
           <Button
             variant="contained"
-            startIcon={<AddIcon />}
+            color="secondary"
+            size="large"
+            onClick={() => navigate('/login')}
             sx={{
+              py: 1.5,
+              px: 3,
               borderRadius: 2,
               textTransform: 'none',
-              px: 3
+              fontSize: '1rem',
+              fontWeight: 600,
+              bgcolor: '#fff',
+              color: theme.palette.primary.main,
+              '&:hover': { bgcolor: '#f8fafc' }
             }}
           >
-            Book Appointment
+            Login to Dashboard
+          </Button>
+          <Button
+            variant="outlined"
+            size="large"
+            onClick={() => navigate('/chat')}
+            sx={{
+              py: 1.5,
+              px: 3,
+              borderRadius: 2,
+              textTransform: 'none',
+              fontSize: '1rem',
+              fontWeight: 600,
+              borderColor: '#fff',
+              color: '#fff',
+              '&:hover': { borderColor: '#f8fafc', bgcolor: 'rgba(255, 255, 255, 0.1)' }
+            }}
+          >
+            Chat with AI Assistant
           </Button>
         </Box>
-      )}
+      </Box>
     </Box>
   );
 };

@@ -177,7 +177,7 @@ const LoginPage = () => {
       }));
 
       // Navigate to dashboard
-      navigate('/');
+      navigate('/dashboard');
     } catch (error) {
       console.error('Login error:', error);
       setError('An error occurred during login. Please try again.');
