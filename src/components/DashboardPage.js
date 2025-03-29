@@ -391,7 +391,15 @@ const DashboardPage = () => {
 
   // Authenticated view
   return (
-    <Container maxWidth="lg">
+    <Container 
+      maxWidth="lg" 
+      sx={{
+        py: 4,
+        px: { xs: 2, sm: 3 },
+        backgroundColor: '#f8fafc',
+        minHeight: '100vh'
+      }}
+    >
       <Box sx={{ py: 4 }}>
         {/* Error Message */}
         {error && (
@@ -401,7 +409,25 @@ const DashboardPage = () => {
         )}
         
         {/* Header Section */}
-        <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+        <Box 
+          sx={{ 
+            mb: 4, 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center', 
+            flexWrap: 'wrap', 
+            gap: 2,
+            background: 'linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%)',
+            borderRadius: '16px',
+            p: 3,
+            boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+            border: '1px solid rgba(0, 0, 0, 0.05)',
+            backdropFilter: 'blur(10px)',
+            position: 'sticky',
+            top: 0,
+            zIndex: 10
+          }}
+        >
           <Box>
             <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 700 }}>
               Patient Dashboard
@@ -444,9 +470,21 @@ const DashboardPage = () => {
           sx={{ 
             p: 3, 
             mb: 4, 
-            borderRadius: 3,
-            background: 'linear-gradient(135deg, #e0f2fe 0%, #bfdbfe 100%)',
-            border: '1px solid rgba(0, 127, 255, 0.1)'
+            borderRadius: '16px',
+            background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+            border: '1px solid rgba(0, 127, 255, 0.1)',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+            position: 'relative',
+            overflow: 'hidden',
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: '4px',
+              background: 'linear-gradient(90deg, #3b82f6, #60a5fa)'
+            }
           }}
         >
           <Grid container spacing={2}>
@@ -498,6 +536,23 @@ const DashboardPage = () => {
                   width: '100%',
                   justifyContent: { xs: 'flex-start', md: 'flex-end' }
                 }}>
+                    </Box>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: 1,
+                    px: 2,
+                    py: 1,
+                    bgcolor: 'rgba(255, 255, 255, 0.5)',
+                    borderRadius: 2
+                  }}>
+                <Box sx={{ 
+                  display: 'flex', 
+                  flexDirection: 'column',
+                  alignItems: { xs: 'flex-start', md: 'flex-end' }, 
+                  gap: 2,
+                  width: '100%'
+                }}>
                   {user.city && user.country && (
                     <Box sx={{ 
                       display: 'flex', 
@@ -516,49 +571,90 @@ const DashboardPage = () => {
                   )}
                   <Box sx={{ 
                     display: 'flex', 
-                    alignItems: 'center', 
-                    gap: 1,
-                    px: 2,
-                    py: 1,
-                    bgcolor: 'rgba(255, 255, 255, 0.5)',
-                    borderRadius: 2
+                    flexDirection: 'row', // Changed to row to place buttons side by side
+                    gap: 2,
+                    alignItems: 'center'
                   }}>
-                    <EventNoteIcon fontSize="small" sx={{ color: theme.palette.primary.main }} />
-                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                      Total Appointments: {appointments.length}
-                    </Typography>
+                    <Button
+                      variant="contained"
+                      //onClick={}                       //backend code added here to add "add document" functionality 
+                      sx={{
+                        borderRadius: 2,
+                        textTransform: 'none',
+                        px: 3,
+                        background: 'linear-gradient(45deg, #1e40af, #3b82f6)',
+                        '&:hover': {
+                          background: 'linear-gradient(45deg, #1e3a8a, #2563eb)'
+                        }
+                      }}
+                    >
+                      Add Documents
+                    </Button>
+
+                    <Button
+                      variant="contained"
+                      //onClick={} //do something here. Display the view similar to "Know Your Treatments"
+                      sx={{
+                        borderRadius: 2,
+                        textTransform: 'none',
+                        px: 3,
+                        background: 'linear-gradient(45deg, #1e40af, #3b82f6)',
+                        '&:hover': {
+                          background: 'linear-gradient(45deg, #1e3a8a, #2563eb)'
+                        }
+                      }}
+                    >
+                      Check Documents
+                    </Button>
                   </Box>
                 </Box>
-                <Button
-                  variant="contained"
-                  startIcon={<AddIcon />}
-                  onClick={handleBookAppointment}
-                  sx={{
-                    mt: 2,
-                    borderRadius: 2,
-                    textTransform: 'none',
-                    px: 3
-                  }}
-                >
-                  Book New Appointment
-                </Button>
-              </Box>
+                  </Box>
+                </Box>
             </Grid>
           </Grid>
         </Paper>
 
         {/* Appointments Section Title */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-          <Typography variant="h5" component="h2" sx={{ fontWeight: 600 }}>
-            Your Appointments
-          </Typography>
-          <Chip 
-            label={`Last refreshed: ${new Date().toLocaleTimeString()}`} 
-            size="small"
-            color="default"
-            variant="outlined" 
-          />
-        </Box>
+            <Typography variant="h5" component="h2" sx={{ fontWeight: 600 }}>
+              Your Appointments
+            </Typography>
+
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Chip 
+                label={`Last refreshed: ${new Date().toLocaleTimeString()}`} 
+                size="small"
+                color="default"
+                variant="outlined" 
+                sx={{
+                  borderRadius: '8px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.8)'
+                }}
+              />
+
+              <EventNoteIcon fontSize="small" sx={{ color: theme.palette.primary.main }} />
+              <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                Total Appointments: {appointments.length}
+              </Typography>
+              
+              <Button
+                variant="contained"
+                onClick={handleBookAppointment}
+                sx={{
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  px: 3,
+                  background: 'linear-gradient(45deg, #1e40af, #3b82f6)',
+                  '&:hover': {
+                    background: 'linear-gradient(45deg, #1e3a8a, #2563eb)'
+                  }
+                }}
+              >
+                Book Appointment
+              </Button>
+            </Box>
+          </Box>
+
 
         {/* Appointments Loading */}
         {appointmentLoading && (
@@ -638,7 +734,22 @@ const DashboardPage = () => {
                           label={status}
                           color={getStatusColor(status)}
                           size="small"
-                          sx={{ borderRadius: 1 }}
+                          sx={{ 
+                            borderRadius: '6px',
+                            fontWeight: 600,
+                            px: 1,
+                            '& .MuiChip-label': {
+                              px: 1
+                            },
+                            background: status.toLowerCase() === 'confirmed' 
+                              ? 'linear-gradient(45deg, #059669, #34d399)'
+                              : status.toLowerCase() === 'pending'
+                              ? 'linear-gradient(45deg, #d97706, #fbbf24)'
+                              : status.toLowerCase() === 'cancelled'
+                              ? 'linear-gradient(45deg, #dc2626, #f87171)'
+                              : 'linear-gradient(45deg, #2563eb, #60a5fa)',
+                            color: '#ffffff'
+                          }}
                         />
                       </Box>
 
@@ -731,8 +842,15 @@ const DashboardPage = () => {
             sx={{ 
               textAlign: 'center', 
               py: 8,
-              background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-              borderRadius: 2
+              px: 3,
+              background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+              borderRadius: '16px',
+              border: '1px solid rgba(0, 0, 0, 0.05)',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 2
             }}
           >
             <CalendarIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
@@ -763,6 +881,12 @@ const DashboardPage = () => {
           onClose={() => setCancelDialogOpen(false)}
           maxWidth="sm"
           fullWidth
+          PaperProps={{
+            sx: {
+              borderRadius: '16px',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+            }
+          }}
         >
           <DialogTitle>Cancel Appointment</DialogTitle>
           <DialogContent>
@@ -887,4 +1011,4 @@ const DashboardPage = () => {
   );
 };
 
-export default DashboardPage; 
+export default DashboardPage;
