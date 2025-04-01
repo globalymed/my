@@ -212,6 +212,8 @@ export const createAppointment = async (appointmentData, medicalRecordFiles = []
       userId: userRef.id, // Ensure this is the correct user ID
       clinicId: appointmentData.clinicId,
       clinicName: appointmentData.clinicName,
+      doctorId: appointmentData.doctorId || null, // Add doctor ID if provided
+      doctorName: appointmentData.doctorName || null, // Add doctor name if provided
       treatmentType: appointmentData.treatmentType,
       appointmentDate: appointmentData.appointmentDate,
       appointmentTime: appointmentData.appointmentTime,
@@ -223,6 +225,10 @@ export const createAppointment = async (appointmentData, medicalRecordFiles = []
       symptoms: appointmentData.symptoms || [],
       notes: appointmentData.notes || '',
       status: 'pending',
+      duration: appointmentData.duration || 30, // Default 30 minutes
+      type: appointmentData.type || 'in-person', // Default to in-person
+      meetingLink: appointmentData.type === 'video' ? generateMeetingLink() : null,
+      doctorNotes: '',
       patientName: `${appointmentData.firstName} ${appointmentData.lastName}`,
       patientEmail: appointmentData.email,
       patientPhone: appointmentData.phone,
@@ -253,13 +259,15 @@ export const createAppointment = async (appointmentData, medicalRecordFiles = []
         firstName: appointmentData.firstName,
         lastName: appointmentData.lastName,
         clinicName: appointmentData.clinicName,
+        doctorName: appointmentData.doctorName || null,
         appointmentDate: appointmentData.appointmentDate,
         appointmentTime: appointmentData.appointmentTime,
         location: appointmentData.city,
         treatmentType: appointmentData.treatmentType,
         appointmentId: appointmentRef.id,
         userId: userRef.id, // Add userId for the email
-        password: userRef.password // Add password for the email (if new user)
+        password: userRef.password, // Add password for the email (if new user)
+        meetingLink: appointmentDocData.meetingLink || null
       };
       
       // Try template email first
@@ -317,6 +325,12 @@ export const createAppointment = async (appointmentData, medicalRecordFiles = []
       error: error.message
     };
   }
+};
+
+// Helper function to generate a video meeting link
+const generateMeetingLink = () => {
+  const meetingId = Math.random().toString(36).substring(2, 15);
+  return `https://meet.google.com/${meetingId}`;
 };
 
 // Get user by email or create a new user
@@ -908,4 +922,503 @@ export const fixAllAppointmentUserIds = async () => {
   }
 };
 
-export default db;
+// ====== Doctor Management Functions ======
+
+// Get all doctors
+export const getDoctors = async () => {
+  try {
+    const doctorsCollection = collection(db, 'doctors');
+    const doctorsSnapshot = await getDocs(doctorsCollection);
+    
+    if (doctorsSnapshot.empty) {
+      console.log('No doctors found in database.');
+      return [];
+    }
+    
+    return doctorsSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+  } catch (error) {
+    console.error('Error fetching doctors:', error);
+    return [];
+  }
+};
+
+// Get doctor by ID
+export const getDoctorById = async (doctorId) => {
+  try {
+    const doctorRef = doc(db, 'doctors', doctorId);
+    const doctorSnap = await getDoc(doctorRef);
+    
+    if (doctorSnap.exists()) {
+      return {
+        id: doctorSnap.id,
+        ...doctorSnap.data()
+      };
+    } else {
+      console.log(`Doctor with ID ${doctorId} not found.`);
+      return null;
+    }
+  } catch (error) {
+    console.error('Error fetching doctor by ID:', error);
+    return null;
+  }
+};
+
+// Get doctor by user ID
+export const getDoctorByUserId = async (userId) => {
+  try {
+    const doctorsCollection = collection(db, 'doctors');
+    const q = query(
+      doctorsCollection,
+      where('userId', '==', userId),
+      limit(1)
+    );
+    
+    const doctorSnapshot = await getDocs(q);
+    
+    if (doctorSnapshot.empty) {
+      console.log(`No doctor found for user ID: ${userId}`);
+      return null;
+    }
+    
+    const doctorDoc = doctorSnapshot.docs[0];
+    return {
+      id: doctorDoc.id,
+      ...doctorDoc.data()
+    };
+  } catch (error) {
+    console.error('Error fetching doctor by user ID:', error);
+    return null;
+  }
+};
+
+// Get doctors by clinic ID
+export const getDoctorsByClinicId = async (clinicId) => {
+  try {
+    const doctorsCollection = collection(db, 'doctors');
+    const q = query(
+      doctorsCollection,
+      where('clinicIds', 'array-contains', clinicId)
+    );
+    
+    const doctorsSnapshot = await getDocs(q);
+    
+    if (doctorsSnapshot.empty) {
+      console.log(`No doctors found for clinic ID: ${clinicId}`);
+      return [];
+    }
+    
+    return doctorsSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+  } catch (error) {
+    console.error('Error fetching doctors by clinic ID:', error);
+    return [];
+  }
+};
+
+// Create or update doctor profile
+export const updateDoctorProfile = async (doctorId, doctorData) => {
+  try {
+    const doctorRef = doc(db, 'doctors', doctorId);
+    
+    await updateDoc(doctorRef, {
+      ...doctorData,
+      updatedAt: serverTimestamp()
+    });
+    
+    return {
+      id: doctorId,
+      ...doctorData
+    };
+  } catch (error) {
+    console.error('Error updating doctor profile:', error);
+    throw error;
+  }
+};
+
+// ====== Doctor Availability Functions ======
+
+// Get doctor's availability
+export const getDoctorAvailability = async (doctorId, startDate = null, endDate = null) => {
+  try {
+    const availabilityCollection = collection(db, 'availability');
+    let q;
+    
+    if (startDate && endDate) {
+      // Get availability for specific date range
+      q = query(
+        availabilityCollection,
+        where('doctorId', '==', doctorId),
+        where('date', '>=', startDate),
+        where('date', '<=', endDate)
+      );
+    } else {
+      // Get all availability for this doctor
+      q = query(
+        availabilityCollection,
+        where('doctorId', '==', doctorId)
+      );
+    }
+    
+    const availabilitySnapshot = await getDocs(q);
+    
+    return availabilitySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+  } catch (error) {
+    console.error('Error fetching doctor availability:', error);
+    return [];
+  }
+};
+
+// Get doctor's weekly recurring availability
+export const getDoctorWeeklyAvailability = async (doctorId) => {
+  try {
+    const availabilityCollection = collection(db, 'availability');
+    const q = query(
+      availabilityCollection,
+      where('doctorId', '==', doctorId),
+      where('weeklyRecurring', '==', true)
+    );
+    
+    const availabilitySnapshot = await getDocs(q);
+    
+    return availabilitySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+  } catch (error) {
+    console.error('Error fetching doctor weekly availability:', error);
+    return [];
+  }
+};
+
+// Create or update doctor availability
+export const updateDoctorAvailability = async (availabilityId, availabilityData) => {
+  try {
+    const availabilityRef = doc(db, 'availability', availabilityId);
+    
+    await updateDoc(availabilityRef, {
+      ...availabilityData,
+      updatedAt: serverTimestamp()
+    });
+    
+    return {
+      id: availabilityId,
+      ...availabilityData
+    };
+  } catch (error) {
+    console.error('Error updating doctor availability:', error);
+    throw error;
+  }
+};
+
+// Create a new weekly recurring availability slot
+export const createWeeklyAvailability = async (doctorId, clinicId, dayOfWeek, slots) => {
+  try {
+    const availabilityRef = await addDoc(collection(db, 'availability'), {
+      doctorId,
+      clinicId,
+      weeklyRecurring: true,
+      dayOfWeek,
+      date: null,
+      available: true,
+      slots,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+    
+    return availabilityRef.id;
+  } catch (error) {
+    console.error('Error creating weekly availability:', error);
+    throw error;
+  }
+};
+
+// ====== Doctor Appointment Functions ======
+
+// Get appointments for a doctor
+export const getDoctorAppointments = async (doctorId, startDate = null, endDate = null, status = null) => {
+  try {
+    const appointmentsCollection = collection(db, 'appointments');
+    let q;
+    
+    if (startDate && endDate && status) {
+      // Get appointments for specific date range and status
+      q = query(
+        appointmentsCollection,
+        where('doctorId', '==', doctorId),
+        where('appointmentDate', '>=', startDate),
+        where('appointmentDate', '<=', endDate),
+        where('status', '==', status)
+      );
+    } else if (startDate && endDate) {
+      // Get appointments for specific date range
+      q = query(
+        appointmentsCollection,
+        where('doctorId', '==', doctorId),
+        where('appointmentDate', '>=', startDate),
+        where('appointmentDate', '<=', endDate)
+      );
+    } else if (status) {
+      // Get appointments for specific status
+      q = query(
+        appointmentsCollection,
+        where('doctorId', '==', doctorId),
+        where('status', '==', status)
+      );
+    } else {
+      // Get all appointments for this doctor
+      q = query(
+        appointmentsCollection,
+        where('doctorId', '==', doctorId)
+      );
+    }
+    
+    const appointmentsSnapshot = await getDocs(q);
+    
+    return appointmentsSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+  } catch (error) {
+    console.error('Error fetching doctor appointments:', error);
+    return [];
+  }
+};
+
+// Update appointment with doctor notes
+export const updateAppointmentWithDoctorNotes = async (appointmentId, doctorNotes) => {
+  try {
+    const appointmentRef = doc(db, 'appointments', appointmentId);
+    
+    await updateDoc(appointmentRef, {
+      doctorNotes,
+      updatedAt: serverTimestamp()
+    });
+    
+    return true;
+  } catch (error) {
+    console.error('Error updating appointment with doctor notes:', error);
+    throw error;
+  }
+};
+
+// ====== Medical Records Functions ======
+
+// Get medical records for a patient
+export const getPatientMedicalRecords = async (patientId) => {
+  try {
+    const medicalRecordsCollection = collection(db, 'medical_records');
+    const q = query(
+      medicalRecordsCollection,
+      where('userId', '==', patientId)
+    );
+    
+    const medicalRecordsSnapshot = await getDocs(q);
+    
+    return medicalRecordsSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+  } catch (error) {
+    console.error('Error fetching patient medical records:', error);
+    return [];
+  }
+};
+
+// Get medical records for an appointment
+export const getAppointmentMedicalRecords = async (appointmentId) => {
+  try {
+    const medicalRecordsCollection = collection(db, 'medical_records');
+    const q = query(
+      medicalRecordsCollection,
+      where('appointmentId', '==', appointmentId)
+    );
+    
+    const medicalRecordsSnapshot = await getDocs(q);
+    
+    return medicalRecordsSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+  } catch (error) {
+    console.error('Error fetching appointment medical records:', error);
+    return [];
+  }
+};
+
+// Upload a medical record by doctor
+export const uploadDoctorMedicalRecord = async (file, patientId, appointmentId, title, category, hasSummary = false, summary = '') => {
+  try {
+    // Upload file to storage similar to uploadMedicalRecord function
+    const storageRef = ref(storage, `medical-records/${patientId}/${Date.now()}_${file.name}`);
+    await uploadBytes(storageRef, file);
+    const fileUrl = await getDownloadURL(storageRef);
+    
+    // Get doctor user ID from current authentication
+    // You'll need to implement this based on your auth system
+    const doctorUserId = 'current-doctor-user-id'; // Replace with actual auth logic
+    
+    // Create medical record document
+    const medicalRecordRef = await addDoc(collection(db, 'medical_records'), {
+      userId: patientId,
+      appointmentId: appointmentId,
+      title: title,
+      fileName: file.name,
+      fileType: file.type,
+      fileSize: file.size,
+      fileUrl: fileUrl,
+      hasSummary: hasSummary,
+      summary: summary,
+      category: category,
+      uploadedBy: doctorUserId,
+      uploadedAt: serverTimestamp(),
+      accessibleTo: [
+        { userId: patientId, role: 'patient' },
+        { userId: doctorUserId, role: 'doctor' }
+      ],
+      updatedAt: serverTimestamp()
+    });
+    
+    return {
+      id: medicalRecordRef.id,
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      url: fileUrl,
+      uploadedAt: new Date().toISOString()
+    };
+  } catch (error) {
+    console.error('Error uploading medical record by doctor:', error);
+    throw error;
+  }
+};
+
+// Update medical record with summary
+export const updateMedicalRecordWithSummary = async (recordId, summary) => {
+  try {
+    const recordRef = doc(db, 'medical_records', recordId);
+    
+    await updateDoc(recordRef, {
+      hasSummary: true,
+      summary,
+      updatedAt: serverTimestamp()
+    });
+    
+    return true;
+  } catch (error) {
+    console.error('Error updating medical record with summary:', error);
+    throw error;
+  }
+};
+
+// ====== Patient Management Functions ======
+
+// Get all patients (for doctor dashboard)
+export const getAllPatients = async () => {
+  try {
+    const usersCollection = collection(db, 'users');
+    const q = query(
+      usersCollection,
+      where('role', '==', 'patient')
+    );
+    
+    const patientsSnapshot = await getDocs(q);
+    
+    return patientsSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+  } catch (error) {
+    console.error('Error fetching all patients:', error);
+    return [];
+  }
+};
+
+// Get patients for a specific doctor (based on previous appointments)
+export const getDoctorPatients = async (doctorId) => {
+  try {
+    // First get all appointments for this doctor
+    const appointmentsCollection = collection(db, 'appointments');
+    const appointmentsQuery = query(
+      appointmentsCollection,
+      where('doctorId', '==', doctorId)
+    );
+    
+    const appointmentsSnapshot = await getDocs(appointmentsQuery);
+    
+    // Extract unique patient IDs
+    const patientIds = [...new Set(
+      appointmentsSnapshot.docs.map(doc => doc.data().userId)
+    )];
+    
+    // Now get patient information for each ID
+    const patients = [];
+    
+    for (const patientId of patientIds) {
+      const userDoc = await getDoc(doc(db, 'users', patientId));
+      
+      if (userDoc.exists()) {
+        patients.push({
+          id: userDoc.id,
+          ...userDoc.data()
+        });
+      }
+    }
+    
+    return patients;
+  } catch (error) {
+    console.error('Error fetching doctor patients:', error);
+    return [];
+  }
+};
+
+// Get patient details including appointment history
+export const getPatientDetails = async (patientId, doctorId) => {
+  try {
+    // Get basic patient info
+    const patientDoc = await getDoc(doc(db, 'users', patientId));
+    
+    if (!patientDoc.exists()) {
+      console.log(`Patient with ID ${patientId} not found.`);
+      return null;
+    }
+    
+    const patientData = {
+      id: patientDoc.id,
+      ...patientDoc.data()
+    };
+    
+    // Get appointment history with this doctor
+    const appointmentsCollection = collection(db, 'appointments');
+    const appointmentsQuery = query(
+      appointmentsCollection,
+      where('userId', '==', patientId),
+      where('doctorId', '==', doctorId),
+      orderBy('appointmentDate', 'desc')
+    );
+    
+    const appointmentsSnapshot = await getDocs(appointmentsQuery);
+    
+    patientData.appointmentHistory = appointmentsSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+    
+    // Get medical records
+    patientData.medicalRecords = await getPatientMedicalRecords(patientId);
+    
+    return patientData;
+  } catch (error) {
+    console.error('Error fetching patient details:', error);
+    return null;
+  }
+};
+
+export default firebaseConfig;

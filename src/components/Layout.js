@@ -55,7 +55,7 @@ const Layout = ({ children }) => {
     { name: 'Know Your Treatment', path: null, icon: <InfoOutlinedIcon />, action: () => setShowTreatmentsInfo(true) },
     { name: 'Book Appointment', path: '/book', icon: <CalendarMonthIcon /> },
     { name: 'Dashboard', path: '/dashboard', icon: <DashboardIcon /> },
-    { name: 'Doctor Dashboard', path: '/doctor-dashboard', icon: <LocalHospitalIcon /> }
+    { name: 'Doctor Dashboard', path: '/doctor-login', icon: <LocalHospitalIcon /> }
   ];
 
   const isActive = (path) => {

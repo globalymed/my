@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
+  Toolbar,
+  Link,
   Container,
   Typography,
   Card,
@@ -69,6 +71,7 @@ const DashboardPage = () => {
   const [cancellationReason, setCancellationReason] = useState('');
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState('');
+  const isLoggedIn = localStorage.getItem('userData') !== null;
   
   // Refresh counter
   const [refreshCount, setRefreshCount] = useState(0);
@@ -407,6 +410,47 @@ const DashboardPage = () => {
             {error}
           </Alert>
         )}
+
+
+{isLoggedIn && (
+           <Toolbar
+             component="nav"
+             variant="dense"
+             sx={{
+               justifyContent: 'center',
+               minHeight: 48,
+               marginBlockEnd:2,
+               display: { xs: 'none', md: 'flex' }
+             }}
+           >
+
+             <Button
+              onClick={() => navigate('/appointment-booking')}
+              color="inherit"
+              sx={{ 
+                mx: 1.5, 
+                textTransform: 'none',
+                fontWeight: location.pathname === '/chat' ? 700 : 400
+              }}
+            >
+              Book Appointment
+            </Button>
+
+            <Button
+              onClick={() => navigate('/chat')}
+              color="inherit"
+              sx={{ 
+                mx: 1.5, 
+                textTransform: 'none',
+                fontWeight: location.pathname === '/chat' ? 700 : 400
+              }}
+            >
+              Health Assistant
+            </Button>
+           </Toolbar>
+         )}
+
+         {/* DOES THIS GO HERE */}
         
         {/* Header Section */}
         <Box 
