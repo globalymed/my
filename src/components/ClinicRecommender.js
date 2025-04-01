@@ -27,6 +27,13 @@ const FALLBACK_CLINICS = {
       rating: 4.7, 
       services: ['Hair Transplant', 'Scalp Treatment', 'Hair Growth Therapy'],
       location: { lat: 28.5921, lng: 77.2290 }
+    },
+    { 
+      id: 'hair3', 
+      name: 'Premier Hair Solutions', 
+      rating: 4.6, 
+      services: ['Hair Transplant', 'Hair Extensions', 'Hair Coloring'],
+      location: { lat: 28.6100, lng: 77.2250 }
     }
   ],
   dental: [
@@ -36,6 +43,20 @@ const FALLBACK_CLINICS = {
       rating: 4.9, 
       services: ['General Dentistry', 'Cosmetic Dentistry', 'Orthodontics'],
       location: { lat: 28.6429, lng: 77.2095 }
+    },
+    { 
+      id: 'dental2', 
+      name: 'Perfect Teeth Clinic', 
+      rating: 4.7, 
+      services: ['Teeth Whitening', 'Dental Implants', 'Root Canal'],
+      location: { lat: 28.6200, lng: 77.2150 }
+    },
+    { 
+      id: 'dental3', 
+      name: 'Modern Dental Solutions', 
+      rating: 4.6, 
+      services: ['Pediatric Dentistry', 'Dental Surgery', 'Dental Crowns'],
+      location: { lat: 28.6300, lng: 77.2100 }
     }
   ],
   cosmetic: [
@@ -45,6 +66,20 @@ const FALLBACK_CLINICS = {
       rating: 4.8, 
       services: ['Botox', 'Fillers', 'Skin Rejuvenation'],
       location: { lat: 28.6239, lng: 77.2190 }
+    },
+    { 
+      id: 'cosmetic2', 
+      name: 'Glow Cosmetic Clinic', 
+      rating: 4.7, 
+      services: ['Laser Treatments', 'Chemical Peels', 'Microdermabrasion'],
+      location: { lat: 28.6150, lng: 77.2180 }
+    },
+    { 
+      id: 'cosmetic3', 
+      name: 'Youthful Beauty Solutions', 
+      rating: 4.6, 
+      services: ['Anti-Aging Treatments', 'Facial Contouring', 'Body Sculpting'],
+      location: { lat: 28.6200, lng: 77.2250 }
     }
   ],
   ivf: [
@@ -54,6 +89,20 @@ const FALLBACK_CLINICS = {
       rating: 4.9, 
       services: ['IVF', 'ICSI', 'Fertility Counseling'],
       location: { lat: 28.6339, lng: 77.2290 }
+    },
+    { 
+      id: 'ivf2', 
+      name: 'New Life Fertility Center', 
+      rating: 4.8, 
+      services: ['IVF', 'Egg Freezing', 'Fertility Testing'],
+      location: { lat: 28.6250, lng: 77.2350 }
+    },
+    { 
+      id: 'ivf3', 
+      name: 'Hope Fertility Clinic', 
+      rating: 4.7, 
+      services: ['IVF', 'Surrogacy', 'Embryo Freezing'],
+      location: { lat: 28.6400, lng: 77.2150 }
     }
   ],
   general: [
@@ -63,6 +112,20 @@ const FALLBACK_CLINICS = {
       rating: 4.5, 
       services: ['General Medicine', 'Diagnostics', 'Preventive Care'],
       location: { lat: 28.6139, lng: 77.2190 }
+    },
+    { 
+      id: 'general2', 
+      name: 'Community Health Center', 
+      rating: 4.4, 
+      services: ['Family Medicine', 'Pediatrics', 'Women\'s Health'],
+      location: { lat: 28.6200, lng: 77.2100 }
+    },
+    { 
+      id: 'general3', 
+      name: 'Prime Medical Care', 
+      rating: 4.3, 
+      services: ['Internal Medicine', 'Cardiology', 'Dermatology'],
+      location: { lat: 28.6250, lng: 77.2150 }
     }
   ]
 };
@@ -129,7 +192,7 @@ const ClinicRecommender = ({ treatmentType, onClinicSelect }) => {
     const fetchClinics = async () => {
       if (!effectiveTreatmentType) {
         console.log("No treatment type specified, using general");
-        setFilteredClinics(FALLBACK_CLINICS.general);
+        setFilteredClinics(FALLBACK_CLINICS.general.slice(0, 3));
         return;
       }
       
@@ -179,13 +242,15 @@ const ClinicRecommender = ({ treatmentType, onClinicSelect }) => {
           clinics = FALLBACK_CLINICS[type] || FALLBACK_CLINICS.general;
         }
         
-        setFilteredClinics(clinics);
+        // Take the top 3 clinics for recommendation
+        setFilteredClinics(clinics.slice(0, 3));
       } catch (error) {
         console.error('Error fetching clinics:', error);
         // Use fallback data on error
         console.log("Using fallback clinics due to error");
         const type = effectiveTreatmentType.toLowerCase();
-        setFilteredClinics(FALLBACK_CLINICS[type] || FALLBACK_CLINICS.general);
+        // Get only 3 clinics from fallback data
+        setFilteredClinics((FALLBACK_CLINICS[type] || FALLBACK_CLINICS.general).slice(0, 3));
       } finally {
         setLoading('clinics', false);
       }
@@ -214,40 +279,43 @@ const ClinicRecommender = ({ treatmentType, onClinicSelect }) => {
         Recommended Clinics for {effectiveTreatmentType}
       </Typography>
       {filteredClinics.length > 0 ? (
-        filteredClinics.map(clinic => (
-          <Card key={clinic.id} sx={{ mb: 2 }}>
-            <CardContent>
-              <Typography variant="h6">{clinic.name}</Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <Rating value={clinic.rating} readOnly />
-                <Typography variant="body2" sx={{ ml: 1 }}>
-                  ({clinic.rating})
-                </Typography>
-              </Box>
-              <Box sx={{ mb: 1 }}>
-                {clinic.services && clinic.services.map ? 
-                  clinic.services.map((service, index) => (
-                    <Chip 
-                      key={index} 
-                      label={service} 
-                      size="small" 
-                      sx={{ mr: 0.5, mb: 0.5 }}
-                      color={service.toLowerCase() === effectiveTreatmentType.toLowerCase() ? "primary" : "default"}
-                    />
-                  )) : 
-                  <Chip label="General" size="small" sx={{ mr: 0.5, mb: 0.5 }} />
-                }
-              </Box>
-              <Button 
-                variant="contained" 
-                color="primary"
-                onClick={() => handleBookNow(clinic)}
-              >
-                Book Appointment
-              </Button>
-            </CardContent>
-          </Card>
-        ))
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2 }}>
+          {filteredClinics.map(clinic => (
+            <Card key={clinic.id} sx={{ mb: { xs: 2, md: 0 }, flex: 1, minWidth: { md: '30%' } }}>
+              <CardContent>
+                <Typography variant="h6">{clinic.name}</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <Rating value={clinic.rating} readOnly />
+                  <Typography variant="body2" sx={{ ml: 1 }}>
+                    ({clinic.rating})
+                  </Typography>
+                </Box>
+                <Box sx={{ mb: 1 }}>
+                  {clinic.services && clinic.services.map ? 
+                    clinic.services.map((service, index) => (
+                      <Chip 
+                        key={index} 
+                        label={service} 
+                        size="small" 
+                        sx={{ mr: 0.5, mb: 0.5 }}
+                        color={service.toLowerCase() === effectiveTreatmentType.toLowerCase() ? "primary" : "default"}
+                      />
+                    )) : 
+                    <Chip label="General" size="small" sx={{ mr: 0.5, mb: 0.5 }} />
+                  }
+                </Box>
+                <Button 
+                  variant="contained" 
+                  color="primary"
+                  onClick={() => handleBookNow(clinic)}
+                  fullWidth
+                >
+                  Book Appointment
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </Box>
       ) : (
         <Typography>
           No clinics found for {effectiveTreatmentType}. Please try a different treatment type.
