@@ -970,7 +970,7 @@ const AIChatFinal = () => {
               <Box sx={{ display: 'flex', gap: 2 }}>
                 <Button 
                   variant="contained" 
-                  onClick={() => navigate('/appointment-booking', { 
+                  onClick={() => navigate('/book-now', { 
                     state: { 
                       clinic: bestClinic, 
                       date: extractedInfo.appointmentDate || '',
