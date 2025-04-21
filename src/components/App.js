@@ -180,6 +180,7 @@ const App = () => {
                 <AppointmentBookingPage />
               </ProtectedRoute>
             } />
+            <Route path="/book-now" element={<AppointmentBookingPage />} />
             <Route path="/doctor-dashboard" element={
               <DoctorProtectedRoute>
                 <DoctorDashboard />
