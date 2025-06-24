@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@emotion/react": "^11.11.0",
     "@emotion/styled": "^11.11.0",
     "@google/generative-ai": "^0.24.0",
