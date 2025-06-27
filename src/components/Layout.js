@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
-import { 
-  AppBar, 
-  Toolbar, 
-  Typography, 
-  Box, 
-  Container, 
-  Button, 
-  IconButton, 
-  Drawer, 
-  List, 
-  ListItem, 
-  ListItemIcon, 
-  ListItemText, 
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Box,
+  Container,
+  Button,
+  IconButton,
+  Drawer,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
   useMediaQuery,
   Avatar,
   Tooltip,
@@ -74,7 +74,7 @@ const Layout = ({ children }) => {
     } else if (action) {
       action();
     }
-    
+
     if (isMobile) {
       setDrawerOpen(false);
     }
@@ -82,17 +82,17 @@ const Layout = ({ children }) => {
 
   const drawer = (
     <Box sx={{ width: 280, height: '100%', background: 'linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%)' }}>
-      <Box sx={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        p: 2, 
+      <Box sx={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        p: 2,
         borderBottom: '1px solid rgba(0,0,0,0.08)'
       }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Avatar 
-            src="/logo192.png" 
-            alt="MedYatra Logo" 
+          <Avatar
+            src="/logo192.png"
+            alt="MedYatra Logo"
             sx={{ width: 40, height: 40 }}
           />
           <Typography variant="h6" sx={{ fontWeight: 700, color: theme.palette.primary.main }}>
@@ -105,8 +105,8 @@ const Layout = ({ children }) => {
       </Box>
       <List sx={{ pt: 2 }}>
         {drawerItems.map((item) => (
-          <ListItem 
-            button 
+          <ListItem
+            button
             key={item.name}
             onClick={() => handleNavigation(item.path, item.action)}
             sx={{
@@ -120,15 +120,15 @@ const Layout = ({ children }) => {
               }
             }}
           >
-            <ListItemIcon sx={{ 
+            <ListItemIcon sx={{
               color: isActive(item.path) ? theme.palette.primary.main : theme.palette.text.secondary,
               minWidth: 40
             }}>
               {item.icon}
             </ListItemIcon>
-            <ListItemText 
-              primary={item.name} 
-              primaryTypographyProps={{ 
+            <ListItemText
+              primary={item.name}
+              primaryTypographyProps={{
                 fontWeight: isActive(item.path) ? 600 : 500,
               }}
             />
@@ -145,7 +145,7 @@ const Layout = ({ children }) => {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <AppBar position="sticky" color="default" elevation={0} sx={{ 
+      <AppBar position="sticky" color="default" elevation={0} sx={{
         backgroundColor: 'rgba(255, 255, 255, 0.8)',
         backdropFilter: 'blur(20px)',
         borderBottom: '1px solid rgba(0,0,0,0.08)'
@@ -161,13 +161,13 @@ const Layout = ({ children }) => {
           >
             <MenuIcon />
           </IconButton>
-          
+
           {isMobile ? (
             <>
               <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1, justifyContent: 'center' }}>
-                <Avatar 
-                  src="/logo192.png" 
-                  alt="MedYatra Logo" 
+                <Avatar
+                  src="/logo192.png"
+                  alt="MedYatra Logo"
                   sx={{ width: 32, height: 32, mr: 1 }}
                 />
                 <Typography variant="h6" component="div" sx={{ fontWeight: 700 }}>
@@ -205,9 +205,9 @@ const Layout = ({ children }) => {
           ) : (
             <>
               <Box sx={{ display: 'flex', alignItems: 'center', mr: 4 }}>
-                <Avatar 
-                  src="/logo192.png" 
-                  alt="MedYatra Logo" 
+                <Avatar
+                  src="/logo192.png"
+                  alt="MedYatra Logo"
                   sx={{ width: 36, height: 36, mr: 1 }}
                 />
                 <Typography variant="h6" component="div" sx={{ fontWeight: 700 }}>
@@ -220,7 +220,7 @@ const Layout = ({ children }) => {
                     key={item.name}
                     onClick={() => handleNavigation(item.path, item.action)}
                     sx={{
-                      my: 2, 
+                      my: 2,
                       px: 2,
                       color: isActive(item.path) ? theme.palette.primary.main : theme.palette.text.primary,
                       fontWeight: isActive(item.path) ? 600 : 500,
@@ -272,7 +272,7 @@ const Layout = ({ children }) => {
           )}
         </Toolbar>
       </AppBar>
-      
+
       <Drawer
         anchor="left"
         open={drawerOpen}
@@ -283,9 +283,9 @@ const Layout = ({ children }) => {
       >
         {drawer}
       </Drawer>
-      
-      <Box component="main" sx={{ 
-        flexGrow: 1, 
+
+      <Box component="main" sx={{
+        flexGrow: 1,
         background: 'linear-gradient(160deg, #f8fafc 0%, #e2e8f0 100%)',
         minHeight: 'calc(100vh - 64px)'
       }}>
@@ -293,18 +293,18 @@ const Layout = ({ children }) => {
           {children}
         </Container>
       </Box>
-      
-      <Box component="footer" sx={{ 
-        py: 3, 
-        px: 2, 
+
+      <Box component="footer" sx={{
+        py: 3,
+        px: 2,
         mt: 'auto',
         backgroundColor: theme.palette.background.paper,
         borderTop: '1px solid rgba(0,0,0,0.08)'
       }}>
         <Container maxWidth="lg">
-          <Box sx={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
+          <Box sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
             alignItems: 'center',
             flexDirection: isMobile ? 'column' : 'row',
             gap: isMobile ? 2 : 0
@@ -326,11 +326,11 @@ const Layout = ({ children }) => {
           </Box>
         </Container>
       </Box>
-      
+
       {/* Render TreatmentsInfo dialog when showTreatmentsInfo is true */}
-      <TreatmentsInfo 
-        open={showTreatmentsInfo} 
-        onClose={() => setShowTreatmentsInfo(false)} 
+      <TreatmentsInfo
+        open={showTreatmentsInfo}
+        onClose={() => setShowTreatmentsInfo(false)}
       />
     </Box>
   );
