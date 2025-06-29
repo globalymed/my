@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     Box,
     Drawer,
@@ -30,6 +30,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import AIChatFinal from './AIChatFinal';
+import TreatmentsInfo from './TreatmentsInfo';
 
 const drawerWidth = 240;
 
@@ -42,11 +43,22 @@ const ChatLayout = ({ children }) => {
     const [sidebarOpen, setSidebarOpen] = React.useState(true);
     const [mobileOpen, setMobileOpen] = React.useState(false);
     const [chatKey, setChatKey] = React.useState(0);
+    const [showTreatmentsInfo, setShowTreatmentsInfo] = useState(false);
 
     const menuItems = [
-        { text: 'New Thread', icon: <AddIcon />, action: () => setChatKey(prev => prev + 1), isButton: true },
+        {
+            text: 'New Thread', icon: <AddIcon />, action: () => {
+                console.log("clicked")
+                setChatKey(prev => prev + 1);
+            }, isButton: true
+        },
         { text: 'Home', icon: <HomeIcon />, path: '/' },
-        { text: 'Treatments', icon: <HospitalIcon />, path: '/treatment' },
+        {
+            text: 'Treatments', icon: <HospitalIcon />, path: null, action: () => {
+                console.log("clicked");
+                setShowTreatmentsInfo(true);
+            }
+        },
         { text: 'Free Consultation', icon: <SupportAgent />, path: '/consultation' },
         { text: 'AI Chat', icon: <ChatIcon />, path: '/chat' },
         { text: 'Compare cost', icon: <AttachMoney />, path: '/compare' },
@@ -105,7 +117,13 @@ const ChatLayout = ({ children }) => {
                             </Button>
                         ) : (
                             <ListItemButton
-                                onClick={() => handleNavigation(item.path)}
+                                onClick={() => {
+                                    if (item.path) {
+                                        handleNavigation(item.path);
+                                    } else if (item.action) {
+                                        item.action();
+                                    }
+                                }}
                                 sx={{
                                     borderRadius: 2,
                                     color: 'white',
@@ -257,7 +275,15 @@ const ChatLayout = ({ children }) => {
                 >
                     <AIChatFinal key={chatKey} />
                 </Box>
+
+
+                {/* Render TreatmentsInfo dialog when showTreatmentsInfo is true */}
+                <TreatmentsInfo
+                    open={showTreatmentsInfo}
+                    onClose={() => setShowTreatmentsInfo(false)}
+                />
             </Box>
+
         </Box>
     );
 };
