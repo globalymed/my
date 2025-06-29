@@ -268,8 +268,9 @@ const ChatLayout = ({ children }) => {
                         mx: 'auto',
                         width: '100%',
                         p: 3,
-                        overflow: 'hidden',
-                        overflowY: 'auto',
+                        overflowX: 'hidden',
+                        overflowY: 'hidden',
+                        mb: 2,
                         backgroundColor: '#F2F1EB',
                     }}
                 >

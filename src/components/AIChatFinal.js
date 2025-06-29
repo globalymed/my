@@ -100,11 +100,11 @@ const AIChatFinal = () => {
   useEffect(() => {
     const initializeChatSession = async () => {
       try {
-        console.log("Initializing chat session");
+        // console.log("Initializing chat session");
         const session = await createChatSession();
 
         if (session) {
-          console.log("Chat session initialized successfully");
+          // console.log("Chat session initialized successfully");
           setChatSession(session);
         } else {
           console.error("Failed to initialize chat session - null session returned");
@@ -157,7 +157,7 @@ const AIChatFinal = () => {
 
     // If we have medical issue and location but no date, show calendar with any message about dates
     if (extractedInfo.medicalIssue && extractedInfo.location && !extractedInfo.appointmentDate) {
-      console.log("Location provided but no appointment date - showing calendar directly");
+      // console.log("Location provided but no appointment date - showing calendar directly");
       setShowCalendar(true);
 
       // First check if the response is asking about dates
@@ -235,14 +235,14 @@ const AIChatFinal = () => {
 
         // Extract medical information from the conversation
         const info = await extractMedicalInfo(messages);
-        console.log("Extracted medical info:", info);
+        // console.log("Extracted medical info:", info);
 
         // Update the extracted info state
         setExtractedInfo(info);
 
         // Check if we need to show calendar after the user provided location
         if (info.medicalIssue && info.location && !info.appointmentDate) {
-          console.log("Location provided but no appointment date - showing calendar directly");
+          // console.log("Location provided but no appointment date - showing calendar directly");
           setShowCalendar(true);
 
           // Add an AI message with the calendar component
@@ -261,7 +261,7 @@ const AIChatFinal = () => {
         setAllParametersCollected(hasAllParameters);
 
         if (hasAllParameters) {
-          console.log("All parameters collected, ready to recommend clinic");
+          // console.log("All parameters collected, ready to recommend clinic");
           // Set treatment details based on extracted information
           setTreatmentDetails({
             treatmentType: info.treatmentType,
@@ -273,14 +273,14 @@ const AIChatFinal = () => {
           // Select the best clinic based on the treatment type, location, and date
           const clinics = await selectBestClinic(info.treatmentType, info.location, info.appointmentDate);
           if (clinics && clinics.length > 0) {
-            console.log("Found clinics:", clinics);
+            // console.log("Found clinics:", clinics);
             setBestClinic(clinics);
             setShowRecommendations(true);
 
             // DO NOT add a message here - let the Gemini API handle responses
             // The clinic recommendations will be shown in the UI separately
           } else {
-            console.log("No clinic found for the given parameters");
+            // console.log("No clinic found for the given parameters");
             // Add message that no clinics are available for the selected date
             setMessages(prev => [...prev, {
               text: `I'm sorry, but there are no clinics available in ${info.location} for ${info.treatmentType} treatment on ${info.appointmentDate}. Would you like to try another date or location?`,
@@ -288,7 +288,7 @@ const AIChatFinal = () => {
             }]);
           }
         } else {
-          console.log("Not all parameters collected yet, continuing conversation");
+          // console.log("Not all parameters collected yet, continuing conversation");
           // Reset recommendations if parameters are incomplete
           if (showRecommendations) {
             setShowRecommendations(false);
@@ -318,7 +318,7 @@ const AIChatFinal = () => {
                 info.appointmentDate
               );
               if (clinic) {
-                console.log("Found clinic with inferred treatment type:", clinic);
+                // console.log("Found clinic with inferred treatment type:", clinic);
                 setTreatmentDetails({
                   treatmentType: inferredType,
                   symptoms: info.medicalIssue,
@@ -346,7 +346,7 @@ const AIChatFinal = () => {
 
   // Handle date selection from the calendar
   const handleDateSelect = async (date) => {
-    console.log("Selected available date:", date);
+    // console.log("Selected available date:", date);
 
     // Update the extracted info with the selected date
     const updatedInfo = {
@@ -368,7 +368,7 @@ const AIChatFinal = () => {
     try {
       if (updatedInfo.treatmentType || determineTreatmentType(updatedInfo.medicalIssue)) {
         const treatmentType = updatedInfo.treatmentType || determineTreatmentType(updatedInfo.medicalIssue);
-        console.log("All parameters collected, searching for clinic now...");
+        // console.log("All parameters collected, searching for clinic now...");
 
         // Set treatment details based on extracted information
         setTreatmentDetails({
@@ -419,7 +419,7 @@ const AIChatFinal = () => {
         // Add a short delay to ensure messages appear in proper sequence
         setTimeout(() => {
           if (clinics && clinics.length > 0) {
-            console.log("Found available clinic:", clinics[0]);
+            // console.log("Found available clinic:", clinics[0]);
             setBestClinic(clinics); // Now storing an array of clinics
             setShowRecommendations(true);
             setAllParametersCollected(true);
@@ -433,7 +433,7 @@ const AIChatFinal = () => {
               sender: 'ai'
             }]);
           } else {
-            console.log("No available clinics found for the selected date and location");
+            // console.log("No available clinics found for the selected date and location");
 
             if (alternativeDates.length > 0) {
               // Suggest alternative dates
@@ -483,7 +483,7 @@ const AIChatFinal = () => {
 
       // If we have a chat session, use it to send the message to the AI
       if (chatSession) {
-        console.log("Using chat session to send message");
+        // console.log("Using chat session to send message");
 
         // Create context from all extracted information
         let context = "";
@@ -501,7 +501,7 @@ const AIChatFinal = () => {
         }
 
         if (context) {
-          console.log("Added context to request:", context);
+          // console.log("Added context to request:", context);
         }
 
         // Send the context along with the user's message
@@ -521,7 +521,7 @@ const AIChatFinal = () => {
         if (response === FALLBACK_RESPONSE) {
           const symptomType = determineTreatmentType(sanitizedInput);
           if (symptomType) {
-            console.log("Detected symptom type:", symptomType);
+            // console.log("Detected symptom type:", symptomType);
             response = `I see you're mentioning symptoms related to ${symptomType} treatment. Could you tell me more about your specific concerns? This will help me find the best clinic for you.`;
           }
         }
@@ -549,12 +549,12 @@ const AIChatFinal = () => {
 
   const selectBestClinic = async (treatmentType, location, appointmentDate) => {
     try {
-      console.log(`Selecting best clinic for: ${treatmentType} in ${location} on ${appointmentDate}`);
+      // console.log(`Selecting best clinic for: ${treatmentType} in ${location} on ${appointmentDate}`);
 
       // Normalize treatment type to lowercase for database consistency
       const normalizedType = treatmentType ? treatmentType.toLowerCase() : null;
 
-      console.log(`Using normalized treatment type: ${normalizedType}`);
+      // console.log(`Using normalized treatment type: ${normalizedType}`);
 
       // Guard clause: If missing any parameter, return null
       if (!normalizedType || !location || !appointmentDate) {
@@ -570,7 +570,7 @@ const AIChatFinal = () => {
         return null;
       }
 
-      console.log(`Found ${clinics.length} clinics matching ${normalizedType} in ${location}`);
+      // console.log(`Found ${clinics.length} clinics matching ${normalizedType} in ${location}`);
 
       // Step 2: Filter for clinics available on the requested date
       const availableClinics = [];
@@ -593,14 +593,14 @@ const AIChatFinal = () => {
         return null;
       }
 
-      console.log(`Found ${availableClinics.length} clinics available on ${appointmentDate}`);
+      // console.log(`Found ${availableClinics.length} clinics available on ${appointmentDate}`);
 
       // Step 3: Sort by rating and return up to three clinics (instead of just the best one)
       availableClinics.sort((a, b) => b.rating - a.rating);
 
       // Return up to 3 clinics
       const topClinics = availableClinics.slice(0, 3);
-      console.log(`Returning top ${topClinics.length} clinics sorted by rating`);
+      // console.log(`Returning top ${topClinics.length} clinics sorted by rating`);
 
       // For backward compatibility, if we need to return a single clinic, return the array
       // This change will allow us to modify other parts of the code to handle multiple clinics
@@ -621,29 +621,36 @@ const AIChatFinal = () => {
       display: 'flex',
       flexDirection: 'column',
       justifyContent: 'flex-end',
-      minHeight: '80vh',
-      maxHeight: '80vh',
+      minHeight: messages.length> 0 ? "85vh": "75vh",
+      maxHeight: '85vh',
       maxWidth: 800,
       mx: 'auto',
-      p: 2,
-      gap: 2
+      mb: 5,
+      p: 1,
+      sm: {
+        px: 2,
+      },
+      gap: 2,
     }}>
       {/* Quick Action Code */}
       {messages.length < 1 && (
-        <Box sx={{ mb: 3 }}>
+        <Box sx={{ mb: 2 }}>
           <Typography variant="h6" sx={{
             mb: 2,
             color: '#1D4645',
             fontWeight: 600,
             textAlign: 'center',
-            fontSize: '1.5rem',
+            fontSize: {
+              xs: '1rem',
+              md: '1.5rem'
+            }
           }}>
             How can I help you today?
           </Typography>
           <Box sx={{
             display: 'grid',
             gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' },
-            gap: 2
+            gap: { xs: 1, sm: 2 },
           }}>
             {quickActions.map((action, index) => (
               <Button
@@ -651,14 +658,20 @@ const AIChatFinal = () => {
                 variant="outlined"
                 onClick={() => handleQuickAction(action)}
                 sx={{
-                  px: 2,
+                  px: {
+                    xs: 1,
+                    sm: 2,
+                  },
+                  fontSize: {
+                    xs: '0.75rem',
+                    md: '1rem',
+                  },
                   borderRadius: 8,
                   border: '2px solid',
                   borderColor: 'rgba(0, 0, 0, 0.08)',
                   bgcolor: 'background.paper',
                   color: 'text.primary',
                   textTransform: 'none',
-                  fontSize: '1rem',
                   fontWeight: 500,
                   display: 'flex',
                   alignItems: 'center',
@@ -668,8 +681,8 @@ const AIChatFinal = () => {
                     borderColor: action.color,
                     bgcolor: `${action.color}08`,
                     transform: 'translateY(-2px)',
-                    boxShadow: theme.shadows[4]
-                  }
+                    boxShadow: theme.shadows[4],
+                  },
                 }}
               >
                 <Box sx={{ color: action.color, display: 'flex' }}>
@@ -677,6 +690,7 @@ const AIChatFinal = () => {
                 </Box>
                 {action.text}
               </Button>
+
             ))}
           </Box>
         </Box>
@@ -691,12 +705,18 @@ const AIChatFinal = () => {
           borderRadius: 2,
           border: '1px solid',
           borderColor: 'rgba(0, 0, 0, 0.08)',
-          bgcolor: 'background.paper',
+          // bgcolor: '#000',
           overflow: 'hidden',
           minWidth: {
+            xs: '275px',
             sm: '400px',
             lg: '600px'
+          },
+          maxWidth: {
+            xs: '320px',
+            sm: 'none'
           }
+
         }}
       >
         <Box
@@ -704,6 +724,7 @@ const AIChatFinal = () => {
           sx={{
             flexGrow: 1,
             overflowY: 'auto',
+            overflowX: 'auto',
             px: messages.length >= 1 ? 3 : 1,
             py: messages.length >= 1 ? 3 : 0,
             display: 'flex',
@@ -711,6 +732,10 @@ const AIChatFinal = () => {
             gap: 2,
           }}
         >
+          {/* <Typography sx={{ whiteSpace: 'nowrap', width: '1200px' }}>
+            Long content that doesn't wrap
+          </Typography> */}
+
           {messages.map((message, index) => (
             <Box
               key={index}
@@ -721,6 +746,7 @@ const AIChatFinal = () => {
                 flexDirection: message.sender === 'user' ? 'row-reverse' : 'row',
                 alignItems: 'flex-start',
                 gap: 1.5,
+                // overflowY: 'auto'
               }}
             >
               <Avatar
@@ -774,10 +800,27 @@ const AIChatFinal = () => {
                     },
                 }}
               >
-                <Typography variant="body1">{message.text}</Typography>
+                <Typography
+                  variant="body1"
+                  sx={{ fontSize: '0.75rem' }}
+                >
+                  {message.text}
+                </Typography>
+
 
                 {message.sender === 'ai' && message.showCalendar && (
-                  <Box mt={2} mb={1}>
+                  <Box
+                    mt={2}
+                    mb={1}
+                    sx={{
+                      width: '100%',
+                      overflowX: 'auto',
+                      px: { xs: 0, sm: 1 },
+                      display: 'flex',
+                      justifyContent: { xs: 'center', sm: 'flex-start' },
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
                     <ChatCalendarComponent
                       onSelectDate={handleDateSelect}
                       treatmentType={
@@ -840,6 +883,10 @@ const AIChatFinal = () => {
           sx={{
             p: 2,
             display: 'flex',
+            flexDirection: {
+              xs: 'column',
+              sm: 'row'
+            },
             alignItems: 'center',
             gap: 1,
             bgcolor: 'rgba(0, 0, 0, 0.02)'
@@ -866,6 +913,7 @@ const AIChatFinal = () => {
                 '& input': {
                   color: '#1D4645',
                 },
+                fontSize: '0.75rem',
               },
             }}
             InputLabelProps={{
@@ -877,42 +925,54 @@ const AIChatFinal = () => {
               },
             }}
           />
-          <Tooltip title="Send message">
-            <span> {/* Span wrapper to fix MUI Tooltip issue with disabled buttons */}
-              <IconButton
-                type="submit"
-                color="primary"
-                disabled={!inputValue.trim() || loading}
-                sx={{
-                  bgcolor: '#1D4645',
-                  color: 'white',
-                  '&:hover': {
-                    bgcolor: '#111',
-                  },
-                  '&.Mui-disabled': {
-                    bgcolor: 'rgba(0, 0, 0, 0.12)',
-                    color: 'rgba(0, 0, 0, 0.26)',
-                  }
-                }}
-              >
-                <Send />
-              </IconButton>
-            </span>
-          </Tooltip>
-          <Tooltip title="Voice input (coming soon)">
-            <span> {/* Span wrapper to fix MUI Tooltip issue */}
-              <IconButton
-                color="#1D4645"
-                sx={{
-                  bgcolor: 'background.paper',
-                  border: '1px solid',
-                  borderColor: 'rgba(0, 0, 0, 0.08)',
-                }}
-              >
-                <Mic />
-              </IconButton>
-            </span>
-          </Tooltip>
+          <Box
+            sx={{
+              display: 'flex',
+              gap: 1,
+              alignItems: 'center',
+            }}
+          >
+            <Tooltip title="Send message">
+              <span> {/* Span wrapper to allow tooltip on disabled button */}
+                <IconButton
+                  type="submit"
+                  color="primary"
+                  disabled={!inputValue.trim() || loading}
+                  sx={{
+                    bgcolor: '#1D4645',
+                    color: 'white',
+                    '&:hover': {
+                      bgcolor: '#111',
+                    },
+                    '&.Mui-disabled': {
+                      bgcolor: 'rgba(0, 0, 0, 0.12)',
+                      color: 'rgba(0, 0, 0, 0.26)',
+                    },
+                  }}
+                >
+                  <Send />
+                </IconButton>
+              </span>
+            </Tooltip>
+
+            <Tooltip title="Voice input (coming soon)">
+              <span> {/* Span wrapper to allow tooltip even if button is conditionally disabled */}
+                <IconButton
+                  sx={{
+                    bgcolor: 'background.paper',
+                    border: '1px solid',
+                    borderColor: 'rgba(0, 0, 0, 0.08)',
+                    color: '#1D4645',
+                    '&:hover': {
+                      bgcolor: 'rgba(29, 70, 69, 0.05)',
+                    },
+                  }}
+                >
+                  <Mic />
+                </IconButton>
+              </span>
+            </Tooltip>
+          </Box>
         </Box>
       </Paper>
 
