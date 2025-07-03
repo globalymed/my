@@ -582,7 +582,7 @@ const AIChatFinal = () => {
         
         if (availability && 
             availability.length > 0 && 
-            availability[0].available) {
+            availability[0].availableDay) {
           availableClinics.push({
             ...clinic,
             slots: availability[0].slots || []

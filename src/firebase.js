@@ -19,7 +19,8 @@ import {
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 // Import the Brevo service for email notifications
-import { sendBookingConfirmationEmail, sendDirectEmail, logEmailEvent } from './services/brevoService';
+// Email handling is done automatically by Firebase Cloud Functions
+// No imports needed for direct email services
 
 // Import the password generator utility
 import { generateSecurePassword } from './utils/passwordUtils';
@@ -27,13 +28,13 @@ import { generateSecurePassword } from './utils/passwordUtils';
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyANg95WdxwaB8bw_AnQS8s2-AUCz_JmX9o",
-  authDomain: "medi-yatra-clinics.firebaseapp.com",
-  projectId: "medi-yatra-clinics",
-  storageBucket: "medi-yatra-clinics.firebasestorage.app",
-  messagingSenderId: "904574554357",
-  appId: "1:904574554357:web:d43d13bbd843c00dcfb5bc",
-  measurementId: "G-VKWS6QZL0X"
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.REACT_APP_FIREBASE_APP_ID,
+  measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID
 };
 
 // Initialize Firebase
@@ -242,75 +243,23 @@ export const createAppointment = async (appointmentData, medicalRecordFiles = []
     console.log(`Verifying userId for new appointment: ${appointmentDocData.userId}`);
     
     // Create the appointment document
+    console.log('📝 Creating appointment document...');
+    console.log('📋 Appointment data to save:', JSON.stringify(appointmentDocData, null, 2));
     const appointmentRef = await addDoc(collection(db, 'appointments'), appointmentDocData);
     
-    console.log(`Created appointment with ID: ${appointmentRef.id} for user: ${appointmentDocData.userId}`);
+    console.log(`✅ Created appointment with ID: ${appointmentRef.id} for user: ${appointmentDocData.userId}`);
+    console.log('🔄 This should trigger the Cloud Function for email sending');
+    console.log('📧 Email will be sent to:', appointmentDocData.patientEmail);
+    console.log('⚠️ Check Firebase Functions logs with: firebase functions:log');
     
     // Update availability status - mark the slot as booked
     if (appointmentDocData.availabilityId) {
       await updateAvailabilityStatus(appointmentDocData.availabilityId, 'booked', appointmentRef.id);
     }
     
-    // Send confirmation email (client-side implementation)
-    try {
-      // Prepare data for the email
-      const emailData = {
-        email: appointmentData.email,
-        firstName: appointmentData.firstName,
-        lastName: appointmentData.lastName,
-        clinicName: appointmentData.clinicName,
-        doctorName: appointmentData.doctorName || null,
-        appointmentDate: appointmentData.appointmentDate,
-        appointmentTime: appointmentData.appointmentTime,
-        location: appointmentData.city,
-        treatmentType: appointmentData.treatmentType,
-        appointmentId: appointmentRef.id,
-        userId: userRef.id, // Add userId for the email
-        password: userRef.password, // Add password for the email (if new user)
-        meetingLink: appointmentDocData.meetingLink || null
-      };
-      
-      // Try template email first
-      logEmailEvent('attempt', { appointmentId: appointmentRef.id, email: appointmentData.email, method: 'template' });
-      let emailResult = await sendBookingConfirmationEmail(emailData);
-      
-      // If template email fails, try direct email as fallback
-      if (!emailResult.success) {
-        logEmailEvent('fallback', { 
-          appointmentId: appointmentRef.id, 
-          email: appointmentData.email, 
-          reason: emailResult.error 
-        });
-        
-        // Try the direct email method as fallback
-        emailResult = await sendDirectEmail(emailData);
-      }
-      
-      // Log the final result
-      if (emailResult.success) {
-        logEmailEvent('success', { appointmentId: appointmentRef.id, email: appointmentData.email });
-        
-        // Update appointment with email status
-        await updateDoc(appointmentRef, {
-          emailSent: true,
-          emailSentAt: serverTimestamp(),
-          emailResponseId: emailResult.data?.messageId || null
-        });
-      } else {
-        logEmailEvent('failure', { 
-          appointmentId: appointmentRef.id, 
-          email: appointmentData.email,
-          error: emailResult.error 
-        });
-      }
-    } catch (emailError) {
-      console.error('Error sending confirmation email:', emailError);
-      logEmailEvent('error', { 
-        appointmentId: appointmentRef.id, 
-        email: appointmentData.email,
-        error: emailError.message 
-      });
-    }
+// Email will be sent automatically by the Firebase Cloud Function
+// when the appointment document is created (see functions/index.js)
+console.log(`Appointment created successfully. Confirmation email will be sent automatically via Cloud Function.`);
 
     return {
       id: appointmentRef.id,

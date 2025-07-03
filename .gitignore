@@ -1,11 +1,19 @@
 node_modules
 
-# Environment files
+# Environment files - CRITICAL: Never commit these!
 .env
+.env.new
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+.env.*
+
+# Functions environment files
+functions/.env
+functions/.env.local
+functions/.env.production
+functions/.env.*
 
 # Firebase
 .firebase/
@@ -13,6 +21,15 @@ firebase-debug.log
 ui-debug.log
 .runtimeconfig.json
 firebase-service-account.json
+serviceAccountKey.json
+testUpdatingMissingParaDb/serviceAccountKey.json
+
+mu
+mu/*
+
+# Sensitive configuration files
+**/serviceAccountKey.json
+**/*-service-account-*.json
 
 # IDE and editor files
 .vscode/
@@ -42,3 +59,13 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 .vercel
+
+
+test/*
+testUpdatingMissingParaDb/*
+test
+testUpdatingMissingParaDb
+documentations
+documentations/*
+files
+files/*

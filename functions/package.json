@@ -14,10 +14,11 @@
     "node": "18"
   },
   "dependencies": {
+    "dotenv": "^17.0.1",
     "firebase-admin": "^11.10.1",
     "firebase-functions": "^4.5.0",
-    "sib-api-v3-sdk": "^8.5.0",
-    "node-fetch": "^3.3.2"
+    "node-fetch": "^3.3.2",
+    "resend": "^4.0.1"
   },
   "private": true
 }

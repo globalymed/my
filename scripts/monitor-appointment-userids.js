@@ -5,17 +5,34 @@ const admin = require('firebase-admin');
 const fs = require('fs');
 const path = require('path');
 
-// Check if service account file exists
-const serviceAccountPath = path.join(__dirname, '../serviceAccountKey.json');
-if (!fs.existsSync(serviceAccountPath)) {
-  console.error('Service account key file not found:', serviceAccountPath);
-  console.error('Please ensure you have the Firebase service account credentials file in the project root.');
+// Load environment variables first
+require('dotenv').config();
+
+// Check if service account file exists (fallback option)
+const serviceAccountPath = path.join(__dirname, '../testUpdatingMissingParaDb/serviceAccountKey.json');
+const hasServiceAccountFile = fs.existsSync(serviceAccountPath);
+const hasEnvCredentials = !!(process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_PRIVATE_KEY);
+
+if (!hasServiceAccountFile && !hasEnvCredentials) {
+  console.error('Firebase credentials not found!');
+  console.error('Please provide either:');
+  console.error('1. Service account file at:', serviceAccountPath);
+  console.error('2. Environment variables: FIREBASE_PROJECT_ID, FIREBASE_PRIVATE_KEY, etc.');
   process.exit(1);
 }
 
 // Initialize Firebase Admin SDK
 try {
-  const serviceAccount = require('../serviceAccountKey.json');
+  const serviceAccount = hasEnvCredentials ? {
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    privateKeyId: process.env.FIREBASE_PRIVATE_KEY_ID,
+    privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+    clientId: process.env.FIREBASE_CLIENT_ID,
+    authUri: process.env.FIREBASE_AUTH_URI,
+    tokenUri: process.env.FIREBASE_TOKEN_URI
+  } : require('../testUpdatingMissingParaDb/serviceAccountKey.json');
+  
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
   });
