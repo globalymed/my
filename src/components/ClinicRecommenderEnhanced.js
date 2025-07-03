@@ -31,7 +31,7 @@ import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
 const DELHI_LOCATION = { lat: 28.6139, lng: 77.2090 };
 const MAX_DISTANCE_KM = 10;
 const MIN_RATING = 4.0;
-const RESULTS_LIMIT = 5;
+const RESULTS_LIMIT = 3;
 
 // Fallback clinics when Firebase fails
 const FALLBACK_CLINICS = {
@@ -49,6 +49,13 @@ const FALLBACK_CLINICS = {
       rating: 4.7, 
       services: ['Hair Transplant', 'Scalp Treatment', 'Hair Growth Therapy'],
       location: { lat: 28.5921, lng: 77.2290 }
+    },
+    { 
+      id: 'hair3', 
+      name: 'Modern Hair Solutions', 
+      rating: 4.6, 
+      services: ['Hair Transplant', 'Hair Restoration', 'Scalp Massage'],
+      location: { lat: 28.6100, lng: 77.2100 }
     }
   ],
   dental: [
@@ -58,6 +65,20 @@ const FALLBACK_CLINICS = {
       rating: 4.9, 
       services: ['General Dentistry', 'Cosmetic Dentistry', 'Orthodontics'],
       location: { lat: 28.6429, lng: 77.2095 }
+    },
+    { 
+      id: 'dental2', 
+      name: 'Bright Dental Clinic', 
+      rating: 4.7, 
+      services: ['Root Canal Treatment', 'Dental Implants', 'Teeth Whitening'],
+      location: { lat: 28.6350, lng: 77.2150 }
+    },
+    { 
+      id: 'dental3', 
+      name: 'Perfect Smile Dentistry', 
+      rating: 4.6, 
+      services: ['Pediatric Dentistry', 'Dental Crowns', 'Emergency Dental Care'],
+      location: { lat: 28.6200, lng: 77.2300 }
     }
   ],
   cosmetic: [
@@ -67,6 +88,20 @@ const FALLBACK_CLINICS = {
       rating: 4.8, 
       services: ['Botox', 'Fillers', 'Skin Rejuvenation'],
       location: { lat: 28.6239, lng: 77.2190 }
+    },
+    { 
+      id: 'cosmetic2', 
+      name: 'Beauty & Beyond Clinic', 
+      rating: 4.7, 
+      services: ['Chemical Peels', 'Microdermabrasion', 'Laser Hair Removal'],
+      location: { lat: 28.6300, lng: 77.2250 }
+    },
+    { 
+      id: 'cosmetic3', 
+      name: 'Glow Cosmetic Surgery', 
+      rating: 4.5, 
+      services: ['Facelift', 'Rhinoplasty', 'Body Contouring'],
+      location: { lat: 28.6150, lng: 77.2280 }
     }
   ],
   ivf: [
@@ -76,6 +111,20 @@ const FALLBACK_CLINICS = {
       rating: 4.9, 
       services: ['IVF', 'ICSI', 'Fertility Counseling'],
       location: { lat: 28.6339, lng: 77.2290 }
+    },
+    { 
+      id: 'ivf2', 
+      name: 'New Life Fertility Center', 
+      rating: 4.8, 
+      services: ['IVF', 'Egg Freezing', 'Embryo Transfer'],
+      location: { lat: 28.6400, lng: 77.2200 }
+    },
+    { 
+      id: 'ivf3', 
+      name: 'Family Beginnings IVF', 
+      rating: 4.7, 
+      services: ['IVF', 'Surrogacy', 'Genetic Testing'],
+      location: { lat: 28.6250, lng: 77.2280 }
     }
   ],
   general: [
@@ -85,6 +134,20 @@ const FALLBACK_CLINICS = {
       rating: 4.5, 
       services: ['General Medicine', 'Diagnostics', 'Preventive Care'],
       location: { lat: 28.6139, lng: 77.2190 }
+    },
+    { 
+      id: 'general2', 
+      name: 'Wellness Medical Center', 
+      rating: 4.4, 
+      services: ['Family Medicine', 'Cardiology', 'Orthopedics'],
+      location: { lat: 28.6250, lng: 77.2200 }
+    },
+    { 
+      id: 'general3', 
+      name: 'Lifeline Healthcare', 
+      rating: 4.3, 
+      services: ['Pediatrics', 'Gynecology', 'Internal Medicine'],
+      location: { lat: 28.6180, lng: 77.2240 }
     }
   ]
 };
@@ -153,7 +216,9 @@ const ClinicRecommenderEnhanced = ({ treatmentType, onClinicSelect }) => {
     const fetchClinics = async () => {
       if (!effectiveTreatmentType) {
         console.log("No treatment type specified, using general");
-        setFilteredClinics(FALLBACK_CLINICS.general);
+        console.log("Fallback general clinics count:", FALLBACK_CLINICS.general.length);
+        // Get at most 3 general clinics
+        setFilteredClinics(FALLBACK_CLINICS.general.slice(0, RESULTS_LIMIT));
         return;
       }
       
@@ -177,6 +242,8 @@ const ClinicRecommenderEnhanced = ({ treatmentType, onClinicSelect }) => {
           ...doc.data(),
         }));
         
+        console.log("Exact match clinics found:", clinics.length);
+        
         // If no clinics found, try without the array-contains filter
         if (clinics.length === 0) {
           console.log("No exact matches found, fetching all clinics");
@@ -192,6 +259,7 @@ const ClinicRecommenderEnhanced = ({ treatmentType, onClinicSelect }) => {
             id: doc.id,
             ...doc.data(),
           }));
+          console.log("Fallback query clinics found:", clinics.length);
         }
         
         console.log("Fetched clinics:", clinics);
@@ -200,16 +268,23 @@ const ClinicRecommenderEnhanced = ({ treatmentType, onClinicSelect }) => {
         if (clinics.length === 0) {
           console.log("No clinics found in database, using fallback data");
           const type = effectiveTreatmentType.toLowerCase();
-          clinics = FALLBACK_CLINICS[type] || FALLBACK_CLINICS.general;
+          // Ensure we return at most 3 clinics from the fallback data
+          const fallbackClinics = FALLBACK_CLINICS[type] || FALLBACK_CLINICS.general;
+          console.log("Fallback clinics available for", type, ":", fallbackClinics.length);
+          clinics = fallbackClinics.slice(0, RESULTS_LIMIT);
         }
         
-        setFilteredClinics(clinics);
+        // Ensure we only return up to 3 clinics
+        console.log("Final clinics count before setting state:", clinics.length);
+        setFilteredClinics(clinics.slice(0, RESULTS_LIMIT));
       } catch (error) {
         console.error('Error fetching clinics:', error);
         // Use fallback data on error
         console.log("Using fallback clinics due to error");
         const type = effectiveTreatmentType.toLowerCase();
-        setFilteredClinics(FALLBACK_CLINICS[type] || FALLBACK_CLINICS.general);
+        const fallbackClinics = FALLBACK_CLINICS[type] || FALLBACK_CLINICS.general;
+        console.log("Error fallback clinics count:", fallbackClinics.length);
+        setFilteredClinics(fallbackClinics.slice(0, RESULTS_LIMIT));
       } finally {
         setLoading('clinics', false);
       }
@@ -217,6 +292,18 @@ const ClinicRecommenderEnhanced = ({ treatmentType, onClinicSelect }) => {
 
     fetchClinics();
   }, [effectiveTreatmentType, setLoading]);
+
+  // Log state value when it changes
+  useEffect(() => {
+    console.log("Enhanced component - filteredClinics state updated:", filteredClinics.length, "clinics");
+    console.log("Enhanced clinic details:", filteredClinics);
+  }, [filteredClinics]);
+
+  // Log filtered results after search
+  useEffect(() => {
+    console.log("Search term applied:", searchTerm);
+    console.log("Clinics after search filter:", filteredAndSearchedClinics.length);
+  }, [searchTerm, filteredAndSearchedClinics]);
 
   const handleBookNow = (clinic) => {
     if (onClinicSelect) {
@@ -268,7 +355,7 @@ const ClinicRecommenderEnhanced = ({ treatmentType, onClinicSelect }) => {
               <LocalHospitalIcon sx={{ fontSize: 40, color: theme.palette.primary.main, mr: 2 }} />
               <Box>
                 <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 700 }}>
-                  {getTreatmentTypeTitle()} Clinics
+                  {getTreatmentTypeTitle()} Clinics (Found: {filteredAndSearchedClinics.length})
                 </Typography>
                 <Typography variant="body1" color="text.secondary">
                   Showing top-rated clinics near Delhi for {effectiveTreatmentType.toLowerCase()} treatments
@@ -389,7 +476,7 @@ const ClinicRecommenderEnhanced = ({ treatmentType, onClinicSelect }) => {
           }}
         >
           <Typography variant="body1">
-            No clinics found for "{searchTerm}". Please try a different search term or browse all available clinics.
+            No suitable clinics were found for "{searchTerm}". Please try different parameters or browse all available clinics.
           </Typography>
         </Alert>
       )}

@@ -2,9 +2,23 @@
 // Script to fix appointment userIds that are not unique
 
 const admin = require('firebase-admin');
-const serviceAccount = require('../serviceAccountKey.json');
 
-// Initialize Firebase Admin SDK
+// Load environment variables
+require('dotenv').config();
+
+// Initialize Firebase Admin SDK with environment variables
+const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH || '../testUpdatingMissingParaDb/serviceAccountKey.json';
+
+const serviceAccount = process.env.FIREBASE_PRIVATE_KEY ? {
+  projectId: process.env.FIREBASE_PROJECT_ID,
+  privateKeyId: process.env.FIREBASE_PRIVATE_KEY_ID,
+  privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+  clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+  clientId: process.env.FIREBASE_CLIENT_ID,
+  authUri: process.env.FIREBASE_AUTH_URI,
+  tokenUri: process.env.FIREBASE_TOKEN_URI
+} : require(serviceAccountPath);
+
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });

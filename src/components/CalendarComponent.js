@@ -148,7 +148,7 @@ const ChatCalendarComponent = ({ onSelectDate, treatmentType = null, location = 
         // Check if the clinic is available on this date
         if (availabilityData && 
             availabilityData.length > 0 && 
-            availabilityData[0].available) {
+            availabilityData[0].availableDay) {
           // Add clinic to available clinics list with its details
           availableClinics.push({
             ...clinic,

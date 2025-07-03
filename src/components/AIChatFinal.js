@@ -240,10 +240,10 @@ const AIChatFinal = () => {
           });
           
           // Select the best clinic based on the treatment type, location, and date
-          const clinic = await selectBestClinic(info.treatmentType, info.location, info.appointmentDate);
-          if (clinic) {
-            console.log("Found best clinic:", clinic);
-            setBestClinic(clinic);
+          const clinics = await selectBestClinic(info.treatmentType, info.location, info.appointmentDate);
+          if (clinics && clinics.length > 0) {
+            console.log("Found clinics:", clinics);
+            setBestClinic(clinics);
             setShowRecommendations(true);
             
             // DO NOT add a message here - let the Gemini API handle responses
@@ -315,26 +315,22 @@ const AIChatFinal = () => {
 
   // Handle date selection from the calendar
   const handleDateSelect = async (date) => {
-    console.log("Selected date:", date);
-    // Hide the calendar after selection
-    setShowCalendar(false);
+    console.log("Selected available date:", date);
     
-    // Add a user message with the selected date
+    // Update the extracted info with the selected date
+    const updatedInfo = { 
+      ...extractedInfo, 
+      appointmentDate: date 
+    };
+    setExtractedInfo(updatedInfo);
+    
+    // Add a user message showing the selected date
     setMessages(prev => [...prev, { 
-      text: `I'd like an appointment on ${date}`, 
+      text: `I'd like to schedule my appointment on ${date}.`, 
       sender: 'user' 
     }]);
     
-    // Update extracted info with the selected date
-    const updatedInfo = {...extractedInfo, appointmentDate: date};
-    setExtractedInfo(updatedInfo);
-    
-    // Add a loading message from AI
-    setMessages(prev => [...prev, { 
-      text: `Thanks for selecting ${date}. Let me check clinic availability for this date...`, 
-      sender: 'ai' 
-    }]);
-    
+    // Set loading to show a response is coming
     setLoading(true);
     
     // Now check for clinic availability immediately rather than waiting for the next message cycle
@@ -351,8 +347,8 @@ const AIChatFinal = () => {
           location: updatedInfo.location
         });
         
-        // Select the best clinic based on all parameters
-        const clinic = await selectBestClinic(
+        // Select the best clinics based on all parameters (now returns an array)
+        const clinics = await selectBestClinic(
           treatmentType, 
           updatedInfo.location, 
           date
@@ -361,7 +357,7 @@ const AIChatFinal = () => {
         // Also check for alternative dates (next 7 days) if no clinic is available on the selected date
         let alternativeDates = [];
         
-        if (!clinic) {
+        if (!clinics || clinics.length === 0) {
           const tomorrow = new Date();
           tomorrow.setDate(tomorrow.getDate() + 1);
           
@@ -377,7 +373,7 @@ const AIChatFinal = () => {
               formattedNextDate
             );
             
-            if (alternativeClinic) {
+            if (alternativeClinic && alternativeClinic.length > 0) {
               alternativeDates.push({
                 date: formattedNextDate,
                 formattedDate: format(nextDate, 'EEE, MMM d, yyyy')
@@ -391,15 +387,18 @@ const AIChatFinal = () => {
         
         // Add a short delay to ensure messages appear in proper sequence
         setTimeout(() => {
-          if (clinic) {
-            console.log("Found available clinic:", clinic);
-            setBestClinic(clinic);
+          if (clinics && clinics.length > 0) {
+            console.log("Found available clinic:", clinics[0]);
+            setBestClinic(clinics); // Now storing an array of clinics
             setShowRecommendations(true);
             setAllParametersCollected(true);
             
             // Add clinic recommendation message
+            const clinicCount = clinics.length;
+            const clinicNames = clinics.map(c => c.name).join(", ");
+            
             setMessages(prev => [...prev, { 
-              text: `Great news! I've found a clinic that matches your requirements in ${updatedInfo.location} for your ${treatmentType} needs. The clinic "${clinic.name}" is available on ${date} and has a rating of ${clinic.rating}/5. Would you like more information about this clinic?`, 
+              text: `Great news! I've found ${clinicCount} ${clinicCount === 1 ? 'clinic' : 'clinics'} that match your requirements in ${updatedInfo.location} for your ${treatmentType} needs. ${clinicCount === 1 ? 'This clinic is' : 'These clinics are'} available on ${date}: ${clinicNames}. Would you like more information about ${clinicCount === 1 ? 'this clinic' : 'these clinics'}?`, 
               sender: 'ai' 
             }]);
           } else {
@@ -426,18 +425,12 @@ const AIChatFinal = () => {
           }
           setLoading(false);
         }, 1000);
-      } else {
-        setLoading(false);
-        setMessages(prev => [...prev, { 
-          text: `Thanks for selecting ${date}. Before I can check for available clinics, could you tell me more about your medical needs?`, 
-          sender: 'ai' 
-        }]);
       }
     } catch (error) {
-      console.error("Error finding clinic after date selection:", error);
+      console.error("Error processing date selection:", error);
       setLoading(false);
       setMessages(prev => [...prev, { 
-        text: `Thanks for selecting ${date}. I'm having trouble checking clinic availability right now. Could you tell me more about your medical needs or preferred location?`, 
+        text: "I'm sorry, but there was an error processing your request. Please try again or select a different date.", 
         sender: 'ai' 
       }]);
     }
@@ -589,7 +582,7 @@ const AIChatFinal = () => {
         
         if (availability && 
             availability.length > 0 && 
-            availability[0].available) {
+            availability[0].availableDay) {
           availableClinics.push({
             ...clinic,
             slots: availability[0].slots || []
@@ -604,10 +597,16 @@ const AIChatFinal = () => {
       
       console.log(`Found ${availableClinics.length} clinics available on ${appointmentDate}`);
       
-      // Step 3: Sort by rating and return the best one
+      // Step 3: Sort by rating and return up to three clinics (instead of just the best one)
       availableClinics.sort((a, b) => b.rating - a.rating);
       
-      return availableClinics[0];
+      // Return up to 3 clinics
+      const topClinics = availableClinics.slice(0, 3);
+      console.log(`Returning top ${topClinics.length} clinics sorted by rating`);
+      
+      // For backward compatibility, if we need to return a single clinic, return the array
+      // This change will allow us to modify other parts of the code to handle multiple clinics
+      return topClinics;
     } catch (error) {
       console.error("Error selecting best clinic:", error);
       return null;
@@ -880,214 +879,157 @@ const AIChatFinal = () => {
         </Box>
       </Paper>
 
-      {showRecommendations && treatmentDetails && bestClinic && (
-        <Paper 
-          elevation={0} 
-          sx={{ 
-            p: 3, 
-            borderRadius: 3,
-            border: '1px solid',
-            borderColor: 'rgba(0, 0, 0, 0.08)',
-            bgcolor: 'background.paper',
-          }}
-        >
-          <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="h5" component="h2" sx={{ fontWeight: 700 }}>
-              Best Clinic For You
-            </Typography>
-            <Chip 
-              label={treatmentDetails.treatmentType.charAt(0).toUpperCase() + treatmentDetails.treatmentType.slice(1)} 
-              color="primary" 
-              sx={{ fontWeight: 600 }}
-            />
-          </Box>
-          
-          <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+      {/* Clinic recommendations section */}
+      {showRecommendations && bestClinic && (
+        <Box sx={{ mt: 3, p: 3, bgcolor: 'background.paper', borderRadius: 3, boxShadow: theme.shadows[1] }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
             <InfoOutlinedIcon fontSize="small" color="action" />
             <Typography variant="body2" color="text.secondary">
-              Based on your symptoms and availability, this clinic is the best match for your needs
+              Based on your symptoms and availability, here are the best clinics for your needs
             </Typography>
           </Box>
           
-          <Card sx={{ mb: 3, overflow: 'hidden', borderRadius: 2, boxShadow: theme.shadows[2] }}>
-            <Box sx={{ position: 'relative', height: 180, overflow: 'hidden' }}>
-              <Box 
-                component="img"
-                src={bestClinic.image}
-                alt={bestClinic.name}
-                sx={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                }}
-              />
-              <Box 
-                sx={{
-                  position: 'absolute',
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  p: 2,
-                  background: 'linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0))',
-                  color: 'white',
-                }}
-              >
-                <Typography variant="h6" fontWeight="bold">{bestClinic.name}</Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <Rating value={bestClinic.rating} precision={0.1} readOnly size="small" />
-                  <Typography variant="body2">{bestClinic.rating || 'N/A'}</Typography>
+          {bestClinic.map((clinic, index) => (
+            <Card key={clinic.id || index} sx={{ mb: 3, overflow: 'hidden', borderRadius: 2, boxShadow: theme.shadows[2] }}>
+              <Box sx={{ position: 'relative', height: 180, overflow: 'hidden' }}>
+                <Box 
+                  component="img"
+                  src={clinic.image}
+                  alt={clinic.name}
+                  sx={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                  }}
+                />
+                <Box 
+                  sx={{
+                    position: 'absolute',
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    p: 2,
+                    background: 'linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0))',
+                    color: 'white',
+                  }}
+                >
+                  <Typography variant="h6" fontWeight="bold">{clinic.name}</Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Rating value={clinic.rating} precision={0.1} readOnly size="small" />
+                    <Typography variant="body2">{clinic.rating || 'N/A'}</Typography>
+                  </Box>
                 </Box>
               </Box>
-            </Box>
-            <CardContent>
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Location: {bestClinic.location} {bestClinic.distance ? `(${bestClinic.distance})` : ''}
-                </Typography>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Availability: {bestClinic.availability || 'Contact for availability'}
-                </Typography>
-              </Box>
-              
-              <Typography variant="subtitle2" gutterBottom>
-                Services:
-              </Typography>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-                {(bestClinic.services || []).map((service, index) => (
-                  <Chip 
-                    key={index}
-                    label={service}
-                    size="small"
-                    sx={{ 
-                      bgcolor: `${theme.palette.primary.main}15`,
-                      color: theme.palette.primary.main,
-                      fontWeight: 500
-                    }}
-                  />
-                ))}
-              </Box>
-              
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <Button 
-                  variant="contained" 
-                  onClick={() => navigate('/book-now', { 
-                    state: { 
-                      clinic: bestClinic, 
-                      date: extractedInfo.appointmentDate || '',
-                      time: '10:00 AM' // Default time, can be changed later
-                    }
-                  })}
-                  sx={{ 
-                    mt: 1, 
-                    borderRadius: 2,
-                    textTransform: 'none',
-                    fontWeight: 600,
-                    flex: 1
-                  }}
-                >
-                  Book Appointment
-                </Button>
-                <Button 
-                  variant="outlined" 
-                  onClick={() => setShowExpandedClinicDetails(prev => !prev)}
-                  sx={{ 
-                    mt: 1, 
-                    borderRadius: 2,
-                    textTransform: 'none',
-                    fontWeight: 600
-                  }}
-                >
-                  {showExpandedClinicDetails ? 'Less' : 'More'}
-                </Button>
-              </Box>
-            </CardContent>
-            
-            {showExpandedClinicDetails && (
-              <Box sx={{ p: 2, bgcolor: 'rgba(0, 0, 0, 0.02)', borderTop: '1px solid rgba(0, 0, 0, 0.08)' }}>
-                <Typography variant="h6" gutterBottom>Detailed Information</Typography>
-                
-                <Box sx={{ mb: 3 }}>
-                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>About the Clinic</Typography>
-                  <Typography variant="body2" paragraph>
-                    {bestClinic.name} is a premier healthcare facility specializing in {treatmentDetails?.treatmentType || 'specialized'} treatments. 
-                    With state-of-the-art equipment and experienced specialists, they provide personalized care 
-                    tailored to each patient's unique needs.
+              <CardContent>
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Location: {clinic.location} {clinic.distance ? `(${clinic.distance})` : ''}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Availability: {clinic.availability || 'Contact for availability'}
                   </Typography>
                 </Box>
                 
-                <Box sx={{ mb: 3 }}>
-                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>Doctors</Typography>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <Avatar sx={{ width: 50, height: 50 }}>{bestClinic.name ? bestClinic.name[0] : 'D'}</Avatar>
-                      <Box>
-                        <Typography variant="subtitle2">Dr. Rajesh Sharma</Typography>
-                        <Typography variant="body2" color="text.secondary">Senior Specialist, 15+ years experience</Typography>
+                <Typography variant="subtitle2" gutterBottom>
+                  Services:
+                </Typography>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                  {(clinic.services || []).map((service, index) => (
+                    <Chip 
+                      key={index}
+                      label={service}
+                      size="small"
+                      sx={{ 
+                        bgcolor: `${theme.palette.primary.main}15`,
+                        color: theme.palette.primary.main,
+                        fontWeight: 500
+                      }}
+                    />
+                  ))}
+                </Box>
+                
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Button 
+                    color="primary"
+                    startIcon={<InfoOutlinedIcon />}
+                    onClick={() => setShowExpandedClinicDetails(!showExpandedClinicDetails)}
+                  >
+                    {showExpandedClinicDetails ? 'Less' : 'More'}
+                  </Button>
+                  <Button 
+                    variant="contained" 
+                    color="primary"
+                    onClick={() => navigate('/book-now', { 
+                      state: { 
+                        clinic: clinic, 
+                        date: extractedInfo.appointmentDate || '',
+                        time: '10:00 AM' // Default time, can be changed later
+                      } 
+                    })}
+                  >
+                    Book Now
+                  </Button>
+                </Box>
+              </CardContent>
+              
+              {showExpandedClinicDetails && (
+                <Box sx={{ p: 2, bgcolor: 'rgba(0, 0, 0, 0.02)', borderTop: '1px solid rgba(0, 0, 0, 0.08)' }}>
+                  <Typography variant="h6" gutterBottom>Detailed Information</Typography>
+                  
+                  <Box sx={{ mb: 3 }}>
+                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>About the Clinic</Typography>
+                    <Typography variant="body2" paragraph>
+                      {clinic.name} is a premier healthcare facility specializing in {treatmentDetails?.treatmentType || 'specialized'} treatments. 
+                      With state-of-the-art equipment and experienced specialists, they provide personalized care 
+                      tailored to each patient's unique needs.
+                    </Typography>
+                  </Box>
+                  
+                  <Box sx={{ mb: 3 }}>
+                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>Doctors</Typography>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Avatar sx={{ width: 50, height: 50 }}>{clinic.name ? clinic.name[0] : 'D'}</Avatar>
+                        <Box>
+                          <Typography variant="subtitle2">Dr. Rajesh Sharma</Typography>
+                          <Typography variant="body2" color="text.secondary">Senior Specialist, 15+ years experience</Typography>
+                        </Box>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Avatar sx={{ width: 50, height: 50 }}>A</Avatar>
+                        <Box>
+                          <Typography variant="subtitle2">Dr. Anjali Patel</Typography>
+                          <Typography variant="body2" color="text.secondary">Consultant, 10+ years experience</Typography>
+                        </Box>
                       </Box>
                     </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <Avatar sx={{ width: 50, height: 50 }}>A</Avatar>
-                      <Box>
-                        <Typography variant="subtitle2">Dr. Anjali Patel</Typography>
-                        <Typography variant="body2" color="text.secondary">Consultant, 10+ years experience</Typography>
-                      </Box>
+                  </Box>
+                  
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>Facilities</Typography>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                      <Chip label="Modern Equipment" size="small" />
+                      <Chip label="Comfortable Waiting Area" size="small" />
+                      <Chip label="Digital Records" size="small" />
+                      <Chip label="Lab Services" size="small" />
+                      <Chip label="Pharmacy" size="small" />
                     </Box>
                   </Box>
                 </Box>
-                
-                <Box sx={{ mb: 3 }}>
-                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>Facilities</Typography>
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                    {['Modern Equipment', 'Comfortable Waiting Area', 'Parking Available', 'Wheelchair Accessible', 'Digital Records'].map((facility, index) => (
-                      <Chip 
-                        key={index}
-                        label={facility}
-                        size="small"
-                        sx={{ 
-                          bgcolor: 'background.paper',
-                          border: '1px solid',
-                          borderColor: 'rgba(0, 0, 0, 0.12)'
-                        }}
-                      />
-                    ))}
-                  </Box>
-                </Box>
-                
-                <Box sx={{ mb: 3 }}>
-                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>Patient Reviews</Typography>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <Paper elevation={0} sx={{ p: 2, bgcolor: 'background.paper', borderRadius: 2 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                        <Typography variant="subtitle2">Rahul M.</Typography>
-                        <Rating value={5} readOnly size="small" />
-                      </Box>
-                      <Typography variant="body2">
-                        "Excellent care and very professional staff. The doctor took time to explain everything clearly."
-                      </Typography>
-                    </Paper>
-                    <Paper elevation={0} sx={{ p: 2, bgcolor: 'background.paper', borderRadius: 2 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                        <Typography variant="subtitle2">Priya S.</Typography>
-                        <Rating value={4} readOnly size="small" />
-                      </Box>
-                      <Typography variant="body2">
-                        "Very satisfied with my treatment results. The facility is clean and modern. Would recommend."
-                      </Typography>
-                    </Paper>
-                  </Box>
-                </Box>
-                
-                <Box>
-                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>Insurance & Payment</Typography>
-                  <Typography variant="body2" paragraph>
-                    This clinic accepts all major insurance providers and offers flexible payment plans. 
-                    They also provide cashless treatment options for select insurance partners.
-                  </Typography>
-                </Box>
-              </Box>
-            )}
-          </Card>
-        </Paper>
+              )}
+            </Card>
+          ))}
+          
+          <Button 
+            variant="contained" 
+            fullWidth
+            color="primary" 
+            onClick={() => setShowTreatmentsInfo(true)}
+            sx={{ mt: 2 }}
+          >
+            View Treatment Information
+          </Button>
+        </Box>
       )}
       
       {/* Render TreatmentsInfo dialog when showTreatmentsInfo is true */}
