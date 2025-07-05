@@ -3,15 +3,13 @@
 
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
-const SibApiV3Sdk = require('sib-api-v3-sdk');
+const { Resend } = require('resend');
 
-// Initialize Brevo API
-const defaultClient = SibApiV3Sdk.ApiClient.instance;
-const apiKey = defaultClient.authentications['api-key'];
-apiKey.apiKey = functions.config().brevo?.api_key;
+// Load environment variables
+require('dotenv').config();
 
-// Template ID for confirmation emails
-const BREVO_TEMPLATE_ID = 3;
+// Initialize Resend API using environment variable
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Generate a secure random password
 function generateSecurePassword(length = 12) {
@@ -38,11 +36,6 @@ async function sendCredentialsEmail(userData) {
   try {
     console.log('Starting to send credentials email to:', userData.email);
     console.log('User data:', JSON.stringify(userData, null, 2));
-    
-    const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
-    
-    // Create email data
-    const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
     
     // Create the HTML content using provided template
     const htmlContent = `<!DOCTYPE html>
@@ -77,18 +70,14 @@ async function sendCredentialsEmail(userData) {
 </body>
 </html>`;
     
-    // Set email properties
-    sendSmtpEmail.sender = { name: 'MediYatra Support', email: 'medyatraglobal@gmail.com' };
-    sendSmtpEmail.to = [{ email: userData.email, name: `${userData.firstName} ${userData.lastName}` }];
-    sendSmtpEmail.subject = "Your Med-Yatra Account Credentials";
-    sendSmtpEmail.htmlContent = htmlContent;
-    
-    // Log the email object before sending
-    console.log('Email object to be sent:', JSON.stringify(sendSmtpEmail, null, 2));
-    
-    // Send email
-    console.log('Attempting to send email...');
-    const result = await apiInstance.sendTransacEmail(sendSmtpEmail);
+    // Send email using Resend
+    console.log('Attempting to send email via Resend...');
+    const result = await resend.emails.send({
+      from: 'MediYatra Support <medyatraglobal@gmail.com>',
+      to: [userData.email],
+      subject: 'Your Med-Yatra Account Credentials',
+      html: htmlContent,
+    });
     console.log('Email sent successfully:', result);
     return { success: true, data: result };
   } catch (error) {
@@ -97,24 +86,15 @@ async function sendCredentialsEmail(userData) {
     console.error('Error stack:', error.stack);
     console.error('Error details:', {
       message: error.message,
-      code: error.code,
-      response: error.response?.body,
-      status: error.response?.status
+      name: error.name
     });
     
-    // Try sending direct email without template as a fallback
+    // Try sending a simplified fallback email
     try {
-      console.log('Attempting to send fallback email...');
-      const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
-      const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
-      
-      // Create direct email with simpler HTML in case the main template fails
-      sendSmtpEmail.sender = { name: 'MediYatra Support', email: 'medyatraglobal@gmail.com' };
-      sendSmtpEmail.to = [{ email: userData.email, name: `${userData.firstName} ${userData.lastName}` }];
-      sendSmtpEmail.subject = 'Your MediYatra Account Credentials';
+      console.log('Attempting to send fallback email via Resend...');
       
       // Simplified HTML content with credentials
-      sendSmtpEmail.htmlContent = `
+      const fallbackHtml = `
         <html>
           <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
             <h2 style="color: #1890ff;">Your MediYatra Account Credentials</h2>
@@ -136,22 +116,18 @@ async function sendCredentialsEmail(userData) {
         </html>
       `;
       
-      // Log the fallback email object
-      console.log('Fallback email object to be sent:', JSON.stringify(sendSmtpEmail, null, 2));
-      
-      // Send the direct email
-      const result = await apiInstance.sendTransacEmail(sendSmtpEmail);
+      // Send the fallback email
+      const result = await resend.emails.send({
+        from: 'MediYatra Support <medyatraglobal@gmail.com>',
+        to: [userData.email],
+        subject: 'Your MediYatra Account Credentials',
+        html: fallbackHtml,
+      });
       console.log('Fallback email sent successfully:', result);
       return { success: true, data: result };
     } catch (fallbackError) {
       console.error('Error sending fallback email:', fallbackError);
       console.error('Fallback error stack:', fallbackError.stack);
-      console.error('Fallback error details:', {
-        message: fallbackError.message,
-        code: fallbackError.code,
-        response: fallbackError.response?.body,
-        status: fallbackError.response?.status
-      });
       throw fallbackError;
     }
   }

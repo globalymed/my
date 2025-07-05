@@ -10,7 +10,10 @@ import {
   Avatar,
   useTheme,
   Paper,
-  Divider
+  Divider,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails
 } from '@mui/material';
 import {
   HealthAndSafety as HealthIcon,
@@ -18,7 +21,9 @@ import {
   AccessTime as TimeIcon,
   CalendarMonth as CalendarIcon,
   Chat as ChatIcon,
-  Psychology as AIIcon
+  Psychology as AIIcon,
+  ExpandMore,
+  ExpandLess,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
@@ -51,6 +56,18 @@ const HomePage = () => {
       icon: <HealthIcon sx={{ fontSize: 40, color: theme.palette.primary.main }} />,
       action: () => navigate('/dashboard')
     }
+  ];
+
+  const faq = [
+    {
+      "General FAQs (for all Treatment)": {
+        "What is MedYatra?": "MedYatra is a healthcare travel platform that connects you with top clinics and hospitals in India for Hair, IVF, Dental, and Cosmetic treatments. We also assist with travel, accommodation, and concierge services.",
+        "How do I book a treatment through MedYatra?": "You can select a treatment, choose a clinic, and book a consultation directly through our website. Our team will assist you throughout the process.",
+        "Do you provide assistance with travel and accommodation?": "Yes. We offer travel packages that include flights, hotel bookings, local transport (like Uber), and appointment scheduling.",
+        "Are the clinics and doctors verified?": "All listed clinics and doctors go through a thorough verification process based on experience, accreditation, and patient reviews.",
+        "Can international patients use MedYatra?": "Absolutely. MedYatra is built for both Indian and international patients seeking affordable, high-quality treatments in India.",
+      }
+    },
   ];
 
   return (
@@ -227,10 +244,10 @@ const HomePage = () => {
                   { title: 'Secure & Private', desc: 'Your health data is securely stored and your privacy is our top priority.' }
                 ].map((item, i) => (
                   <Box key={i} sx={{ display: 'flex', gap: 2 }}>
-                    <Box sx={{ 
-                      width: 24, 
-                      height: 24, 
-                      borderRadius: '50%', 
+                    <Box sx={{
+                      width: 24,
+                      height: 24,
+                      borderRadius: '50%',
                       bgcolor: theme.palette.primary.main,
                       display: 'flex',
                       alignItems: 'center',
@@ -241,7 +258,7 @@ const HomePage = () => {
                       flexShrink: 0,
                       mt: 0.5
                     }}>
-                      {i+1}
+                      {i + 1}
                     </Box>
                     <Box>
                       <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#334155' }}>
@@ -260,8 +277,8 @@ const HomePage = () => {
       </Paper>
 
       {/* Call to Action */}
-      <Box sx={{ 
-        p: 4, 
+      <Box sx={{
+        p: 4,
         textAlign: 'center',
         bgcolor: theme.palette.primary.main,
         borderRadius: 4,
@@ -275,10 +292,9 @@ const HomePage = () => {
         </Typography>
         <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
           <Button
-            variant="contained"
-            color="secondary"
+            variant="outlined"
             size="large"
-            onClick={() => navigate('/login')}
+            onClick={() => navigate('/chat')}
             sx={{
               py: 1.5,
               px: 3,
@@ -286,9 +302,9 @@ const HomePage = () => {
               textTransform: 'none',
               fontSize: '1rem',
               fontWeight: 600,
-              bgcolor: '#fff',
-              color: theme.palette.primary.main,
-              '&:hover': { bgcolor: '#f8fafc' }
+              borderColor: '#fff',
+              color: '#fff',
+              '&:hover': { borderColor: '#f8fafc', bgcolor: 'rgba(255, 255, 255, 0.1)' }
             }}
           >
             Login to Dashboard
@@ -313,6 +329,36 @@ const HomePage = () => {
           </Button>
         </Box>
       </Box>
+
+
+      {/* Faq section */}
+      <Paper elevation={0} sx={{ p: 4, mt: 6, borderRadius: 4, bgcolor: '#f8fafc' }}>
+        <Typography variant="h4" component="h2" sx={{ my: 1, fontWeight: 700, color: '#1e3a8a', textAlign: 'center' }}>
+          Frequently Asked Questions
+        </Typography>
+        <Box sx={{ maxWidth: 900, mx: 'auto', mt: 3, px: 2 }}>
+          {faq.map((section, index) => {
+            const [categoryTitle, questions] = Object.entries(section)[0];
+            return (
+              <Box key={index} sx={{ mb: 4 }}>
+                <Typography variant="h6" align='center' sx={{mb:3 }} fontWeight={700}>
+                  {categoryTitle}
+                </Typography>
+                {Object.entries(questions).map(([question, answer], i) => (
+                  <Accordion key={i} sx={{ mb: 1, borderRadius: 2 }}>
+                    <AccordionSummary expandIcon={<ExpandMore />}>
+                      <Typography fontWeight={600}>{question}</Typography>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                      <Typography>{answer}</Typography>
+                    </AccordionDetails>
+                  </Accordion>
+                ))}
+              </Box>
+            );
+          })}
+        </Box>
+      </Paper>
     </Box>
   );
 };

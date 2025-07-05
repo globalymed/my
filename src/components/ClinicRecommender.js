@@ -9,7 +9,7 @@ import { useNavigate } from 'react-router-dom';
 const DELHI_LOCATION = { lat: 28.6139, lng: 77.2090 };
 const MAX_DISTANCE_KM = 10;
 const MIN_RATING = 4.0;
-const RESULTS_LIMIT = 5;
+const RESULTS_LIMIT = 3;
 
 // Fallback clinics when Firebase fails
 const FALLBACK_CLINICS = {
@@ -30,10 +30,10 @@ const FALLBACK_CLINICS = {
     },
     { 
       id: 'hair3', 
-      name: 'Premier Hair Solutions', 
+      name: 'Modern Hair Solutions', 
       rating: 4.6, 
-      services: ['Hair Transplant', 'Hair Extensions', 'Hair Coloring'],
-      location: { lat: 28.6100, lng: 77.2250 }
+      services: ['Hair Transplant', 'Hair Restoration', 'Scalp Massage'],
+      location: { lat: 28.6100, lng: 77.2100 }
     }
   ],
   dental: [
@@ -46,17 +46,17 @@ const FALLBACK_CLINICS = {
     },
     { 
       id: 'dental2', 
-      name: 'Perfect Teeth Clinic', 
+      name: 'Bright Dental Clinic', 
       rating: 4.7, 
-      services: ['Teeth Whitening', 'Dental Implants', 'Root Canal'],
-      location: { lat: 28.6200, lng: 77.2150 }
+      services: ['Root Canal Treatment', 'Dental Implants', 'Teeth Whitening'],
+      location: { lat: 28.6350, lng: 77.2150 }
     },
     { 
       id: 'dental3', 
-      name: 'Modern Dental Solutions', 
+      name: 'Perfect Smile Dentistry', 
       rating: 4.6, 
-      services: ['Pediatric Dentistry', 'Dental Surgery', 'Dental Crowns'],
-      location: { lat: 28.6300, lng: 77.2100 }
+      services: ['Pediatric Dentistry', 'Dental Crowns', 'Emergency Dental Care'],
+      location: { lat: 28.6200, lng: 77.2300 }
     }
   ],
   cosmetic: [
@@ -69,17 +69,17 @@ const FALLBACK_CLINICS = {
     },
     { 
       id: 'cosmetic2', 
-      name: 'Glow Cosmetic Clinic', 
+      name: 'Beauty & Beyond Clinic', 
       rating: 4.7, 
-      services: ['Laser Treatments', 'Chemical Peels', 'Microdermabrasion'],
-      location: { lat: 28.6150, lng: 77.2180 }
+      services: ['Chemical Peels', 'Microdermabrasion', 'Laser Hair Removal'],
+      location: { lat: 28.6300, lng: 77.2250 }
     },
     { 
       id: 'cosmetic3', 
-      name: 'Youthful Beauty Solutions', 
-      rating: 4.6, 
-      services: ['Anti-Aging Treatments', 'Facial Contouring', 'Body Sculpting'],
-      location: { lat: 28.6200, lng: 77.2250 }
+      name: 'Glow Cosmetic Surgery', 
+      rating: 4.5, 
+      services: ['Facelift', 'Rhinoplasty', 'Body Contouring'],
+      location: { lat: 28.6150, lng: 77.2280 }
     }
   ],
   ivf: [
@@ -94,15 +94,15 @@ const FALLBACK_CLINICS = {
       id: 'ivf2', 
       name: 'New Life Fertility Center', 
       rating: 4.8, 
-      services: ['IVF', 'Egg Freezing', 'Fertility Testing'],
-      location: { lat: 28.6250, lng: 77.2350 }
+      services: ['IVF', 'Egg Freezing', 'Embryo Transfer'],
+      location: { lat: 28.6400, lng: 77.2200 }
     },
     { 
       id: 'ivf3', 
-      name: 'Hope Fertility Clinic', 
+      name: 'Family Beginnings IVF', 
       rating: 4.7, 
-      services: ['IVF', 'Surrogacy', 'Embryo Freezing'],
-      location: { lat: 28.6400, lng: 77.2150 }
+      services: ['IVF', 'Surrogacy', 'Genetic Testing'],
+      location: { lat: 28.6250, lng: 77.2280 }
     }
   ],
   general: [
@@ -115,17 +115,17 @@ const FALLBACK_CLINICS = {
     },
     { 
       id: 'general2', 
-      name: 'Community Health Center', 
+      name: 'Wellness Medical Center', 
       rating: 4.4, 
-      services: ['Family Medicine', 'Pediatrics', 'Women\'s Health'],
-      location: { lat: 28.6200, lng: 77.2100 }
+      services: ['Family Medicine', 'Cardiology', 'Orthopedics'],
+      location: { lat: 28.6250, lng: 77.2200 }
     },
     { 
       id: 'general3', 
-      name: 'Prime Medical Care', 
+      name: 'Lifeline Healthcare', 
       rating: 4.3, 
-      services: ['Internal Medicine', 'Cardiology', 'Dermatology'],
-      location: { lat: 28.6250, lng: 77.2150 }
+      services: ['Pediatrics', 'Gynecology', 'Internal Medicine'],
+      location: { lat: 28.6180, lng: 77.2240 }
     }
   ]
 };
@@ -192,7 +192,9 @@ const ClinicRecommender = ({ treatmentType, onClinicSelect }) => {
     const fetchClinics = async () => {
       if (!effectiveTreatmentType) {
         console.log("No treatment type specified, using general");
-        setFilteredClinics(FALLBACK_CLINICS.general.slice(0, 3));
+        console.log("Fallback general clinics count:", FALLBACK_CLINICS.general.length);
+        // Get at most 3 general clinics
+        setFilteredClinics(FALLBACK_CLINICS.general.slice(0, RESULTS_LIMIT));
         return;
       }
       
@@ -216,6 +218,8 @@ const ClinicRecommender = ({ treatmentType, onClinicSelect }) => {
           ...doc.data(),
         }));
         
+        console.log("Exact match clinics found:", clinics.length);
+        
         // If no clinics found, try without the array-contains filter
         if (clinics.length === 0) {
           console.log("No exact matches found, fetching all clinics");
@@ -231,6 +235,7 @@ const ClinicRecommender = ({ treatmentType, onClinicSelect }) => {
             id: doc.id,
             ...doc.data(),
           }));
+          console.log("Fallback query clinics found:", clinics.length);
         }
         
         console.log("Fetched clinics:", clinics);
@@ -239,18 +244,23 @@ const ClinicRecommender = ({ treatmentType, onClinicSelect }) => {
         if (clinics.length === 0) {
           console.log("No clinics found in database, using fallback data");
           const type = effectiveTreatmentType.toLowerCase();
-          clinics = FALLBACK_CLINICS[type] || FALLBACK_CLINICS.general;
+          // Ensure we return at most 3 clinics from the fallback data
+          const fallbackClinics = FALLBACK_CLINICS[type] || FALLBACK_CLINICS.general;
+          console.log("Fallback clinics available:", fallbackClinics.length);
+          clinics = fallbackClinics.slice(0, RESULTS_LIMIT);
         }
         
-        // Take the top 3 clinics for recommendation
-        setFilteredClinics(clinics.slice(0, 3));
+        // Ensure we only return up to 3 clinics
+        console.log("Final clinics count before setting state:", clinics.length);
+        setFilteredClinics(clinics.slice(0, RESULTS_LIMIT));
       } catch (error) {
         console.error('Error fetching clinics:', error);
         // Use fallback data on error
         console.log("Using fallback clinics due to error");
         const type = effectiveTreatmentType.toLowerCase();
-        // Get only 3 clinics from fallback data
-        setFilteredClinics((FALLBACK_CLINICS[type] || FALLBACK_CLINICS.general).slice(0, 3));
+        const fallbackClinics = FALLBACK_CLINICS[type] || FALLBACK_CLINICS.general;
+        console.log("Error fallback clinics count:", fallbackClinics.length);
+        setFilteredClinics(fallbackClinics.slice(0, RESULTS_LIMIT));
       } finally {
         setLoading('clinics', false);
       }
@@ -258,6 +268,12 @@ const ClinicRecommender = ({ treatmentType, onClinicSelect }) => {
 
     fetchClinics();
   }, [effectiveTreatmentType, setLoading]);
+
+  // Log state value when it changes
+  useEffect(() => {
+    console.log("filteredClinics state updated:", filteredClinics.length, "clinics");
+    console.log("Clinic details:", filteredClinics);
+  }, [filteredClinics]);
 
   const handleBookNow = (clinic) => {
     if (onClinicSelect) {
@@ -276,7 +292,8 @@ const ClinicRecommender = ({ treatmentType, onClinicSelect }) => {
   return (
     <Box sx={{ p: 2 }}>
       <Typography variant="h5" gutterBottom>
-        Recommended Clinics for {effectiveTreatmentType}
+        Recommended Clinics for {effectiveTreatmentType} 
+        (Found: {filteredClinics.length})
       </Typography>
       {filteredClinics.length > 0 ? (
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2 }}>
@@ -318,7 +335,7 @@ const ClinicRecommender = ({ treatmentType, onClinicSelect }) => {
         </Box>
       ) : (
         <Typography>
-          No clinics found for {effectiveTreatmentType}. Please try a different treatment type.
+          No suitable clinics were found for {effectiveTreatmentType}. Please try different parameters.
         </Typography>
       )}
     </Box>

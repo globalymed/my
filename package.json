@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@emotion/react": "^11.11.0",
     "@emotion/styled": "^11.11.0",
     "@google/generative-ai": "^0.24.0",
@@ -9,7 +10,9 @@
     "@reduxjs/toolkit": "^2.5.1",
     "@types/uuid": "^9.0.2",
     "date-fns": "^4.1.0",
+    "dotenv": "^17.0.1",
     "firebase": "^9.23.0",
+    "firebase-admin": "^13.4.0",
     "immer": "^10.0.2",
     "libphonenumber-js": "^1.11.19",
     "node-fetch": "^2.7.0",
@@ -19,7 +22,7 @@
     "react-router-dom": "^6.3.0",
     "react-scripts": "^5.0.1",
     "redux": "^5.0.1",
-    "sib-api-v3-sdk": "^8.5.0",
+    "resend": "^4.0.1",
     "uuid": "^9.0.0",
     "zustand": "^4.5.6"
   },
@@ -32,7 +35,11 @@
     "postbuild:dashboard": "if not exist public\\patient-dashboard-ai mkdir public\\patient-dashboard-ai && xcopy /E /Y patient-dashboard-ai\\dist\\* public\\patient-dashboard-ai\\",
     "predeploy:all": "npm install && cd patient-dashboard-ai && npm install",
     "deploy:all": "npm run build:dashboard && npm run postbuild:dashboard && npm run build",
-    "setup-dev": "node scripts/setup-dev-environment.js"
+    "setup-dev": "node scripts/setup-dev-environment.js",
+    "security:audit": "node scripts/security-migration.js",
+    "env:validate": "node scripts/validate-env.js",
+    "env:setup": "cp .env.example .env && echo 'Created .env file from template. Please update with your actual values.'",
+    "security:check": "npm run security:audit && npm run env:validate"
   },
   "browserslist": {
     "production": [
