@@ -1,13 +1,11 @@
 import React, { Suspense, useEffect } from 'react';
 import { Route, Routes, Navigate, useNavigate } from 'react-router-dom';
-import { CircularProgress, Box, Button, Typography, useTheme, Paper } from '@mui/material';
+import { CircularProgress, Box, Button, Typography, useTheme } from '@mui/material';
 import { db } from '../firebase';
 import Layout from './Layout';
 import { ThemeProvider } from '@mui/material/styles';
 import theme from '../theme';
 import LogoutIcon from '@mui/icons-material/Logout';
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import DashboardIcon from '@mui/icons-material/Dashboard';
 
 const AIChat = React.lazy(() => import('./AIChatFinal'));
 const ClinicRecommender = React.lazy(() => import('./ClinicRecommenderEnhanced'));
@@ -20,123 +18,90 @@ const DoctorLoginPage = React.lazy(() => import('./DoctorLoginPage'));
 const HomePage = React.lazy(() => import('./HomePage'));
 const DashboardPage = React.lazy(() => import('./DashboardPage'));
 
-// Doctor Dashboard Landing Page Component
-const DoctorDashboardLanding = () => {
+// Create a component to render the doctor dashboard in an iframe
+const DoctorDashboard = () => {
   const navigate = useNavigate();
   const theme = useTheme();
-  
+  const HEADER_HEIGHT = 64;
+
   // Function to handle doctor logout
   const handleLogout = () => {
-    // Remove doctor data from localStorage
     localStorage.removeItem('doctorData');
     localStorage.removeItem('rememberedDoctorEmail');
-    localStorage.removeItem('dashboardOpened'); // Clear the flag on logout
-    
-    // Redirect to doctor login page
     navigate('/doctor-login');
   };
-  
-  // Function to open doctor dashboard in new tab
-  const openDoctorDashboard = () => {
-    window.open('https://dd-green-kappa.vercel.app/', '_blank', 'noopener,noreferrer');
-  };
-  
-  // Auto-open dashboard on component mount (only once per session)
-  useEffect(() => {
-    // Check if dashboard has already been opened in this session
-    const hasOpened = localStorage.getItem('dashboardOpened');
-    
-    if (!hasOpened) {
-      // Mark as opened and open the dashboard
-      localStorage.setItem('dashboardOpened', 'true');
-      openDoctorDashboard();
-    }
-  }, []);
-  
+
   return (
-    <Box sx={{ 
-      width: '100%', 
-      height: 'calc(100vh - 150px)', 
-      display: 'flex', 
-      flexDirection: 'column', 
-      justifyContent: 'center',
-      alignItems: 'center',
-      p: 3
-    }}>
-      <Paper 
-        elevation={3} 
-        sx={{ 
-          p: 4, 
-          maxWidth: 600, 
-          width: '100%',
-          textAlign: 'center',
-          borderRadius: 2
+    <>
+      {/* Top header bar*/}
+      <Box
+        sx={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: HEADER_HEIGHT,
+          bgcolor: 'transparent',
+          color: theme.palette.text.primary,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'flex-start',
+          px: 3,
+          zIndex: 20,
+          boxShadow: 'none',
         }}
       >
-        {/* Header */}
-        <Box 
-          sx={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center',
-            mb: 3,
-            pb: 2,
-            borderBottom: `1px solid ${theme.palette.divider}`
+        <Typography variant="h6" sx={{ fontWeight: 'bold', ml: 2 }}>
+          Doctor Dashboard
+        </Typography>
+      </Box>
+
+      {/* Dashboard iframe below header, above bottom bar */}
+      <Box
+        sx={{
+          position: 'fixed',
+          top: HEADER_HEIGHT,
+          left: 0,
+          width: '100vw',
+          height: `calc(100vh - ${HEADER_HEIGHT}px)`, // remove BOTTOM_BAR_HEIGHT
+          zIndex: 10,
+          backgroundColor: theme.palette.background.default,
+        }}
+      >
+        <iframe
+          src="https://dd-green-kappa.vercel.app/"
+          title="Doctor Dashboard"
+          style={{
+            width: '100vw',
+            height: '100%',
+            border: 'none',
+            borderRadius: 0,
+            margin: 0,
+            padding: 0,
+            display: 'block',
           }}
-        >
-          <Typography variant="h5" sx={{ fontWeight: 'bold', color: theme.palette.primary.main }}>
-            Doctor Portal
-          </Typography>
-          <Button 
-            variant="outlined" 
-            color="error"
-            onClick={handleLogout}
-            startIcon={<LogoutIcon />}
-            sx={{ 
-              textTransform: 'none'
-            }}
-          >
-            Logout
-          </Button>
-        </Box>
-        
-        {/* Welcome Message */}
-        <Box sx={{ mb: 4 }}>
-          <DashboardIcon sx={{ fontSize: 64, color: theme.palette.primary.main, mb: 2 }} />
-          <Typography variant="h6" gutterBottom>
-            Welcome to Your Doctor Dashboard
-          </Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-            Access your complete dashboard with patient management, appointments, and medical records.
-          </Typography>
-        </Box>
-        
-        {/* Dashboard Access Button */}
-        <Button 
-          variant="contained" 
-          size="large"
-          onClick={openDoctorDashboard}
-          startIcon={<OpenInNewIcon />}
-          sx={{ 
-            textTransform: 'none',
-            py: 1.5,
-            px: 4,
-            fontSize: '1.1rem',
-            fontWeight: 'bold'
-          }}
-        >
-          Open Doctor Dashboard
-        </Button>
-        
-        {/* Additional Info */}
-        <Box sx={{ mt: 3, p: 2, bgcolor: theme.palette.grey[50], borderRadius: 1 }}>
-          <Typography variant="body2" color="text.secondary">
-            The dashboard will open in a new tab for the best experience. 
-            Keep this tab open to maintain your session.
-          </Typography>
-        </Box>
-      </Paper>
-    </Box>
+        />
+      </Box>
+
+      {/* Logout button fixed at bottom left, no bar */}
+      <Button
+        variant="contained"
+        color="error"
+        onClick={handleLogout}
+        startIcon={<LogoutIcon />}
+        sx={{
+          position: 'fixed',
+          left: 75, 
+          bottom: 40,
+          zIndex: 30,
+          textTransform: 'none',
+          bgcolor: 'error.main',
+          '&:hover': { bgcolor: 'error.dark' }
+        }}
+      >
+        Logout
+      </Button>
+    </>
   );
 };
 
@@ -173,6 +138,7 @@ const DoctorProtectedRoute = ({ children }) => {
     }
   }, [isDoctorAuthenticated, navigate]);
   
+  // Directly render children (doctor dashboard) if authenticated without any intermediary redirect
   return isDoctorAuthenticated ? children : <LoadingFallback />;
 };
 
@@ -199,9 +165,10 @@ const DoctorAuthRoute = ({ children }) => {
   useEffect(() => {
     // If doctor is already authenticated, redirect to doctor dashboard
     if (isDoctorAuthenticated) {
-      navigate('/doctor-dashboard');
+      // Direct redirect to bypass SPA routing issues
+      window.location.href = '/doctor-dashboard';
     }
-  }, [isDoctorAuthenticated, navigate]);
+  }, [isDoctorAuthenticated]);
   
   return !isDoctorAuthenticated ? children : <LoadingFallback />;
 };
@@ -235,7 +202,7 @@ const App = () => {
             <Route path="/book-now" element={<AppointmentBookingPage />} />
             <Route path="/doctor-dashboard" element={
               <DoctorProtectedRoute>
-                <DoctorDashboardLanding />
+                <DoctorDashboard />
               </DoctorProtectedRoute>
             } />
             <Route path="/login" element={
@@ -248,11 +215,11 @@ const App = () => {
                 <DoctorLoginPage />
               </DoctorAuthRoute>
             } />
-            <Route path="/patient-dashboard-ai" element={
-              <ProtectedRoute>
-                <DashboardPage />
-              </ProtectedRoute>
-            } />
+              <Route path="/patient-dashboard-ai" element={
+    <ProtectedRoute>
+      <DashboardPage />
+    </ProtectedRoute>
+  } />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Layout>
