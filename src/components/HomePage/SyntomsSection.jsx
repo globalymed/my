@@ -73,10 +73,16 @@ const SymptomChecker = () => {
         the right specialists
       </Typography>
 
-      <Grid container spacing={4} justifyContent="center">
+      <Grid container gap={4} justifyContent="center">
         {/* Chat Box */}
-        <Grid item xs={12} md={6}>
-         <AIChatFinal />
+        <Grid item xs={12} md={6} sx={
+          {
+            backgroundColor: 'white',
+            borderRadius: 2,
+            // overflowY: 'auto'
+          }
+        }>
+          <AIChatFinal />
         </Grid>
 
         {/* Feature Points */}
