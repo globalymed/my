@@ -25,7 +25,7 @@ const HeroSection = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Optional: Validate form here
+        // Validate form here
         const newErrors = {};
         Object.entries(formData).forEach(([key, value]) => {
             if (!value) newErrors[key] = 'This field is required';
@@ -36,40 +36,41 @@ const HeroSection = () => {
             return;
         }
 
-        const url = 'https://script.google.com/macros/s/AKfycbzgrOfQ3KHRn1gcDQcsjkg78KpaZFp70EpxawYeSmMnaDJQ7rJXw6Su6hreZKjouIH9/exec';
+        // Clear any previous errors
+        setErrors({});
 
+        const url = 'https://script.google.com/macros/s/AKfycbytFG2TljAlxci0n51NsPy9LoLlNWyD43UD3r30XFXUH0uZPjk38HaV0RGq6Cv0_T9EMA/exec';
+
+        // Create form data
         const formBody = new URLSearchParams(formData).toString();
 
         try {
-            const response = await fetch(url, {
+            // Use no-cors mode for Google Apps Script
+            await fetch(url, {
                 method: 'POST',
+                mode: 'no-cors',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
                 body: formBody,
             });
 
-            const data = await response.json();
-
-            if (data.result === 'success') {
-                alert('Submitted successfully!');
-                setFormData({
-                    name: '',
-                    country: '',
-                    treatment: '',
-                    problem: '',
-                    phone: ''
-                });
-            } else {
-                alert('Something went wrong. Try again later.');
-            }
+            // With no-cors mode, we can't read the response
+            // So we assume success if no error is thrown
+            alert('Form submitted successfully! We will contact you soon.');
+            setFormData({
+                name: '',
+                country: '',
+                treatment: '',
+                problem: '',
+                phone: ''
+            });
 
         } catch (err) {
             console.error('Error submitting form:', err);
-            alert('Submission failed.');
+            alert('Submission failed. Please check your internet connection and try again.');
         }
     };
-
     const chipData = [
         { label: '10000+ patients served', icon: <PeopleAlt fontSize="small" /> },
         { label: '4.9 ⭐ average rating', icon: <Star fontSize="small" /> },
