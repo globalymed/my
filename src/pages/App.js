@@ -6,6 +6,7 @@ import Layout from './Layout';
 import { ThemeProvider } from '@mui/material/styles';
 import theme from '../theme';
 import LogoutIcon from '@mui/icons-material/Logout';
+import ChatLayout from '../components/ChatLayout';
 
 const AIChat = React.lazy(() => import('../components/AIChatFinal'));
 const ClinicRecommender = React.lazy(() => import('../components/ClinicRecommenderEnhanced'));
@@ -158,55 +159,68 @@ const App = () => {
   return (
     <ThemeProvider theme={theme}>
       <Suspense fallback={<LoadingFallback />}>
-        <Layout>
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/dashboard" element={
-              <ProtectedRoute>
-                <DashboardPage />
-              </ProtectedRoute>
-            } />
-            <Route path="/chat" element={<AIChat />} />
-            <Route path="/recommend" element={<ClinicRecommender />} />
-            <Route path="/book" element={
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                <CalendarComponent />
-                <TimeSlotGrid />
-                <BookingConfirmationForm />
-              </Box>
-            } />
-            <Route path="/appointment-booking" element={
-              <ProtectedRoute>
-                <AppointmentBookingPage />
-              </ProtectedRoute>
-            } />
-            <Route path="/book-now" element={<AppointmentBookingPage />} />
-            <Route path="/doctor-dashboard" element={
-              <DoctorProtectedRoute>
-                <DoctorDashboard />
-              </DoctorProtectedRoute>
-            } />
-            <Route path="/login" element={
-              <AuthRoute>
-                <LoginPage />
-              </AuthRoute>
-            } />
-            <Route path="/doctor-login" element={
-              <DoctorAuthRoute>
-                <DoctorLoginPage />
-              </DoctorAuthRoute>
-            } />
-            <Route path="/patient-dashboard-ai" element={
-              <ProtectedRoute>
-                <DashboardPage />
-              </ProtectedRoute>
-            } />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Layout>
+        <Routes>
+          {/* Chat route with ChatLayout */}
+          <Route path="/chat" element={
+            <ChatLayout>
+              <AIChat />
+            </ChatLayout>
+          } />
+
+          {/* All other routes with default Layout */}
+          <Route path="/*" element={
+            <Layout>
+              <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/dashboard" element={
+                  <ProtectedRoute>
+                    <DashboardPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/chat" element={<AIChat />} />
+                <Route path="/recommend" element={<ClinicRecommender />} />
+                <Route path="/book" element={
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                    <CalendarComponent />
+                    <TimeSlotGrid />
+                    <BookingConfirmationForm />
+                  </Box>
+                } />
+                <Route path="/appointment-booking" element={
+                  <ProtectedRoute>
+                    <AppointmentBookingPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/book-now" element={<AppointmentBookingPage />} />
+                <Route path="/doctor-dashboard" element={
+                  <DoctorProtectedRoute>
+                    <DoctorDashboard />
+                  </DoctorProtectedRoute>
+                } />
+                <Route path="/login" element={
+                  <AuthRoute>
+                    <LoginPage />
+                  </AuthRoute>
+                } />
+                <Route path="/doctor-login" element={
+                  <DoctorAuthRoute>
+                    <DoctorLoginPage />
+                  </DoctorAuthRoute>
+                } />
+                <Route path="/patient-dashboard-ai" element={
+                  <ProtectedRoute>
+                    <DashboardPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </Layout>
+          } />
+        </Routes>
       </Suspense>
     </ThemeProvider>
   );
 };
+
 
 export default App;
