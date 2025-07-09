@@ -226,6 +226,7 @@ const Footer = () => {
               {socialLinks.map((item, index) => (
                 <IconButton
                   size="small"
+                  key={index}
                   sx={{
                     color: 'white',
                     // backgroundColor: 'white',

@@ -35,7 +35,7 @@ const DoctorDashboard = () => {
   };
 
   return (
-    <Box sx={{ width: '105%', height: 'calc(100vh - 150px)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+    <Box sx={{ width: '100%', height: 'calc(100vh - 150px)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
       {/* Logout header */}
       <Box
         sx={{

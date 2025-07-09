@@ -79,7 +79,10 @@ const SymptomChecker = () => {
           {
             backgroundColor: 'white',
             borderRadius: 2,
-            // overflowY: 'auto'
+            overflow: 'hidden',
+            maxHeight: '90vh',
+            overflowY: 'hidden',
+            background: 'linear-gradient(to bottom right, #ffffff, #fde2e4, #e0c3fc)',
           }
         }>
           <AIChatFinal />

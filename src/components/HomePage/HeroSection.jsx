@@ -94,41 +94,70 @@ const HeroSection = () => {
                         <Typography
                             variant="h3"
                             component="h1"
-                            sx={{ fontWeight: 700, fontSize: { xs: '2rem', md: '3rem' } }}
+                            sx={{
+                                fontWeight: 700, fontSize: { xs: '2rem', md: '3rem' }, textAlign: {
+                                    xs: 'center', md: 'left'
+                                }
+                            }}
                         >
                             World-Class Medical
                         </Typography>
                         <Typography
                             variant="h3"
                             component="h1"
-                            sx={{ fontWeight: 700, mb: 2, fontSize: { xs: '2rem', md: '3rem' }, color: "#333333" }}
+                            sx={{
+                                fontWeight: 700, mb: 2, fontSize: { xs: '2rem', md: '3rem' }, color: "#333333", textAlign: {
+                                    xs: 'center', md: 'left'
+                                }
+                            }}
                         >
                             Care Made Simple
                             & Affordable.
                         </Typography>
 
-                        <Typography sx={{ mb: 3, color: 'text.secondary', maxWidth: 450 }}>
+                        <Typography sx={{
+                            mb: 3, color: 'text.secondary', maxWidth: 450, textAlign: {
+                                xs: 'center', md: 'left'
+                            },
+                            mx: {
+                                xs: 'auto', md: 0
+                            },
+                        }}>
                             From diagnosis to travel – our AI assistant ensures effortless treatment planning in India's top hospitals.
                         </Typography>
 
                         {/* CTA Buttons */}
-                        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} mb={3}>
+                        <Stack
+                            direction={{ xs: 'column', sm: 'row' }}
+                            spacing={2}
+                            mb={3}
+                            sx={{
+                                alignItems: 'center',
+                                justifyContent: { xs: 'center', sm: 'flex-start' },
+                                mx: { xs: 'auto', md: 0 }, // center Stack on mobile
+                                width: { xs: '100%', sm: 'auto' }, // full width on mobile
+                            }}
+                        >
                             <Button
+                                fullWidth
                                 variant="outlined"
                                 sx={{
                                     backgroundColor: 'black',
                                     color: 'white',
                                     textTransform: 'none',
+                                    borderColor: 'black',
                                     '&:hover': {
                                         backgroundColor: '#333',
                                         borderColor: '#333',
                                     },
+                                    maxWidth: { xs: '300px', sm: 'none' },
                                 }}
                             >
                                 Chat With AI Agent
                             </Button>
 
                             <Button
+                                fullWidth
                                 variant="outlined"
                                 sx={{
                                     backgroundColor: 'white',
@@ -139,14 +168,25 @@ const HeroSection = () => {
                                         backgroundColor: '#f0f0f0',
                                         borderColor: '#0f0f0f',
                                     },
+                                    maxWidth: { xs: '300px', sm: 'none' },
                                 }}
                             >
                                 Compare Treatment Cost
                             </Button>
                         </Stack>
 
+
                         {/* Trust badges */}
-                        <Stack direction="row" gap={2} flexWrap="wrap" mb={3}>
+                        <Stack
+                            direction="row"
+                            gap={2}
+                            flexWrap="wrap"
+                            mb={3}
+                            sx={{
+                                alignContent: 'center',
+                                justifyContent: { xs: 'center', md: 'flex-start' }, // center on mobile
+                            }}
+                        >
                             {chipData.map((item) => (
                                 <Chip
                                     key={item.label}
@@ -163,10 +203,18 @@ const HeroSection = () => {
                         </Stack>
 
                         {/* Partner logos */}
-                        <Typography variant="caption" color="text.secondary" sx={{ mb: 1 }}>
+                        <Typography color="text.secondary"
+                            sx={{ mb: 1 }}
+                            textAlign={{ xs: 'center', md: 'left' }}
+                        >
                             Trusted by leading healthcare partners:
                         </Typography>
-                        <Stack direction="row" spacing={2} flexWrap="wrap">
+                        <Stack direction="row" spacing={2} flexWrap="wrap"
+                            sx={{
+                                alignContent: 'center',
+                                justifyContent: { xs: 'center', md: 'flex-start' }, // center on mobile
+                            }}
+                        >
                             {['Apollo', 'Fortis', 'Max', 'AIIMS'].map((name) => (
                                 <Chip
                                     key={name}

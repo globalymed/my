@@ -616,22 +616,70 @@ const AIChatFinal = () => {
     inputRef.current?.focus();
   };
 
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 600);
+
   return (
     <Box sx={{
       display: 'flex',
       flexDirection: 'column',
       justifyContent: 'flex-end',
-      minHeight: messages.length> 0 ? "85vh": "75vh",
-      maxHeight: '85vh',
+      minHeight: messages.length > 0 ? "85vh" : "fit",
+      minHeight: '85vh',
+      maxHeight: '100%',
       maxWidth: 800,
       mx: 'auto',
-      mb: 5,
+      // mb: 5,
       p: 1,
       sm: {
         px: 2,
       },
       gap: 2,
     }}>
+
+      {!isMobile && messages.length < 1 && (
+        <Box
+          sx={{
+            // minHeight: '100vh',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            textAlign: 'center',
+            padding: 4,
+          }}
+        >
+          {/* Logo Circle with "M" */}
+          <Avatar
+            sx={{
+              bgcolor: '#ccc',
+              width: 96,
+              height: 96,
+              fontSize: 40,
+              fontWeight: 'bold',
+              mb: 4,
+              color: '#000',
+            }}
+          >
+            M
+          </Avatar>
+
+          {/* Title */}
+          <Typography
+            variant="h4"
+            component="h1"
+            fontWeight="bold"
+            sx={{ mb: 1 }}
+          >
+            Welcome to MedYatra ✨
+          </Typography>
+
+          {/* Subtitle */}
+          <Typography variant="subtitle1" color="#000">
+            Empowering Your Health Journey With AI
+          </Typography>
+        </Box>
+      )}
+
       {/* Quick Action Code */}
       {messages.length < 1 && (
         <Box sx={{ mb: 2 }}>
@@ -706,7 +754,8 @@ const AIChatFinal = () => {
           border: '1px solid',
           borderColor: 'rgba(0, 0, 0, 0.08)',
           // bgcolor: '#000',
-          overflow: 'hidden',
+          overflowX: 'hidden',
+          overflowY: 'auto',
           minWidth: {
             xs: '275px',
             sm: '400px',
@@ -715,8 +764,7 @@ const AIChatFinal = () => {
           maxWidth: {
             xs: '320px',
             sm: 'none'
-          }
-
+          },
         }}
       >
         <Box
