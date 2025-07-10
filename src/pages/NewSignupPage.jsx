@@ -141,7 +141,7 @@ function SignupForm() {
     };
 
     return (
-        <Box sx={{ minHeight: '100vh', bgcolor: 'grey.50', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2 }}>
+        <Box sx={{ bgcolor: 'grey.50', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2 }}>
             <Paper elevation={3} sx={{ width: '100%', maxWidth: 1000, borderRadius: 3, overflow: 'hidden' }}>
                 {/* Header */}
                 <Box sx={{ textAlign: 'center', p: 4, pb: 2 }}>
