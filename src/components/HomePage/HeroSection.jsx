@@ -5,9 +5,11 @@ import {
     Verified,
 } from '@mui/icons-material';
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { countries } from './Countrylist.js';
 
 const HeroSection = () => {
+    const navigate = useNavigate();
 
     const [formData, setFormData] = useState({
         name: '',
@@ -81,7 +83,7 @@ const HeroSection = () => {
     return (
         <Box sx={{
             px: { xs: 2, md: 8 },
-            py:4,
+            py: 4,
             background: 'linear-gradient(to bottom right, #ffffff, #fde2e4, #e0c3fc)',
         }}>
             <Box maxWidth="lg" alignContent={"center"} mx="auto"
@@ -98,6 +100,7 @@ const HeroSection = () => {
                         <Typography
                             variant="h3"
                             component="h1"
+                            color='#000000'
                             sx={{
                                 fontWeight: 700, fontSize: { xs: '2rem', md: '3rem' }, textAlign: {
                                     xs: 'center', md: 'left'
@@ -145,14 +148,15 @@ const HeroSection = () => {
                             <Button
                                 fullWidth
                                 variant="outlined"
+                                onClick={() => navigate('/chat')}
                                 sx={{
-                                    backgroundColor: 'black',
+                                    backgroundColor: '#1D4645',
                                     color: 'white',
                                     textTransform: 'none',
-                                    borderColor: 'black',
+                                    borderColor: '#E0E0E0',
                                     '&:hover': {
                                         backgroundColor: '#333',
-                                        borderColor: '#333',
+                                        borderColor: '#E0E0E0',
                                     },
                                     maxWidth: { xs: '300px', sm: 'none' },
                                 }}
@@ -164,13 +168,13 @@ const HeroSection = () => {
                                 fullWidth
                                 variant="outlined"
                                 sx={{
-                                    backgroundColor: 'white',
-                                    color: 'black',
+                                    backgroundColor: '#FFFFFF',
+                                    color: '#1D4645',
                                     textTransform: 'none',
-                                    borderColor: 'black',
+                                    borderColor: '#1D4645',
                                     '&:hover': {
                                         backgroundColor: '#f0f0f0',
-                                        borderColor: '#0f0f0f',
+                                        borderColor: '#1D4645',
                                     },
                                     maxWidth: { xs: '300px', sm: 'none' },
                                 }}
@@ -198,7 +202,7 @@ const HeroSection = () => {
                                     label={item.label}
                                     variant="outlined"
                                     sx={{
-                                        backgroundColor: '#EEFAF9',
+                                        backgroundColor: '#F5F5F5',
                                         color: '#333333',
                                         borderColor: '#28938C'
                                     }}
@@ -207,12 +211,14 @@ const HeroSection = () => {
                         </Stack>
 
                         {/* Partner logos */}
-                        <Typography color="text.secondary"
+                        <Typography color="#666666"
                             sx={{ mb: 1 }}
                             textAlign={{ xs: 'center', md: 'left' }}
+                        
                         >
                             Trusted by leading healthcare partners:
                         </Typography>
+
                         <Stack direction="row" spacing={2} flexWrap="wrap"
                             sx={{
                                 alignContent: 'center',
@@ -226,7 +232,7 @@ const HeroSection = () => {
                                     variant="outlined"
                                     sx={{
                                         backgroundColor: '#EEFAF9',
-                                        color: 'black',
+                                        color: '#333333',
                                         borderColor: "#28938C"
                                     }}
                                 />

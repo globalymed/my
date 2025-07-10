@@ -714,7 +714,7 @@ const AIChatFinal = () => {
                     xs: '0.75rem',
                     md: '1rem',
                   },
-                  borderRadius: 8,
+                  borderRadius: 1,
                   border: '2px solid',
                   borderColor: 'rgba(0, 0, 0, 0.08)',
                   bgcolor: 'background.paper',

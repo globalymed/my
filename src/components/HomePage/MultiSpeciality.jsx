@@ -125,8 +125,8 @@ const TreatmentCard = ({ treatment }) => (
       <Divider sx={{ my: 2 }} />
 
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography fontWeight={700}>{treatment.fee}</Typography>
-        <Typography variant="caption" color="text.secondary">
+        <Typography color='#000' fontWeight={700}>{treatment.fee}</Typography>
+        <Typography variant="caption" color="#666666">
           Consultation fee
         </Typography>
       </Box>
@@ -136,8 +136,8 @@ const TreatmentCard = ({ treatment }) => (
         fullWidth
         sx={{
           mt: 'auto',
-          backgroundColor: '#000',
-          borderColor: '#000',
+          backgroundColor: '#1D4645',
+          borderColor: '#1D4645',
           color: '#fff',
           borderRadius: 2,
           textTransform: 'none',
@@ -182,7 +182,7 @@ const MultiSpecialitySection = () => {
                         fontWeight: 600,
                         color: '#333333',
                         backgroundColor: '#fff',
-                        borderColor: '#333333',
+                        borderColor: '#999999',
                         '&:hover': {
                             backgroundColor: '#eee',
                             borderColor: '#333333',
