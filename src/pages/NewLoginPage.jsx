@@ -274,7 +274,7 @@ function LoginForm() {
             >
               Don't have an account?{' '}
               <Link
-                href="/signup"
+                href="/newSignup"
                 sx={{
                   color: '#4A90E2',
                   textDecoration: 'none',

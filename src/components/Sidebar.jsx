@@ -360,7 +360,9 @@ const Sidebar = () => {
                                             backgroundColor: '#444',
                                             border: 0,
                                         },
-                                    }}>
+                                    }}
+                                        onClick={() => navigate('/newSignup')}
+                                    >
                                         Sign Up
                                     </Button>
                                 </Box>

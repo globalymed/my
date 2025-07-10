@@ -8,6 +8,7 @@ import theme from '../theme';
 import LogoutIcon from '@mui/icons-material/Logout';
 import ChatLayout from '../components/ChatLayout';
 import NewLoginPage from './NewLoginPage.jsx';
+import NewSignupPage from './NewSignupPage.jsx';
 
 const AIChat = React.lazy(() => import('../components/AIChatFinal'));
 const ClinicRecommender = React.lazy(() => import('../components/ClinicRecommenderEnhanced'));
@@ -182,6 +183,7 @@ const App = () => {
                 } />
                 <Route path="/free-consultation" element={<FreeConsultation />} />
                 <Route path="/newLogin" element={<NewLoginPage />} />
+                <Route path="/newSignup" element={<NewSignupPage />} />
                 <Route path="/chat" element={<AIChat />} />
                 <Route path="/recommend" element={<ClinicRecommender />} />
                 <Route path="/book" element={
