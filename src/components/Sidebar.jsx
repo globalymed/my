@@ -53,7 +53,7 @@ const Sidebar = () => {
     // Modified navItems - Doctor Dashboard removed from main navigation
     const mainNavItems = [
         { name: 'Home', path: '/', icon: <HomeIcon /> },
-        { name: 'Free Consultation', path: '/consultation', icon: <ChatIcon /> },
+        { name: 'Free Consultation', path: '/free-consultation', icon: <ChatIcon /> },
         { name: 'Compare Cost', path: '/compare', icon: <InfoOutlinedIcon /> },
         { name: 'Plan Journey', path: '/plan', icon: <CalendarMonthIcon /> },
         { name: 'Treatment', path: '/treatment', icon: <DashboardIcon /> },
@@ -70,7 +70,7 @@ const Sidebar = () => {
                 setShowTreatmentsInfo(true);
             }
         },
-        { text: 'Free Consultation', icon: <SupportAgent />, path: '/consultation' },
+        { text: 'Free Consultation', icon: <SupportAgent />, path: '/free-consultation' },
         { text: 'AI Chat', icon: <ChatIcon />, path: '/chat' },
         { text: 'Compare cost', icon: <AttachMoney />, path: '/compare' },
         { text: 'Contact', icon: <Phone />, path: '/contact' },
