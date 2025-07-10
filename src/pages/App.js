@@ -7,6 +7,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import theme from '../theme';
 import LogoutIcon from '@mui/icons-material/Logout';
 import ChatLayout from '../components/ChatLayout';
+import NewLoginPage from './NewLoginPage.jsx';
 
 const AIChat = React.lazy(() => import('../components/AIChatFinal'));
 const ClinicRecommender = React.lazy(() => import('../components/ClinicRecommenderEnhanced'));
@@ -19,6 +20,7 @@ const DoctorLoginPage = React.lazy(() => import('../components/DoctorLoginPage')
 const HomePage = React.lazy(() => import('../components/HomePage.jsx'));
 const DashboardPage = React.lazy(() => import('../components/DashboardPage'));
 import FreeConsultation from './FreeConsultation.jsx';
+import { Login } from '@mui/icons-material';
 
 // Create a component to render the doctor dashboard in an iframe
 const DoctorDashboard = () => {
@@ -179,6 +181,7 @@ const App = () => {
                   </ProtectedRoute>
                 } />
                 <Route path="/free-consultation" element={<FreeConsultation />} />
+                <Route path="/newLogin" element={<NewLoginPage />} />
                 <Route path="/chat" element={<AIChat />} />
                 <Route path="/recommend" element={<ClinicRecommender />} />
                 <Route path="/book" element={

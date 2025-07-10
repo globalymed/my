@@ -329,19 +329,24 @@ const Sidebar = () => {
 
                                 {/* Right: Login & Sign Up */}
                                 <Box sx={{ display: 'flex', gap: 1 }}>
-                                    <Button variant="outlined" size="small" sx={{
-                                        color: '#000',
-                                        borderColor: '#fff',
-                                        backgroundColor: '#fff',
-                                        textTransform: 'none',
-                                        fontWeight: 500,
-                                        fontSize: '1rem',
-                                        border: 0,
-                                        '&:hover': {
-                                            backgroundColor: '#f0f0f0',
+                                    <Button
+                                        variant="outlined"
+                                        size="small"
+                                        sx={{
+                                            color: '#000',
+                                            borderColor: '#fff',
+                                            backgroundColor: '#fff',
+                                            textTransform: 'none',
+                                            fontWeight: 500,
+                                            fontSize: '1rem',
                                             border: 0,
-                                        },
-                                    }}>
+                                            '&:hover': {
+                                                backgroundColor: '#f0f0f0',
+                                                border: 0,
+                                            },
+                                        }}
+                                        onClick={() => navigate('/newLogin')}
+                                    >
                                         Login
                                     </Button>
                                     <Button variant="outlined" size="small" sx={{
