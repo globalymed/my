@@ -201,7 +201,7 @@ const LoginPage = () => {
         <CardContent sx={{ p: 4 }}>
           <LogoContainer>
             <img
-              src="/logo192.png"
+              src="/logo.png"
               alt="MedYatra Logo"
               style={{
                 width: isMobile ? 64 : 80,

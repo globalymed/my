@@ -68,7 +68,7 @@ const HomePage = () => {
 
 
   return (
-    <Box sx={{ py: 4 }}>
+    <Box sx={{ py:0 }}>
 
       <HeroSection />
 

@@ -79,7 +79,11 @@ const HeroSection = () => {
     ];
 
     return (
-        <Box sx={{ px: { xs: 2, md: 8 } }}>
+        <Box sx={{
+            px: { xs: 2, md: 8 },
+            py:4,
+            background: 'linear-gradient(to bottom right, #ffffff, #fde2e4, #e0c3fc)',
+        }}>
             <Box maxWidth="lg" alignContent={"center"} mx="auto"
                 sx={{
                     // px: { xs: 2, md: 8 },

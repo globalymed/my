@@ -39,7 +39,7 @@ const Layout = ({ children }) => {
         <Container
           maxWidth={false}
           disableGutters
-          sx={{ py: 3, px: 0 }}
+          sx={{ py: 0, px: 0 }}
         >
           {children}
         </Container>

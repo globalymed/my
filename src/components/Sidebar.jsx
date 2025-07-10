@@ -110,26 +110,18 @@ const Sidebar = () => {
                 borderBottom: '1px solid rgba(0,0,0,0.08)'
             }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Box
-                        sx={{
-                            width: 40,
-                            height: 40,
-                            borderRadius: '50%',
-                            overflow: 'hidden',
-                            backgroundColor: 'white',
+                    <Avatar
+                        src="/logo.png"
+                        alt="MedYatra Logo"
+                        sx={{ width: 40, height: 40, mr: 1 }}
+                        imgProps={{
+                            style: {
+                                objectFit: 'contain',
+                                objectPosition: 'center',
+                                transform: 'scale(1.5)', // zoom the image a bit
+                            },
                         }}
-                    >
-                        <img
-                            src="/logo192.png"
-                            alt="MedYatra Logo"
-                            style={{
-                                width: '100%',
-                                height: 'auto',
-                                objectFit: 'cover',
-                                objectPosition: 'top',
-                            }}
-                        />
-                    </Box>
+                    />
                     <Typography variant="h6" sx={{ fontWeight: 700, color: 'white' }}>
                         MedYatra
                     </Typography>
@@ -230,9 +222,16 @@ const Sidebar = () => {
                             </IconButton>
                             <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1, justifyContent: 'center' }}>
                                 <Avatar
-                                    src="/logo192.png"
+                                    src="/logo.png"
                                     alt="MedYatra Logo"
-                                    sx={{ width: 32, height: 32, mr: 1 }}
+                                    sx={{ width: 40, height: 40, mr: 1 }}
+                                    imgProps={{
+                                        style: {
+                                            objectFit: 'contain',
+                                            objectPosition: 'center',
+                                            transform: 'scale(1.5)', // zoom the image a bit
+                                        },
+                                    }}
                                 />
                                 <Typography variant="h6" component="div" sx={{ fontWeight: 700 }}>
                                     MedYatra
@@ -278,7 +277,18 @@ const Sidebar = () => {
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
                                 {/* Left: Logo + Title */}
                                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                    <Avatar src="/logo192.png" alt="MedYatra Logo" sx={{ width: 40, height: 40, mr: 1 }} />
+                                    <Avatar
+                                        src="/logo.png"
+                                        alt="MedYatra Logo"
+                                        sx={{ width: 40, height: 40, mr: 1 }}
+                                        imgProps={{
+                                            style: {
+                                                objectFit: 'contain',
+                                                objectPosition: 'center',
+                                                transform: 'scale(1.5)', // zoom the image a bit
+                                            },
+                                        }}
+                                    />
                                     <Box>
                                         <Typography
                                             variant="h6"
