@@ -23,6 +23,8 @@ const DashboardPage = React.lazy(() => import('../components/DashboardPage'));
 import FreeConsultation from './FreeConsultation.jsx';
 import ContactUs from './ContactUs.jsx';
 import { Login } from '@mui/icons-material';
+import Blog from './Blog.jsx';
+import BlogPostPage from './BlogPostPage.jsx';
 
 // Create a component to render the doctor dashboard in an iframe
 const DoctorDashboard = () => {
@@ -184,6 +186,8 @@ const App = () => {
                 } />
                 <Route path="/free-consultation" element={<FreeConsultation />} />
                 <Route path="/contact" element={<ContactUs />} />
+                <Route path="/treatment" element={<Blog />} />
+                <Route path="/treatment/:id" element={<BlogPostPage />} />
                 <Route path="/newLogin" element={<NewLoginPage />} />
                 <Route path="/newSignup" element={<NewSignupPage />} />
                 <Route path="/chat" element={<AIChat />} />

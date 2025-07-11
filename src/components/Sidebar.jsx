@@ -65,7 +65,7 @@ const Sidebar = () => {
     const menuItems = [
         { text: 'Home', icon: <HomeIcon />, path: '/' },
         {
-            text: 'Treatments', icon: <LocalHospital />, path: null, action: () => {
+            text: 'Treatments', icon: <LocalHospital />, path: '/treatment', action: () => {
                 console.log("clicked");
                 setShowTreatmentsInfo(true);
             }
