@@ -3,8 +3,8 @@ import { Box, Typography, Grid, Card, CardContent, CardMedia, Button, Chip, Divi
 
 const treatments = [
     {
-        name: "Journey To Parenthood with IVF",
-        subtitle: "IVF - Bringing Dreams to Life",
+        name: "IVF",
+        subtitle: "Journey To Parenthood with IVF",
         description:
             "Struggling to conceive? IVF is a proven method where eggs and sperm are combined in a lab, and embryos are implanted in the uterus.",
         types: [
@@ -14,12 +14,12 @@ const treatments = [
             "Genetic Testing",
             "Fertility Preservation",
         ],
-        fee: "₹XXX",
+        fee: "Free",
         tag: "Available Today",
-        image: "/doctors/doctor1.png",
+        image: "/doctors/ivf.png",
     },
     {
-        name: "Bald To Bold - Your Hair Comeback Starts Here",
+        name: "Hair Transplant",
         subtitle: "Regain Your Hair, Regain Confidence",
         description:
             "Hair transplant restores natural look using advanced FUE & FUT methods to move healthy follicles to balding areas.",
@@ -30,12 +30,12 @@ const treatments = [
             "Beard / Eyebrow Transplants",
             "Scalp Micropigmentation",
         ],
-        fee: "₹XXX",
+        fee: "Free",
         tag: "Available Today",
-        image: "/doctors/doctor2.png",
+        image: "/doctors/hair transplant.png",
     },
     {
-        name: "Smile Like You Mean It - Dental Care that Shines",
+        name: "Dental Care",
         subtitle: "Dental Care That Makes You Smile",
         description:
             "We connect you with expert dental care - from basic cleaning to full smile makeovers - using cutting-edge technology.",
@@ -46,12 +46,12 @@ const treatments = [
             "Smile Makeovers",
             "Full Mouth Rehab",
         ],
-        fee: "₹XXX",
+        fee: "Free",
         tag: "Available Today",
-        image: "/doctors/doctor3.png",
+        image: "/doctors/dental.png",
     },
     {
-        name: "Be Your Best Look - Elevate Your Beauty Game!",
+        name: "Cosmetic Procedures",
         subtitle: "Redefine Your With Confidence",
         description:
             "From subtle enhancements to full transformations, we help you access global cosmetic care with ease.",
@@ -62,9 +62,9 @@ const treatments = [
             "Facelift & Breast Procedures",
             "Plastic Surgery"
         ],
-        fee: "₹XXX",
+        fee: "Free",
         tag: "Available Today",
-        image: "/doctors/doctor4.png",
+        image: "/doctors/cosmetic.png",
     },
 ];
 
@@ -147,7 +147,7 @@ const TreatmentCard = ({ treatment }) => (
           },
         }}
       >
-        Book Now
+        Free Consultation
       </Button>
     </CardContent>
   </Card>
