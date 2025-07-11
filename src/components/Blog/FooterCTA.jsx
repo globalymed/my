@@ -23,7 +23,7 @@ const FooterCTA = () => {
           <Typography variant="h6" fontWeight="bold" mb={2}>
             Can't find what you need?
           </Typography>
-          <Typography color="grey.400" mb={3}>
+          <Typography color="#2f2f2f" mb={3}>
             Our medical advisors are here to help you navigate your healthcare journey.
           </Typography>
           <Button

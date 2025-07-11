@@ -36,7 +36,7 @@ const HeroSection = () => {
                         <Typography
                             variant="h3"
                             component="h1"
-                            color='#000000'
+                            color='#2f2f2f'
                             sx={{
                                 fontWeight: 700, fontSize: { xs: '2rem', md: '3rem' }, textAlign: {
                                     xs: 'center', md: 'left'
