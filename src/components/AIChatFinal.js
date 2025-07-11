@@ -622,23 +622,18 @@ const AIChatFinal = () => {
       display: 'flex',
       flexDirection: 'column',
       justifyContent: 'flex-end',
-      minHeight: messages.length > 0 ? "85vh" : "fit",
       minHeight: '85vh',
-      maxHeight: '100%',
+      maxHeight: '100vh',
       maxWidth: 800,
       mx: 'auto',
-      // mb: 5,
       p: 1,
-      sm: {
-        px: 2,
-      },
       gap: 2,
+      overflow: 'hidden',
     }}>
 
       {!isMobile && messages.length < 1 && (
         <Box
           sx={{
-            // minHeight: '100vh',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
@@ -737,7 +732,6 @@ const AIChatFinal = () => {
                 </Box>
                 {action.text}
               </Button>
-
             ))}
           </Box>
         </Box>
@@ -746,15 +740,13 @@ const AIChatFinal = () => {
       <Paper
         elevation={0}
         sx={{
-          // flexGrow: 1,
           display: 'flex',
           flexDirection: 'column',
           borderRadius: 2,
           border: '1px solid',
           borderColor: 'rgba(0, 0, 0, 0.08)',
-          // bgcolor: '#000',
           overflowX: 'hidden',
-          overflowY: 'auto',
+          overflowY: 'hidden',
           minWidth: {
             xs: '275px',
             sm: '400px',
@@ -764,6 +756,7 @@ const AIChatFinal = () => {
             xs: '320px',
             sm: 'none'
           },
+          maxHeight: '100%',
         }}
       >
         <Box
@@ -771,18 +764,29 @@ const AIChatFinal = () => {
           sx={{
             flexGrow: 1,
             overflowY: 'auto',
-            overflowX: 'auto',
+            overflowX: 'hidden',
             px: messages.length >= 1 ? 3 : 1,
             py: messages.length >= 1 ? 3 : 0,
             display: 'flex',
             flexDirection: 'column',
             gap: 2,
+            maxHeight: 'calc(100vh - 200px)',
+            '&::-webkit-scrollbar': {
+              width: '8px',
+            },
+            '&::-webkit-scrollbar-track': {
+              background: '#f1f1f1',
+              borderRadius: '4px',
+            },
+            '&::-webkit-scrollbar-thumb': {
+              background: '#c1c1c1',
+              borderRadius: '4px',
+              '&:hover': {
+                background: '#a8a8a8',
+              },
+            },
           }}
         >
-          {/* <Typography sx={{ whiteSpace: 'nowrap', width: '1200px' }}>
-            Long content that doesn't wrap
-          </Typography> */}
-
           {messages.map((message, index) => (
             <Box
               key={index}
@@ -793,7 +797,6 @@ const AIChatFinal = () => {
                 flexDirection: message.sender === 'user' ? 'row-reverse' : 'row',
                 alignItems: 'flex-start',
                 gap: 1.5,
-                // overflowY: 'auto'
               }}
             >
               <Avatar
@@ -853,7 +856,6 @@ const AIChatFinal = () => {
                 >
                   {message.text}
                 </Typography>
-
 
                 {message.sender === 'ai' && message.showCalendar && (
                   <Box
@@ -919,6 +921,213 @@ const AIChatFinal = () => {
               </Paper>
             </Box>
           )}
+
+          {/* CLINIC RECOMMENDATIONS MOVED INSIDE CHAT CONTAINER */}
+          {showRecommendations && bestClinic && (
+            <Box sx={{ 
+              mt: 2, 
+              p: 2, 
+              bgcolor: 'background.paper', 
+              borderRadius: 3, 
+              boxShadow: theme.shadows[1],
+              border: '1px solid',
+              borderColor: 'rgba(0, 0, 0, 0.08)',
+              alignSelf: 'flex-start',
+              width: '100%'
+            }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                <InfoOutlined fontSize="small" color="action" />
+                <Typography variant="body2" color="text.secondary">
+                  Based on your symptoms and availability, here are the best clinics for your needs
+                </Typography>
+              </Box>
+
+              {bestClinic.map((clinic, index) => (
+                <Card 
+                  key={clinic.id || index} 
+                  sx={{ 
+                    mb: 2, 
+                    overflow: 'hidden', 
+                    borderRadius: 2, 
+                    boxShadow: theme.shadows[1],
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease-in-out',
+                    '&:hover': {
+                      boxShadow: theme.shadows[3],
+                      transform: 'translateY(-2px)'
+                    }
+                  }}
+                  onClick={() => navigate('/book-now', {
+                    state: {
+                      clinic: clinic,
+                      date: extractedInfo.appointmentDate || '',
+                      time: '10:00 AM'
+                    }
+                  })}
+                >
+                  <Box sx={{ position: 'relative', height: 120, overflow: 'hidden' }}>
+                    <Box
+                      component="img"
+                      src={clinic.image}
+                      alt={clinic.name}
+                      sx={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                      }}
+                    />
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        p: 1.5,
+                        background: 'linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0))',
+                        color: 'white',
+                      }}
+                    >
+                      <Typography variant="subtitle1" fontWeight="bold">{clinic.name}</Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <Rating value={clinic.rating} precision={0.1} readOnly size="small" />
+                        <Typography variant="body2">{clinic.rating || 'N/A'}</Typography>
+                      </Box>
+                    </Box>
+                  </Box>
+                  <CardContent sx={{ p: 2 }}>
+                    <Box sx={{ mb: 1.5 }}>
+                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                        📍 {clinic.location} {clinic.distance ? `(${clinic.distance})` : ''}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                        ⏰ {clinic.availability || 'Contact for availability'}
+                      </Typography>
+                    </Box>
+
+                    <Typography variant="subtitle2" gutterBottom>
+                      Services:
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1.5 }}>
+                      {(clinic.services || []).slice(0, 3).map((service, index) => (
+                        <Chip
+                          key={index}
+                          label={service}
+                          size="small"
+                          sx={{
+                            bgcolor: `${theme.palette.primary.main}15`,
+                            color: theme.palette.primary.main,
+                            fontWeight: 500
+                          }}
+                        />
+                      ))}
+                    </Box>
+
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1, mt: 2 }}>
+                      <Button
+                        size="small"
+                        color="primary"
+                        startIcon={<InfoOutlined />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowExpandedClinicDetails(!showExpandedClinicDetails);
+                        }}
+                      >
+                        Details
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="contained"
+                        color="primary"
+                        sx={{
+                          bgcolor: '#1D4645',
+                          '&:hover': {
+                            bgcolor: '#143433',
+                          }
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate('/book-now', {
+                            state: {
+                              clinic: clinic,
+                              date: extractedInfo.appointmentDate || '',
+                              time: '10:00 AM'
+                            }
+                          });
+                        }}
+                      >
+                        Book Now
+                      </Button>
+                    </Box>
+                  </CardContent>
+
+                  {showExpandedClinicDetails && (
+                    <Box sx={{ p: 2, bgcolor: 'rgba(0, 0, 0, 0.02)', borderTop: '1px solid rgba(0, 0, 0, 0.08)' }}>
+                      <Typography variant="h6" gutterBottom>Detailed Information</Typography>
+
+                      <Box sx={{ mb: 3 }}>
+                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>About the Clinic</Typography>
+                        <Typography variant="body2" paragraph>
+                          {clinic.name} is a premier healthcare facility specializing in {treatmentDetails?.treatmentType || 'specialized'} treatments.
+                          With state-of-the-art equipment and experienced specialists, they provide personalized care
+                          tailored to each patient's unique needs.
+                        </Typography>
+                      </Box>
+
+                      <Box sx={{ mb: 3 }}>
+                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>Doctors</Typography>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                            <Avatar sx={{ width: 50, height: 50 }}>{clinic.name ? clinic.name[0] : 'D'}</Avatar>
+                            <Box>
+                              <Typography variant="subtitle2">Dr. Rajesh Sharma</Typography>
+                              <Typography variant="body2" color="text.secondary">Senior Specialist, 15+ years experience</Typography>
+                            </Box>
+                          </Box>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                            <Avatar sx={{ width: 50, height: 50 }}>A</Avatar>
+                            <Box>
+                              <Typography variant="subtitle2">Dr. Anjali Patel</Typography>
+                              <Typography variant="body2" color="text.secondary">Consultant, 10+ years experience</Typography>
+                            </Box>
+                          </Box>
+                        </Box>
+                      </Box>
+
+                      <Box>
+                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>Facilities</Typography>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                          <Chip label="Modern Equipment" size="small" />
+                          <Chip label="Comfortable Waiting Area" size="small" />
+                          <Chip label="Digital Records" size="small" />
+                          <Chip label="Lab Services" size="small" />
+                          <Chip label="Pharmacy" size="small" />
+                        </Box>
+                      </Box>
+                    </Box>
+                  )}
+                </Card>
+              ))}
+
+              <Button
+                variant="outlined"
+                fullWidth
+                color="primary"
+                size="small"
+                onClick={() => setShowTreatmentsInfo(true)}
+                sx={{ 
+                  mt: 1,
+                  borderColor: '#1D4645',
+                  color: '#1D4645',
+                  '&:hover': {
+                    borderColor: '#143433',
+                    bgcolor: 'rgba(29, 70, 69, 0.05)'
+                  }
+                }}
+              >
+                View Treatment Information
+              </Button>
+            </Box>
+          )}
         </Box>
 
         <Divider />
@@ -936,7 +1145,8 @@ const AIChatFinal = () => {
             },
             alignItems: 'center',
             gap: 1,
-            bgcolor: 'rgba(0, 0, 0, 0.02)'
+            bgcolor: 'rgba(0, 0, 0, 0.02)',
+            flexShrink: 0,
           }}
         >
           <TextField
@@ -980,7 +1190,7 @@ const AIChatFinal = () => {
             }}
           >
             <Tooltip title="Send message">
-              <span> {/* Span wrapper to allow tooltip on disabled button */}
+              <span>
                 <IconButton
                   type="submit"
                   color="primary"
@@ -989,7 +1199,7 @@ const AIChatFinal = () => {
                     bgcolor: '#1D4645',
                     color: 'white',
                     '&:hover': {
-                      bgcolor: '#111',
+                      bgcolor: '#143433',
                     },
                     '&.Mui-disabled': {
                       bgcolor: 'rgba(0, 0, 0, 0.12)',
@@ -1003,7 +1213,7 @@ const AIChatFinal = () => {
             </Tooltip>
 
             <Tooltip title="Voice input (coming soon)">
-              <span> {/* Span wrapper to allow tooltip even if button is conditionally disabled */}
+              <span>
                 <IconButton
                   sx={{
                     bgcolor: 'background.paper',
@@ -1022,159 +1232,6 @@ const AIChatFinal = () => {
           </Box>
         </Box>
       </Paper>
-
-      {/* Clinic recommendations section */}
-      {showRecommendations && bestClinic && (
-        <Box sx={{ mt: 3, p: 3, bgcolor: 'background.paper', borderRadius: 3, boxShadow: theme.shadows[1] }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-            <InfoOutlined fontSize="small" color="action" />
-            <Typography variant="body2" color="text.secondary">
-              Based on your symptoms and availability, here are the best clinics for your needs
-            </Typography>
-          </Box>
-
-          {bestClinic.map((clinic, index) => (
-            <Card key={clinic.id || index} sx={{ mb: 3, overflow: 'hidden', borderRadius: 2, boxShadow: theme.shadows[2] }}>
-              <Box sx={{ position: 'relative', height: 180, overflow: 'hidden' }}>
-                <Box
-                  component="img"
-                  src={clinic.image}
-                  alt={clinic.name}
-                  sx={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                  }}
-                />
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    p: 2,
-                    background: 'linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0))',
-                    color: 'white',
-                  }}
-                >
-                  <Typography variant="h6" fontWeight="bold">{clinic.name}</Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <Rating value={clinic.rating} precision={0.1} readOnly size="small" />
-                    <Typography variant="body2">{clinic.rating || 'N/A'}</Typography>
-                  </Box>
-                </Box>
-              </Box>
-              <CardContent>
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Location: {clinic.location} {clinic.distance ? `(${clinic.distance})` : ''}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Availability: {clinic.availability || 'Contact for availability'}
-                  </Typography>
-                </Box>
-
-                <Typography variant="subtitle2" gutterBottom>
-                  Services:
-                </Typography>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-                  {(clinic.services || []).map((service, index) => (
-                    <Chip
-                      key={index}
-                      label={service}
-                      size="small"
-                      sx={{
-                        bgcolor: `${theme.palette.primary.main}15`,
-                        color: theme.palette.primary.main,
-                        fontWeight: 500
-                      }}
-                    />
-                  ))}
-                </Box>
-
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Button
-                    color="primary"
-                    startIcon={<InfoOutlined />}
-                    onClick={() => setShowExpandedClinicDetails(!showExpandedClinicDetails)}
-                  >
-                    {showExpandedClinicDetails ? 'Less' : 'More'}
-                  </Button>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={() => navigate('/book-now', {
-                      state: {
-                        clinic: clinic,
-                        date: extractedInfo.appointmentDate || '',
-                        time: '10:00 AM' // Default time, can be changed later
-                      }
-                    })}
-                  >
-                    Book Now
-                  </Button>
-                </Box>
-              </CardContent>
-
-              {showExpandedClinicDetails && (
-                <Box sx={{ p: 2, bgcolor: 'rgba(0, 0, 0, 0.02)', borderTop: '1px solid rgba(0, 0, 0, 0.08)' }}>
-                  <Typography variant="h6" gutterBottom>Detailed Information</Typography>
-
-                  <Box sx={{ mb: 3 }}>
-                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>About the Clinic</Typography>
-                    <Typography variant="body2" paragraph>
-                      {clinic.name} is a premier healthcare facility specializing in {treatmentDetails?.treatmentType || 'specialized'} treatments.
-                      With state-of-the-art equipment and experienced specialists, they provide personalized care
-                      tailored to each patient's unique needs.
-                    </Typography>
-                  </Box>
-
-                  <Box sx={{ mb: 3 }}>
-                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>Doctors</Typography>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Avatar sx={{ width: 50, height: 50 }}>{clinic.name ? clinic.name[0] : 'D'}</Avatar>
-                        <Box>
-                          <Typography variant="subtitle2">Dr. Rajesh Sharma</Typography>
-                          <Typography variant="body2" color="text.secondary">Senior Specialist, 15+ years experience</Typography>
-                        </Box>
-                      </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Avatar sx={{ width: 50, height: 50 }}>A</Avatar>
-                        <Box>
-                          <Typography variant="subtitle2">Dr. Anjali Patel</Typography>
-                          <Typography variant="body2" color="text.secondary">Consultant, 10+ years experience</Typography>
-                        </Box>
-                      </Box>
-                    </Box>
-                  </Box>
-
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>Facilities</Typography>
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                      <Chip label="Modern Equipment" size="small" />
-                      <Chip label="Comfortable Waiting Area" size="small" />
-                      <Chip label="Digital Records" size="small" />
-                      <Chip label="Lab Services" size="small" />
-                      <Chip label="Pharmacy" size="small" />
-                    </Box>
-                  </Box>
-                </Box>
-              )}
-            </Card>
-          ))}
-
-          <Button
-            variant="contained"
-            fullWidth
-            color="primary"
-            onClick={() => setShowTreatmentsInfo(true)}
-            sx={{ mt: 2 }}
-          >
-            View Treatment Information
-          </Button>
-        </Box>
-      )}
 
       {/* Render TreatmentsInfo dialog when showTreatmentsInfo is true */}
       <TreatmentsInfo
