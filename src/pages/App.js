@@ -21,6 +21,7 @@ const DoctorLoginPage = React.lazy(() => import('../components/DoctorLoginPage')
 const HomePage = React.lazy(() => import('../components/HomePage.jsx'));
 const DashboardPage = React.lazy(() => import('../components/DashboardPage'));
 import FreeConsultation from './FreeConsultation.jsx';
+import ContactUs from './ContactUs.jsx';
 import { Login } from '@mui/icons-material';
 
 // Create a component to render the doctor dashboard in an iframe
@@ -182,6 +183,7 @@ const App = () => {
                   </ProtectedRoute>
                 } />
                 <Route path="/free-consultation" element={<FreeConsultation />} />
+                <Route path="/contact" element={<ContactUs />} />
                 <Route path="/newLogin" element={<NewLoginPage />} />
                 <Route path="/newSignup" element={<NewSignupPage />} />
                 <Route path="/chat" element={<AIChat />} />

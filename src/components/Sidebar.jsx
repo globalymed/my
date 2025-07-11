@@ -57,7 +57,7 @@ const Sidebar = () => {
         { name: 'Compare Cost', path: '/compare', icon: <InfoOutlinedIcon /> },
         { name: 'Plan Journey', path: '/plan', icon: <CalendarMonthIcon /> },
         { name: 'Treatment', path: '/treatment', icon: <DashboardIcon /> },
-        { name: 'Contacts', path: '/contacts' },
+        { name: 'Contact Us', path: '/contact' },
         { name: 'Doctor? Here!', path: '/doctors' }
     ];
 
@@ -73,7 +73,7 @@ const Sidebar = () => {
         { text: 'Free Consultation', icon: <SupportAgent />, path: '/free-consultation' },
         { text: 'AI Chat', icon: <ChatIcon />, path: '/chat' },
         { text: 'Compare cost', icon: <AttachMoney />, path: '/compare' },
-        { text: 'Contact', icon: <Phone />, path: '/contact' },
+        { text: 'Contact Us', icon: <Phone />, path: '/contact' },
         { text: 'Dashboard', icon: <Dashboard />, path: '/login' },
         { text: 'Logout', icon: <Logout />, path: '/logout' },
     ];
