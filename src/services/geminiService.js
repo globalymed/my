@@ -1,9 +1,14 @@
 // Direct API approach for Gemini
-const API_KEY = process.env.REACT_APP_GEMINI_API_KEY || "AIzaSyArjTDiaJOVP2wYoyKELb5nIuBVtXBWVoM";
+const API_KEY = process.env.REACT_APP_GEMINI_API_KEY;
 const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash-001:generateContent?key=${API_KEY}`;
 
 // Add debugging to check if API key is available
 console.log("Gemini API Key available:", !!API_KEY);
+
+// Validate API key is set
+if (!API_KEY) {
+  console.error('REACT_APP_GEMINI_API_KEY is not set in environment variables');
+}
 
 // Function to create a chat session with Gemini
 export const createChatSession = () => {

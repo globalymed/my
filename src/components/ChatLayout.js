@@ -15,6 +15,7 @@ import {
     Toolbar,
     Divider,
 } from '@mui/material';
+
 import {
     Home as HomeIcon,
     LocalHospital as HospitalIcon,
@@ -26,7 +27,8 @@ import {
     SupportAgent,
     Menu as MenuIcon,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    Logout
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import AIChatFinal from './AIChatFinal';
@@ -44,6 +46,7 @@ const ChatLayout = ({ children }) => {
     const [mobileOpen, setMobileOpen] = React.useState(false);
     const [chatKey, setChatKey] = React.useState(0);
     const [showTreatmentsInfo, setShowTreatmentsInfo] = useState(false);
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
 
     const menuItems = [
         {
@@ -64,6 +67,7 @@ const ChatLayout = ({ children }) => {
         { text: 'Compare cost', icon: <AttachMoney />, path: '/compare' },
         { text: 'Contact', icon: <PhoneIcon />, path: '/contact' },
         { text: 'Dashboard', icon: <Dashboard />, path: '/login' },
+        { text: 'Logout', icon: <Logout />, path: '/logout' },
     ];
 
     const handleNavigation = (path) => {
@@ -208,7 +212,8 @@ const ChatLayout = ({ children }) => {
                     flexDirection: 'column',
                     height: '100vh',
                     overflow: 'hidden',
-                    bgcolor: '#F2F1EB'
+                    // bgcolor: '#F2F1EB',
+                    background: 'linear-gradient(to bottom right, #ffffff, #fde2e4, #e0c3fc)',
                 }}
             >
                 {/* Header */}
@@ -221,7 +226,7 @@ const ChatLayout = ({ children }) => {
                         },
                         alignItems: 'center',
                         p: 2,
-                        bgcolor: '#F2F1EB',
+                        // bgcolor: '#F2F1EB',
                         minHeight: 64,
                     }}
                 >
@@ -267,11 +272,13 @@ const ChatLayout = ({ children }) => {
                         maxWidth: '800px',
                         mx: 'auto',
                         width: '100%',
-                        p: 3,
+                        px: 3,
+                        py: 1,
                         overflowX: 'hidden',
                         overflowY: 'hidden',
                         mb: 2,
-                        backgroundColor: '#F2F1EB',
+                        // backgroundColor: '#F2F1EB',
+                        // background: 'linear-gradient(to bottom right, #ffffff, #fde2e4, #e0c3fc)',
                     }}
                 >
                     <AIChatFinal key={chatKey} />

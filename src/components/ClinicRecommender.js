@@ -296,40 +296,43 @@ const ClinicRecommender = ({ treatmentType, onClinicSelect }) => {
         (Found: {filteredClinics.length})
       </Typography>
       {filteredClinics.length > 0 ? (
-        filteredClinics.map(clinic => (
-          <Card key={clinic.id} sx={{ mb: 2 }}>
-            <CardContent>
-              <Typography variant="h6">{clinic.name}</Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <Rating value={clinic.rating} readOnly />
-                <Typography variant="body2" sx={{ ml: 1 }}>
-                  ({clinic.rating})
-                </Typography>
-              </Box>
-              <Box sx={{ mb: 1 }}>
-                {clinic.services && clinic.services.map ? 
-                  clinic.services.map((service, index) => (
-                    <Chip 
-                      key={index} 
-                      label={service} 
-                      size="small" 
-                      sx={{ mr: 0.5, mb: 0.5 }}
-                      color={service.toLowerCase() === effectiveTreatmentType.toLowerCase() ? "primary" : "default"}
-                    />
-                  )) : 
-                  <Chip label="General" size="small" sx={{ mr: 0.5, mb: 0.5 }} />
-                }
-              </Box>
-              <Button 
-                variant="contained" 
-                color="primary"
-                onClick={() => handleBookNow(clinic)}
-              >
-                Book Appointment
-              </Button>
-            </CardContent>
-          </Card>
-        ))
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2 }}>
+          {filteredClinics.map(clinic => (
+            <Card key={clinic.id} sx={{ mb: { xs: 2, md: 0 }, flex: 1, minWidth: { md: '30%' } }}>
+              <CardContent>
+                <Typography variant="h6">{clinic.name}</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <Rating value={clinic.rating} readOnly />
+                  <Typography variant="body2" sx={{ ml: 1 }}>
+                    ({clinic.rating})
+                  </Typography>
+                </Box>
+                <Box sx={{ mb: 1 }}>
+                  {clinic.services && clinic.services.map ? 
+                    clinic.services.map((service, index) => (
+                      <Chip 
+                        key={index} 
+                        label={service} 
+                        size="small" 
+                        sx={{ mr: 0.5, mb: 0.5 }}
+                        color={service.toLowerCase() === effectiveTreatmentType.toLowerCase() ? "primary" : "default"}
+                      />
+                    )) : 
+                    <Chip label="General" size="small" sx={{ mr: 0.5, mb: 0.5 }} />
+                  }
+                </Box>
+                <Button 
+                  variant="contained" 
+                  color="primary"
+                  onClick={() => handleBookNow(clinic)}
+                  fullWidth
+                >
+                  Book Appointment
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </Box>
       ) : (
         <Typography>
           No suitable clinics were found for {effectiveTreatmentType}. Please try different parameters.
