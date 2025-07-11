@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { addDays, format, isBefore, isAfter, startOfWeek, differenceInDays, startOfMonth, endOfMonth, getDaysInMonth, subMonths, addMonths, startOfDay } from 'date-fns';
 import {
   Paper,
   Typography,
@@ -11,7 +12,11 @@ import {
   Chip,
   Grid,
   styled,
-  useTheme
+  useTheme,
+  TextField,
+  FormControlLabel,
+  Checkbox,
+  Tooltip
 } from '@mui/material';
 import {
   ArrowBackIos,
@@ -22,6 +27,7 @@ import {
   RadioButtonUnchecked,
   FiberManualRecord
 } from '@mui/icons-material';
+import { getClinicsByTreatmentType, getAvailability } from '../firebase';
 
 // Styled components
 const CalendarContainer = styled(Paper)(({ theme }) => ({
@@ -46,10 +52,12 @@ const DropdownBox = styled(Box)(({ theme }) => ({
 }));
 
 const YearButton = styled(Button)(({ theme }) => ({
-  backgroundColor: theme.palette.primary.main,
-  color: theme.palette.primary.contrastText,
+  backgroundColor: 'white',
+  borderColor: '#ccc',
+  color: 'black',
   '&:hover': {
-    backgroundColor: theme.palette.primary.dark
+    backgroundColor: '#f0f0f0',
+    borderColor: '#aaa',
   },
   borderRadius: theme.spacing(1),
   textTransform: 'none',
@@ -57,10 +65,12 @@ const YearButton = styled(Button)(({ theme }) => ({
 }));
 
 const MonthButton = styled(Button)(({ theme }) => ({
-  backgroundColor: theme.palette.grey[100],
-  color: theme.palette.text.primary,
+  backgroundColor: 'white',
+  borderColor: '#ccc',
+  color: 'black',
   '&:hover': {
-    backgroundColor: theme.palette.grey[200]
+    backgroundColor: '#f0f0f0',
+    borderColor: '#aaa',
   },
   borderRadius: theme.spacing(1),
   textTransform: 'none',
@@ -158,7 +168,6 @@ const DayButton = styled(Button)(({ theme, status }) => {
   };
 });
 
-
 const LegendBox = styled(Box)(({ theme }) => ({
   display: 'flex',
   justifyContent: 'center',
@@ -184,16 +193,28 @@ const ChatCalendarComponent = ({ onSelectDate, treatmentType = null, location = 
   const [yearAnchorEl, setYearAnchorEl] = useState(null);
   const [monthAnchorEl, setMonthAnchorEl] = useState(null);
 
+  // Log the props for debugging
+  useEffect(() => {
+    console.log("Calendar component received props:", { 
+      treatmentType, 
+      location, 
+      treatmentTypeLower: treatmentType ? treatmentType.toLowerCase() : null 
+    });
+  }, [treatmentType, location]);
+
+  // Normalize treatmentType to lowercase for consistent database queries
+  const normalizedTreatmentType = treatmentType ? treatmentType.toLowerCase() : null;
+
   // Date utility functions
-  const formatDate = (date, format) => {
+  const formatDate = (date, formatStr) => {
     const d = new Date(date);
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
 
-    if (format === 'yyyy-MM-dd') return `${year}-${month}-${day}`;
-    if (format === 'd') return String(d.getDate());
-    if (format === 'EEE, MMM d, yyyy') {
+    if (formatStr === 'yyyy-MM-dd') return `${year}-${month}-${day}`;
+    if (formatStr === 'd') return String(d.getDate());
+    if (formatStr === 'EEE, MMM d, yyyy') {
       const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       return `${days[d.getDay()]}, ${months[d.getMonth()]} ${d.getDate()}, ${year}`;
@@ -213,44 +234,121 @@ const ChatCalendarComponent = ({ onSelectDate, treatmentType = null, location = 
     return isSameDay(date, new Date());
   };
 
-  const isBefore = (date1, date2) => {
-    return new Date(date1) < new Date(date2);
-  };
-
-  const startOfDay = (date) => {
-    const d = new Date(date);
-    d.setHours(0, 0, 0, 0);
-    return d;
-  };
-
-  const getDaysInMonth = (date) => {
-    const d = new Date(date);
-    return new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
-  };
-
   const getFirstDayOfMonth = (date) => {
     const d = new Date(date);
     return new Date(d.getFullYear(), d.getMonth(), 1).getDay();
   };
 
-  // Mock availability data - replace with your actual API calls
-  const mockAvailability = {
-    '2025-07-15': { available: true, count: 3 },
-    '2025-07-16': { available: false, count: 0 },
-    '2025-07-17': { available: true, count: 2 },
-    '2025-07-20': { available: true, count: 4 },
-    '2025-07-22': { available: false, count: 0 },
-    '2025-07-25': { available: true, count: 1 },
+  // Helper function to get availability for a specific date, treatment, and location
+  const getAvailabilityForDate = async (treatmentType, location, date) => {
+    try {
+      // Normalize treatment type to lowercase for database consistency
+      const normalizedType = treatmentType ? treatmentType.toLowerCase() : treatmentType;
+      
+      console.log(`Checking availability for ${normalizedType} in ${location} on ${date}`);
+      
+      // Step 1: Get clinics matching the treatment type and location
+      const clinics = await getClinicsByTreatmentType(normalizedType, location);
+      
+      if (!clinics || clinics.length === 0) {
+        console.log(`No clinics found for ${normalizedType} in ${location}`);
+        return [];
+      }
+      
+      // Step 2: Check each clinic's availability for the specified date
+      const availableClinics = [];
+      
+      for (const clinic of clinics) {
+        // Get availability data for this clinic on this date
+        const availabilityData = await getAvailability(clinic.id, date);
+        
+        // Check if the clinic is available on this date
+        if (availabilityData && 
+            availabilityData.length > 0 && 
+            availabilityData[0].availableDay) {
+          // Add clinic to available clinics list with its details
+          availableClinics.push({
+            ...clinic,
+            availabilitySlots: availabilityData[0].slots || []
+          });
+        }
+      }
+      
+      return availableClinics;
+    } catch (error) {
+      console.error(`Error checking availability for ${treatmentType} in ${location} on ${date}:`, error);
+      return []; // Return empty array on error
+    }
   };
 
-  // Simulate loading availability
+  // Fetch availability data for this month's calendar
   useEffect(() => {
-    setLoading(true);
-    setTimeout(() => {
-      setAvailableDates(mockAvailability);
-      setLoading(false);
-    }, 500);
-  }, [currentMonth, treatmentType, location]);
+    const fetchAvailability = async () => {
+      setLoading(true);
+
+      try {
+        console.log("Fetching clinic availability for:", normalizedTreatmentType, location);
+
+        // Default to general availability if no treatment type or location specified
+        const treatment = normalizedTreatmentType || 'general';
+        const locationFilter = location || 'all';
+
+        // Get all dates in the current month
+        const firstDay = startOfMonth(currentMonth);
+        const lastDay = endOfMonth(currentMonth);
+
+        // Create a map to store availability for all dates in the month
+        const newAvailableDates = {};
+
+        // Loop through all dates in the month
+        let currentDate = firstDay;
+        while (currentDate <= lastDay) {
+          const dateStr = format(currentDate, 'yyyy-MM-dd');
+
+          // Get clinics available on this date for the specified treatment and location
+          const clinicsAvailable = await getAvailabilityForDate(
+            treatment, 
+            locationFilter, 
+            dateStr
+          );
+
+          // Mark date as available if there are clinics
+          newAvailableDates[dateStr] = {
+            available: clinicsAvailable.length > 0,
+            clinics: clinicsAvailable,
+            count: clinicsAvailable.length
+          };
+
+          // Move to next day
+          currentDate = addDays(currentDate, 1);
+        }
+
+        setAvailableDates(newAvailableDates);
+        console.log("Availability data loaded:", newAvailableDates);
+      } catch (error) {
+        console.error("Error fetching availability:", error);
+        // Set all dates as available in case of error to prevent blocking
+        const newAvailableDates = {};
+        const daysInMonth = getDaysInMonth(currentMonth);
+
+        for (let i = 1; i <= daysInMonth; i++) {
+          const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), i);
+          const dateStr = format(date, 'yyyy-MM-dd');
+          newAvailableDates[dateStr] = {
+            available: true,
+            clinics: [],
+            count: 0
+          };
+        }
+
+        setAvailableDates(newAvailableDates);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAvailability();
+  }, [currentMonth, normalizedTreatmentType, location]);
 
   const years = Array.from({ length: 12 }, (_, i) => 2021 + i);
   const months = [
@@ -262,8 +360,15 @@ const ChatCalendarComponent = ({ onSelectDate, treatmentType = null, location = 
     if (isDateDisabled(date)) return;
 
     const formattedDate = formatDate(date, 'yyyy-MM-dd');
-    setSelectedDate(date);
-    onSelectDate && onSelectDate(formattedDate);
+    const dateInfo = availableDates[formattedDate];
+    
+    if (dateInfo && dateInfo.available) {
+      console.log("Selected available date:", formattedDate);
+      setSelectedDate(date);
+      onSelectDate && onSelectDate(formattedDate);
+    } else {
+      console.log("Selected unavailable date:", formattedDate);
+    }
   };
 
   const isDateDisabled = (date) => {
@@ -321,16 +426,32 @@ const ChatCalendarComponent = ({ onSelectDate, treatmentType = null, location = 
           const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), dayNumber);
           const status = getDateStatus(date);
           const disabled = isDateDisabled(date);
+          const formattedDate = formatDate(date, 'yyyy-MM-dd');
+          const dateInfo = availableDates[formattedDate];
+
+          // Create tooltip message
+          let tooltipText = "Loading availability...";
+          if (dateInfo) {
+            if (dateInfo.available) {
+              const clinicCount = dateInfo.count || 0;
+              tooltipText = `${clinicCount} clinic${clinicCount !== 1 ? 's' : ''} available for ${normalizedTreatmentType || 'treatment'} in ${location || 'this area'}`;
+            } else {
+              tooltipText = `No clinics available for ${normalizedTreatmentType || 'treatment'} in ${location || 'this area'} on this date`;
+            }
+          }
 
           days.push(
-            <DayButton
-              key={cellIndex}
-              status={status}
-              onClick={() => !disabled && handleDateClick(date)}
-              disabled={disabled}
-            >
-              {dayNumber}
-            </DayButton>
+            <Tooltip key={cellIndex} title={tooltipText}>
+              <span>
+                <DayButton
+                  status={status}
+                  onClick={() => !disabled && handleDateClick(date)}
+                  disabled={disabled}
+                >
+                  {dayNumber}
+                </DayButton>
+              </span>
+            </Tooltip>
           );
         } else {
           days.push(<Box key={cellIndex} sx={{ width: 40, height: 40 }} />);
@@ -352,21 +473,11 @@ const ChatCalendarComponent = ({ onSelectDate, treatmentType = null, location = 
       {/* Header */}
       <HeaderBox>
         <DropdownBox>
-
           {/* Month Dropdown */}
           <MonthButton
             variant='outlined'
             endIcon={<KeyboardArrowDown />}
             onClick={(e) => setMonthAnchorEl(e.currentTarget)}
-            sx={{
-              backgroundColor: 'white',
-              borderColor: '#ccc', // optional: make border subtle
-              color: 'black',       // text color contrast
-              '&:hover': {
-                backgroundColor: '#f0f0f0',
-                borderColor: '#aaa',
-              },
-            }}
           >
             {months[currentMonth.getMonth()]}
           </MonthButton>
@@ -393,21 +504,11 @@ const ChatCalendarComponent = ({ onSelectDate, treatmentType = null, location = 
             ))}
           </Menu>
 
-
           {/* Year Dropdown */}
           <YearButton
             variant="outlined"
             endIcon={<KeyboardArrowDown />}
             onClick={(e) => setYearAnchorEl(e.currentTarget)}
-            sx={{
-              backgroundColor: 'white',
-              borderColor: '#ccc', // optional: make border subtle
-              color: 'black',       // text color contrast
-              '&:hover': {
-                backgroundColor: '#f0f0f0',
-                borderColor: '#aaa',
-              },
-            }}
           >
             {currentMonth.getFullYear()}
           </YearButton>
@@ -433,7 +534,6 @@ const ChatCalendarComponent = ({ onSelectDate, treatmentType = null, location = 
               </MenuItem>
             ))}
           </Menu>
-
         </DropdownBox>
 
         {/* Navigation */}
@@ -441,19 +541,21 @@ const ChatCalendarComponent = ({ onSelectDate, treatmentType = null, location = 
           <IconButton
             onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))}
             size="small"
+            disabled={isBefore(subMonths(currentMonth, 1), today)}
           >
             <ArrowBackIos />
           </IconButton>
           <IconButton
             onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))}
             size="small"
+            disabled={differenceInDays(addMonths(currentMonth, 1), today) > 30}
           >
             <ArrowForwardIos />
           </IconButton>
         </Box>
       </HeaderBox>
 
-      {/* Days of week header - Fixed to start with Sunday */}
+      {/* Days of week header */}
       <DayHeader>
         {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
           <DayLabel key={day}>{day}</DayLabel>
@@ -515,11 +617,98 @@ const ChatCalendarComponent = ({ onSelectDate, treatmentType = null, location = 
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <CircularProgress size={24} />
-            <Typography variant="body2">Loading availability...</Typography>
+            <Typography variant="body2">Loading clinic availability...</Typography>
           </Box>
         </Box>
       )}
     </CalendarContainer>
+  );
+};
+
+const BookingConfirmationForm = ({ onSubmit }) => {
+  const [step, setStep] = useState(1);
+  const [formData, setFormData] = useState({
+    fullName: '',
+    phone: '',
+    reason: '',
+    insurance: false,
+    insuranceDetails: '',
+  });
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    const fieldValue = type === 'checkbox' ? checked : value;
+    setFormData((prevData) => ({ ...prevData, [name]: fieldValue }));
+  };
+
+  const handleNext = () => {
+    if (step === 1) {
+      // Validate required fields for step 1
+      if (!formData.fullName || !formData.phone) {
+        // Display error message or handle validation failure
+        return;
+      }
+    }
+    setStep((prevStep) => prevStep + 1);
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      {step === 1 && (
+        <>
+          <TextField
+            name="fullName"
+            label="Full Name"
+            value={formData.fullName}
+            onChange={handleChange}
+            required
+          />
+          <TextField
+            name="phone"
+            label="Phone Number"
+            value={formData.phone}
+            onChange={handleChange}
+            required
+          />
+          <Button onClick={handleNext}>Next</Button>
+        </>
+      )}
+      {step === 2 && (
+        <>
+          <TextField
+            name="reason"
+            label="Reason for Visit"
+            value={formData.reason}
+            onChange={handleChange}
+            required
+          />
+          <FormControlLabel
+            control={
+              <Checkbox
+                name="insurance"
+                checked={formData.insurance}
+                onChange={handleChange}
+              />
+            }
+            label="I have insurance"
+          />
+          {formData.insurance && (
+            <TextField
+              name="insuranceDetails"
+              label="Insurance Details"
+              value={formData.insuranceDetails}
+              onChange={handleChange}
+            />
+          )}
+          <Button type="submit">Confirm Booking</Button>
+        </>
+      )}
+    </form>
   );
 };
 

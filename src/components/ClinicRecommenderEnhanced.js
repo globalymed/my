@@ -212,6 +212,16 @@ const ClinicRecommenderEnhanced = ({ treatmentType, onClinicSelect }) => {
     }
   };
 
+  // Filter clinics based on search term
+  const filteredAndSearchedClinics = searchTerm
+    ? filteredClinics.filter(clinic => 
+        clinic.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (clinic.services && clinic.services.some(service => 
+          service.toLowerCase().includes(searchTerm.toLowerCase())
+        ))
+      )
+    : filteredClinics;
+
   useEffect(() => {
     const fetchClinics = async () => {
       if (!effectiveTreatmentType) {
@@ -313,16 +323,6 @@ const ClinicRecommenderEnhanced = ({ treatmentType, onClinicSelect }) => {
       navigate('/book', { state: { selectedClinic: clinic } });
     }
   };
-
-  // Filter clinics based on search term
-  const filteredAndSearchedClinics = searchTerm
-    ? filteredClinics.filter(clinic => 
-        clinic.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (clinic.services && clinic.services.some(service => 
-          service.toLowerCase().includes(searchTerm.toLowerCase())
-        ))
-      )
-    : filteredClinics;
 
   const getTreatmentTypeTitle = () => {
     const typeMap = {
