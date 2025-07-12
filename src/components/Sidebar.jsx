@@ -57,7 +57,7 @@ const Sidebar = () => {
         { name: 'Compare Cost', path: '/compare', icon: <InfoOutlinedIcon /> },
         { name: 'Plan Journey', path: '/plan', icon: <CalendarMonthIcon /> },
         { name: 'Treatment', path: '/treatment', icon: <DashboardIcon /> },
-        { name: 'Contacts', path: '/contacts' },
+        { name: 'Contact Us', path: '/contact' },
         { name: 'Doctor? Here!', path: '/doctors' }
     ];
 
@@ -65,7 +65,7 @@ const Sidebar = () => {
     const menuItems = [
         { text: 'Home', icon: <HomeIcon />, path: '/' },
         {
-            text: 'Treatments', icon: <LocalHospital />, path: null, action: () => {
+            text: 'Treatments', icon: <LocalHospital />, path: '/treatment', action: () => {
                 console.log("clicked");
                 setShowTreatmentsInfo(true);
             }
@@ -73,7 +73,7 @@ const Sidebar = () => {
         { text: 'Free Consultation', icon: <SupportAgent />, path: '/free-consultation' },
         { text: 'AI Chat', icon: <ChatIcon />, path: '/chat' },
         { text: 'Compare cost', icon: <AttachMoney />, path: '/compare' },
-        { text: 'Contact', icon: <Phone />, path: '/contact' },
+        { text: 'Contact Us', icon: <Phone />, path: '/contact' },
         { text: 'Dashboard', icon: <Dashboard />, path: '/login' },
         { text: 'Logout', icon: <Logout />, path: '/logout' },
     ];
@@ -266,6 +266,7 @@ const Sidebar = () => {
                                             boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
                                         },
                                     }}
+                                    onClick={() => navigate('/newLogin')}
                                 >
                                     Login
                                 </Button>
@@ -329,19 +330,24 @@ const Sidebar = () => {
 
                                 {/* Right: Login & Sign Up */}
                                 <Box sx={{ display: 'flex', gap: 1 }}>
-                                    <Button variant="outlined" size="small" sx={{
-                                        color: '#000',
-                                        borderColor: '#fff',
-                                        backgroundColor: '#fff',
-                                        textTransform: 'none',
-                                        fontWeight: 500,
-                                        fontSize: '1rem',
-                                        border: 0,
-                                        '&:hover': {
-                                            backgroundColor: '#f0f0f0',
+                                    <Button
+                                        variant="outlined"
+                                        size="small"
+                                        sx={{
+                                            color: '#000',
+                                            borderColor: '#fff',
+                                            backgroundColor: '#fff',
+                                            textTransform: 'none',
+                                            fontWeight: 500,
+                                            fontSize: '1rem',
                                             border: 0,
-                                        },
-                                    }}>
+                                            '&:hover': {
+                                                backgroundColor: '#f0f0f0',
+                                                border: 0,
+                                            },
+                                        }}
+                                        onClick={() => navigate('/newLogin')}
+                                    >
                                         Login
                                     </Button>
                                     <Button variant="outlined" size="small" sx={{
@@ -355,7 +361,9 @@ const Sidebar = () => {
                                             backgroundColor: '#444',
                                             border: 0,
                                         },
-                                    }}>
+                                    }}
+                                        onClick={() => navigate('/newSignup')}
+                                    >
                                         Sign Up
                                     </Button>
                                 </Box>
