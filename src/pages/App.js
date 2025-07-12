@@ -9,6 +9,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import ChatLayout from '../components/ChatLayout';
 import NewLoginPage from './NewLoginPage.jsx';
 import NewSignupPage from './NewSignupPage.jsx';
+import DoctorLoginPage from '../components/DoctorLoginPage';
 
 const AIChat = React.lazy(() => import('../components/AIChatFinal'));
 const ClinicRecommender = React.lazy(() => import('../components/ClinicRecommenderEnhanced'));
@@ -17,12 +18,10 @@ const TimeSlotGrid = React.lazy(() => import('../components/TimeSlotGrid'));
 const BookingConfirmationForm = React.lazy(() => import('../components/BookingConfirmationForm'));
 const AppointmentBookingPage = React.lazy(() => import('../components/AppointmentBookingPage'));
 const LoginPage = React.lazy(() => import('../components/LoginPage'));
-const DoctorLoginPage = React.lazy(() => import('../components/DoctorLoginPage'));
 const HomePage = React.lazy(() => import('../components/HomePage.jsx'));
 const DashboardPage = React.lazy(() => import('../components/DashboardPage'));
 import FreeConsultation from './FreeConsultation.jsx';
 import ContactUs from './ContactUs.jsx';
-import { Login } from '@mui/icons-material';
 import Blog from './Blog.jsx';
 import BlogPostPage from './BlogPostPage.jsx';
 
@@ -42,54 +41,39 @@ const DoctorDashboard = () => {
   };
 
   return (
-    <Box sx={{ width: '100%', height: 'calc(100vh - 150px)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-      {/* Logout header */}
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          p: 2,
-          bgcolor: theme.palette.primary.main,
-          color: 'white',
-          borderTopLeftRadius: '8px',
-          borderTopRightRadius: '8px',
-        }}
-      >
-        <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-          Doctor Dashboard
-        </Typography>
-        <Button
-          variant="contained"
-          color="error"
-          onClick={handleLogout}
-          startIcon={<LogoutIcon />}
-          sx={{
-            textTransform: 'none',
-            bgcolor: 'error.main',
-            '&:hover': {
-              bgcolor: 'error.dark',
-            }
-          }}
-        >
-          Logout
-        </Button>
-      </Box>
-
-      {/* Dashboard iframe */}
+    <Box sx={{ width: '100%', height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      {/* Dashboard iframe - now takes full height */}
       <iframe
-        src="https://preview--patient-dashboard-ai.lovable.app/"
+        src="https://dd-green-kappa.vercel.app/"
         title="Doctor Dashboard"
         style={{
           width: '100%',
           height: '100%',
           border: 'none',
-          borderBottomLeftRadius: '8px',
-          borderBottomRightRadius: '8px',
           boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-          justifyContent: 'center',
         }}
       />
+      
+      {/* Logout button positioned absolutely in bottom left */}
+      <Button
+        variant="contained"
+        color="error"
+        onClick={handleLogout}
+        startIcon={<LogoutIcon />}
+        sx={{
+          position: 'absolute',
+          bottom: '40px',
+          left: '70px',
+          textTransform: 'none',
+          bgcolor: 'error.main',
+          zIndex: 1000,
+          '&:hover': {
+            bgcolor: 'error.dark',
+          }
+        }}
+      >
+        Logout
+      </Button>
     </Box>
   );
 };
@@ -154,10 +138,9 @@ const DoctorAuthRoute = ({ children }) => {
   useEffect(() => {
     // If doctor is already authenticated, redirect to doctor dashboard
     if (isDoctorAuthenticated) {
-      // Direct redirect to bypass SPA routing issues
-      window.location.href = '/doctor-dashboard';
+      navigate('/doctor-dashboard');
     }
-  }, [isDoctorAuthenticated]);
+  }, [isDoctorAuthenticated, navigate]);
 
   return !isDoctorAuthenticated ? children : <LoadingFallback />;
 };
@@ -190,7 +173,6 @@ const App = () => {
                 <Route path="/treatment/:id" element={<BlogPostPage />} />
                 <Route path="/newLogin" element={<NewLoginPage />} />
                 <Route path="/newSignup" element={<NewSignupPage />} />
-                <Route path="/chat" element={<AIChat />} />
                 <Route path="/recommend" element={<ClinicRecommender />} />
                 <Route path="/book" element={
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -234,6 +216,5 @@ const App = () => {
     </ThemeProvider>
   );
 };
-
 
 export default App;
