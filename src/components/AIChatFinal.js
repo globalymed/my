@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  TextField, 
-  Button, 
-  Typography, 
-  Box, 
-  Paper, 
-  Avatar, 
-  Card, 
-  CardContent, 
+import {
+  TextField,
+  Button,
+  Typography,
+  Box,
+  Paper,
+  Avatar,
+  Card,
+  CardContent,
   CardMedia,
   Chip,
   Rating,
@@ -24,23 +24,26 @@ import { useNavigate } from 'react-router-dom';
 import './AIChat.css';
 import ClinicRecommender from './ClinicRecommenderEnhanced';
 import TreatmentsInfo from './TreatmentsInfo';
-import SendIcon from '@mui/icons-material/Send';
-import MicIcon from '@mui/icons-material/Mic';
-import SmartToyIcon from '@mui/icons-material/SmartToy';
-import PersonIcon from '@mui/icons-material/Person';
-import DeleteIcon from '@mui/icons-material/Delete';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { createChatSession, sendMessage, extractMedicalInfo, determineTreatmentType, generateCalendarResponse } from '../services/geminiService';
 import { getClinicsByTreatmentType, getAvailability } from '../firebase';
 import ChatCalendarComponent from './CalendarComponent';
 import { format } from 'date-fns';
+import {
+  LocalHospital as DentalIcon,
+  Face as HairIcon,
+  AutoAwesome as CosmeticIcon,
+  FamilyRestroom as FertilityIcon,
+  Send,
+  Mic,
+  SmartToy,
+  Person,
+  InfoOutlined
+} from '@mui/icons-material';
 
 const FALLBACK_RESPONSE = "I'd like to help you find the right specialist. Could you tell me more about your symptoms or what type of medical treatment you're looking for?";
 
 const AIChatFinal = () => {
-  const [messages, setMessages] = useState([
-    { text: "Hello! I'm your MedYatra AI assistant. We currently offer specialized treatments in four areas: Hair, Dental Care, Cosmetic Procedures, and IVF/Fertility. Please describe your symptoms or medical needs, and I'll help you find the right clinic.", sender: 'ai' }
-  ]);
+  const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
   const [loading, setLoading] = useState(false);
   const chatRef = useRef(null);
@@ -61,7 +64,35 @@ const AIChatFinal = () => {
   const [allParametersCollected, setAllParametersCollected] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
-  
+
+
+  const quickActions = [
+    {
+      icon: <DentalIcon />,
+      text: "I have dental problems",
+      type: "dental",
+      color: "#2196F3"
+    },
+    {
+      icon: <HairIcon />,
+      text: "I'm experiencing hair loss",
+      type: "hair",
+      color: "#FF9800"
+    },
+    {
+      icon: <CosmeticIcon />,
+      text: "I want cosmetic treatment",
+      type: "cosmetic",
+      color: "#E91E63"
+    },
+    {
+      icon: <FertilityIcon />,
+      text: "I need fertility consultation",
+      type: "fertility",
+      color: "#4CAF50"
+    }
+  ];
+
   const theme = useTheme();
   const navigate = useNavigate();
 
@@ -71,23 +102,23 @@ const AIChatFinal = () => {
       try {
         console.log("Initializing chat session");
         const session = await createChatSession();
-        
+
         if (session) {
-          console.log("Chat session initialized successfully");
+           console.log("Chat session initialized successfully");
           setChatSession(session);
         } else {
           console.error("Failed to initialize chat session - null session returned");
-          
+
           // Even though we don't have a chat session, we can still show the UI
           // We'll fall back to local processing when the user sends messages
         }
       } catch (error) {
         console.error("Error initializing chat session:", error);
-        
+
         // Even on error, we'll show the UI and use local fallbacks
       }
     };
-    
+
     initializeChatSession();
   }, []);
 
@@ -108,40 +139,40 @@ const AIChatFinal = () => {
   const addAIResponseWithCalendar = (response) => {
     // If we're dealing with hair issues but got a generic fallback,
     // override with a more specific hair loss response
-    if (response === FALLBACK_RESPONSE && 
-        (extractedInfo.medicalIssue?.toLowerCase().includes('hair') || 
-         detectHairIssue(inputValue))) {
+    if (response === FALLBACK_RESPONSE &&
+      (extractedInfo.medicalIssue?.toLowerCase().includes('hair') ||
+        detectHairIssue(inputValue))) {
       console.log("Detected hair issue, providing specialized response");
-      
+
       // Update extractedInfo
       setExtractedInfo(prev => ({
         ...prev,
         medicalIssue: 'hair loss',
         treatmentType: 'hair'
       }));
-      
+
       // Provide a specific response for hair issues
       response = "I understand you're experiencing hair loss. Our Hair specialists can help. Could you tell me which city you'd prefer for treatment?";
     }
-    
+
     // If we have medical issue and location but no date, show calendar with any message about dates
     if (extractedInfo.medicalIssue && extractedInfo.location && !extractedInfo.appointmentDate) {
       console.log("Location provided but no appointment date - showing calendar directly");
       setShowCalendar(true);
-      
-      // First check if the response is asking about dates
+
+          // First check if the response is asking about dates
       const isDateRequest = response.toLowerCase().includes("date") || 
                            response.toLowerCase().includes("appointment") || 
                            response.toLowerCase().includes("schedule") ||
                            response.toLowerCase().includes("when") ||
                            response.toLowerCase().includes("calendar");
-      
+
       if (isDateRequest) {
         // If it's a date request, use the original response but add the calendar
-        setMessages(prev => [...prev, { 
+        setMessages(prev => [...prev, {
           text: response,
-          sender: 'ai', 
-          showCalendar: true 
+          sender: 'ai',
+          showCalendar: true
         }]);
       } else {
         // If it's not asking about dates, override with a date request that includes the calendar
@@ -150,14 +181,14 @@ const AIChatFinal = () => {
 • Green dates indicate days when clinics are available
 • Red dates indicate days when no clinics are available
 • You can only select available (green) dates`;
-        
-        setMessages(prev => [...prev, { 
+
+        setMessages(prev => [...prev, {
           text: calendarMessage,
-          sender: 'ai', 
-          showCalendar: true 
+          sender: 'ai',
+          showCalendar: true
         }]);
       }
-      
+
       // Make sure to set this flag to show the calendar
       setShowCalendar(true);
     } else {
@@ -176,7 +207,7 @@ const AIChatFinal = () => {
 
   // Focus input field after sending a message
   useEffect(() => {
-    if (inputRef.current && !loading) {
+    if (inputRef.current && !loading && messages.length > 0) {
       inputRef.current.focus();
     }
   }, [loading, messages]);
@@ -189,7 +220,7 @@ const AIChatFinal = () => {
     if (isProcessing || (lastMessage && lastMessage.sender === 'ai')) {
       return;
     }
-    
+   
     const processConversation = async () => {
       try {
         // Set processing flag to prevent infinite loops
@@ -516,39 +547,6 @@ const AIChatFinal = () => {
     }
   };
 
-  const clearChat = () => {
-    // Reset chat to initial state
-    setMessages([
-      { text: "Hello! I'm your MedYatra AI assistant. We currently offer specialized treatments in four areas: Hair, Dental Care, Cosmetic Procedures, and IVF/Fertility. Please describe your symptoms or medical needs, and I'll help you find the right clinic.", sender: 'ai' }
-    ]);
-    setSelectedClinic(null);
-    setTreatmentDetails(null);
-    setBestClinic(null);
-    setShowExpandedClinicDetails(false);
-    setShowRecommendations(false);
-    setExtractedInfo({
-      medicalIssue: null,
-      location: null,
-      appointmentDate: null,
-      treatmentType: null
-    });
-    setAllParametersCollected(false);
-    
-    // Reinitialize chat session
-    const initializeChat = async () => {
-      try {
-        console.log("Reinitializing Gemini chat session...");
-        const session = await createChatSession();
-        console.log("Chat session reinitialized:", !!session);
-        setChatSession(session);
-      } catch (error) {
-        console.error("Failed to initialize chat session:", error);
-      }
-    };
-    
-    initializeChat();
-  };
-
   const selectBestClinic = async (treatmentType, location, appointmentDate) => {
     try {
       console.log(`Selecting best clinic for: ${treatmentType} in ${location} on ${appointmentDate}`);
@@ -612,158 +610,272 @@ const AIChatFinal = () => {
       return null;
     }
   };
+  const handleQuickAction = (action) => {
+    setInputValue(action.text);
+    inputRef.current?.focus();
+  };
+
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 600);
 
   return (
-    <Box sx={{ 
-      display: 'flex', 
-      flexDirection: 'column', 
-      height: '100%',
+    <Box sx={{
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'flex-end',
+      minHeight: '85vh',
+      maxHeight: '100vh',
       maxWidth: 800,
       mx: 'auto',
-      p: 2,
-      gap: 2
+      p: 1,
+      gap: 2,
+      overflow: 'hidden',
     }}>
-      <Paper 
-        elevation={0} 
-        sx={{ 
-          p: 2, 
-          display: 'flex', 
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          borderRadius: 3,
-          border: '1px solid',
-          borderColor: 'rgba(0, 0, 0, 0.08)',
-          bgcolor: 'background.paper'
-        }}
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Avatar 
-            sx={{ 
-              bgcolor: theme.palette.primary.main,
-              width: 48,
-              height: 48
-            }}
-          >
-            <SmartToyIcon />
-          </Avatar>
-          <Box>
-            <Typography variant="h5" component="h1" gutterBottom sx={{ fontWeight: 700, mb: 0.5 }}>
-              MedYatra AI Assistant
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Describe your symptoms and I'll help find the right specialist for you
-            </Typography>
-          </Box>
-        </Box>
-        <Tooltip title="Clear conversation">
-          <span>
-            <IconButton 
-              onClick={clearChat}
-              sx={{ 
-                bgcolor: 'rgba(255, 255, 255, 0.8)',
-                '&:hover': {
-                  bgcolor: 'rgba(255, 255, 255, 0.9)',
-                }
-              }}
-            >
-              <DeleteIcon />
-            </IconButton>
-          </span>
-        </Tooltip>
-      </Paper>
-      
-      <Paper 
-        elevation={0} 
-        sx={{ 
-          flexGrow: 1, 
-          display: 'flex', 
-          flexDirection: 'column',
-          borderRadius: 3,
-          border: '1px solid',
-          borderColor: 'rgba(0, 0, 0, 0.08)',
-          bgcolor: 'background.paper',
-          overflow: 'hidden'
-        }}
-      >
-        <Box 
-          ref={chatRef}
-          sx={{ 
-            flexGrow: 1, 
-            overflowY: 'auto', 
-            p: 3,
+
+      {!isMobile && messages.length < 1 && (
+        <Box
+          sx={{
             display: 'flex',
             flexDirection: 'column',
-            gap: 2
+            justifyContent: 'center',
+            alignItems: 'center',
+            textAlign: 'center',
+            padding: 4,
+          }}
+        >
+          {/* Logo Circle with "M" */}
+          <Avatar
+            sx={{
+              bgcolor: '#ccc',
+              width: 96,
+              height: 96,
+              fontSize: 40,
+              fontWeight: 'bold',
+              mb: 4,
+              color: '#000',
+            }}
+          >
+            M
+          </Avatar>
+
+          {/* Title */}
+          <Typography
+            variant="h4"
+            component="h1"
+            fontWeight="bold"
+            sx={{ mb: 1 }}
+          >
+            Welcome to MedYatra ✨
+          </Typography>
+
+          {/* Subtitle */}
+          <Typography variant="subtitle1" color="#000">
+            Empowering Your Health Journey With AI
+          </Typography>
+        </Box>
+      )}
+
+      {/* Quick Action Code */}
+      {messages.length < 1 && (
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="h6" sx={{
+            mb: 2,
+            color: '#1D4645',
+            fontWeight: 600,
+            textAlign: 'center',
+            fontSize: {
+              xs: '1rem',
+              md: '1.5rem'
+            }
+          }}>
+            How can I help you today?
+          </Typography>
+          <Box sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' },
+            gap: { xs: 1, sm: 2 },
+          }}>
+            {quickActions.map((action, index) => (
+              <Button
+                key={index}
+                variant="outlined"
+                onClick={() => handleQuickAction(action)}
+                sx={{
+                  px: {
+                    xs: 1,
+                    sm: 2,
+                  },
+                  fontSize: {
+                    xs: '0.75rem',
+                    md: '1rem',
+                  },
+                  borderRadius: 1,
+                  border: '2px solid',
+                  borderColor: 'rgba(0, 0, 0, 0.08)',
+                  bgcolor: 'background.paper',
+                  color: 'text.primary',
+                  textTransform: 'none',
+                  fontWeight: 500,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1.5,
+                  transition: 'all 0.2s ease-in-out',
+                  '&:hover': {
+                    borderColor: action.color,
+                    bgcolor: `${action.color}08`,
+                    transform: 'translateY(-2px)',
+                    boxShadow: theme.shadows[4],
+                  },
+                }}
+              >
+                <Box sx={{ color: action.color, display: 'flex' }}>
+                  {action.icon}
+                </Box>
+                {action.text}
+              </Button>
+            ))}
+          </Box>
+        </Box>
+      )}
+
+      <Paper
+        elevation={0}
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          borderRadius: 2,
+          border: '1px solid',
+          borderColor: 'rgba(0, 0, 0, 0.08)',
+          overflowX: 'hidden',
+          overflowY: 'hidden',
+          minWidth: {
+            xs: '275px',
+            sm: '400px',
+            lg: '600px'
+          },
+          maxWidth: {
+            xs: '320px',
+            sm: 'none'
+          },
+          maxHeight: '100%',
+        }}
+      >
+        <Box
+          ref={chatRef}
+          sx={{
+            flexGrow: 1,
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            px: messages.length >= 1 ? 3 : 1,
+            py: messages.length >= 1 ? 3 : 0,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
+            maxHeight: 'calc(100vh - 200px)',
+            '&::-webkit-scrollbar': {
+              width: '8px',
+            },
+            '&::-webkit-scrollbar-track': {
+              background: '#f1f1f1',
+              borderRadius: '4px',
+            },
+            '&::-webkit-scrollbar-thumb': {
+              background: '#c1c1c1',
+              borderRadius: '4px',
+              '&:hover': {
+                background: '#a8a8a8',
+              },
+            },
           }}
         >
           {messages.map((message, index) => (
-            <Box 
-              key={index} 
-              sx={{ 
+            <Box
+              key={index}
+              sx={{
                 alignSelf: message.sender === 'user' ? 'flex-end' : 'flex-start',
                 maxWidth: '80%',
                 display: 'flex',
                 flexDirection: message.sender === 'user' ? 'row-reverse' : 'row',
                 alignItems: 'flex-start',
-                gap: 1.5
+                gap: 1.5,
               }}
             >
-              <Avatar 
-                sx={{ 
-                  bgcolor: message.sender === 'user' ? theme.palette.secondary.main : theme.palette.primary.main,
+              <Avatar
+                sx={{
+                  bgcolor: '#1D4645',
                   width: 36,
-                  height: 36
+                  height: 36,
                 }}
               >
-                {message.sender === 'user' ? <PersonIcon /> : <SmartToyIcon />}
+                {message.sender === 'user' ? <Person /> : <SmartToy />}
               </Avatar>
-              <Paper 
+
+              <Paper
                 elevation={0}
-                sx={{ 
-                  p: 2, 
+                sx={{
+                  p: 2,
                   borderRadius: 3,
-                  bgcolor: message.sender === 'user' 
-                    ? `linear-gradient(135deg, ${theme.palette.secondary.main}, ${theme.palette.secondary.dark})`
-                    : theme.palette.background.default,
-                  color: message.sender === 'user' ? 'black' : 'text.primary',
+                  bgcolor:
+                    message.sender === 'user'
+                      ? 'linear-gradient(135deg, #1D4645, #1D4645)'
+                      : theme.palette.background.default,
+                  color: 'text.primary',
                   border: '1px solid',
-                  borderColor: message.sender === 'user' 
-                    ? theme.palette.secondary.dark 
-                    : 'rgba(0, 0, 0, 0.08)',
+                  borderColor:
+                    message.sender === 'user' ? '#1D4645' : 'rgba(0, 0, 0, 0.08)',
                   position: 'relative',
-                  '&::after': message.sender === 'user' ? {
-                    content: '""',
-                    position: 'absolute',
-                    top: 12,
-                    right: -8,
-                    width: 0,
-                    height: 0,
-                    border: '8px solid transparent',
-                    borderLeftColor: theme.palette.secondary.dark,
-                    borderRight: 0,
-                    marginRight: -8,
-                  } : {
-                    content: '""',
-                    position: 'absolute',
-                    top: 12,
-                    left: -8,
-                    width: 0,
-                    height: 0,
-                    border: '8px solid transparent',
-                    borderRightColor: theme.palette.background.default,
-                    borderLeft: 0,
-                    marginLeft: -8,
-                  }
+                  '&::after': message.sender === 'user'
+                    ? {
+                      content: '""',
+                      position: 'absolute',
+                      top: 12,
+                      right: -8,
+                      width: 0,
+                      height: 0,
+                      border: '8px solid transparent',
+                      borderLeftColor: '#1D4645',
+                      borderRight: 0,
+                      marginRight: -8,
+                    }
+                    : {
+                      content: '""',
+                      position: 'absolute',
+                      top: 12,
+                      left: -8,
+                      width: 0,
+                      height: 0,
+                      border: '8px solid transparent',
+                      borderRightColor: theme.palette.background.default,
+                      borderLeft: 0,
+                      marginLeft: -8,
+                    },
                 }}
               >
-                <Typography variant="body1">
+                <Typography
+                  variant="body1"
+                  sx={{ fontSize: '0.75rem' }}
+                >
                   {message.text}
                 </Typography>
+
                 {message.sender === 'ai' && message.showCalendar && (
-                  <Box mt={2} mb={1}>
-                    <ChatCalendarComponent 
-                      onSelectDate={handleDateSelect} 
-                      treatmentType={extractedInfo.treatmentType || determineTreatmentType(extractedInfo.medicalIssue)}
+                  <Box
+                    mt={2}
+                    mb={1}
+                    sx={{
+                      width: '100%',
+                      overflowX: 'auto',
+                      px: { xs: 0, sm: 1 },
+                      display: 'flex',
+                      justifyContent: { xs: 'center', sm: 'flex-start' },
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    <ChatCalendarComponent
+                      onSelectDate={handleDateSelect}
+                      treatmentType={
+                        extractedInfo.treatmentType ||
+                        determineTreatmentType(extractedInfo.medicalIssue)
+                      }
                       location={extractedInfo.location}
                     />
                   </Box>
@@ -771,28 +883,29 @@ const AIChatFinal = () => {
               </Paper>
             </Box>
           ))}
+
           {loading && (
-            <Box 
-              sx={{ 
+            <Box
+              sx={{
                 alignSelf: 'flex-start',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 1.5
+                gap: 1.5,
               }}
             >
-              <Avatar 
-                sx={{ 
-                  bgcolor: theme.palette.primary.main,
+              <Avatar
+                sx={{
+                  bgcolor: '#1D4645',
                   width: 36,
-                  height: 36
+                  height: 36,
                 }}
               >
-                <SmartToyIcon />
+                <SmartToy />
               </Avatar>
-              <Paper 
+              <Paper
                 elevation={0}
-                sx={{ 
-                  p: 2, 
+                sx={{
+                  p: 2,
                   borderRadius: 3,
                   bgcolor: theme.palette.background.default,
                   border: '1px solid',
@@ -808,18 +921,232 @@ const AIChatFinal = () => {
               </Paper>
             </Box>
           )}
+
+          {/* CLINIC RECOMMENDATIONS MOVED INSIDE CHAT CONTAINER */}
+          {showRecommendations && bestClinic && (
+            <Box sx={{ 
+              mt: 2, 
+              p: 2, 
+              bgcolor: 'background.paper', 
+              borderRadius: 3, 
+              boxShadow: theme.shadows[1],
+              border: '1px solid',
+              borderColor: 'rgba(0, 0, 0, 0.08)',
+              alignSelf: 'flex-start',
+              width: '100%'
+            }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                <InfoOutlined fontSize="small" color="action" />
+                <Typography variant="body2" color="text.secondary">
+                  Based on your symptoms and availability, here are the best clinics for your needs
+                </Typography>
+              </Box>
+
+              {bestClinic.map((clinic, index) => (
+                <Card 
+                  key={clinic.id || index} 
+                  sx={{ 
+                    mb: 2, 
+                    overflow: 'hidden', 
+                    borderRadius: 2, 
+                    boxShadow: theme.shadows[1],
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease-in-out',
+                    '&:hover': {
+                      boxShadow: theme.shadows[3],
+                      transform: 'translateY(-2px)'
+                    }
+                  }}
+                  onClick={() => navigate('/book-now', {
+                    state: {
+                      clinic: clinic,
+                      date: extractedInfo.appointmentDate || '',
+                      time: '10:00 AM'
+                    }
+                  })}
+                >
+                  <Box sx={{ position: 'relative', height: 120, overflow: 'hidden' }}>
+                    <Box
+                      component="img"
+                      src={clinic.image}
+                      alt={clinic.name}
+                      sx={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                      }}
+                    />
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        p: 1.5,
+                        background: 'linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0))',
+                        color: 'white',
+                      }}
+                    >
+                      <Typography variant="subtitle1" fontWeight="bold">{clinic.name}</Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <Rating value={clinic.rating} precision={0.1} readOnly size="small" />
+                        <Typography variant="body2">{clinic.rating || 'N/A'}</Typography>
+                      </Box>
+                    </Box>
+                  </Box>
+                  <CardContent sx={{ p: 2 }}>
+                    <Box sx={{ mb: 1.5 }}>
+                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                        📍 {clinic.location} {clinic.distance ? `(${clinic.distance})` : ''}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                        ⏰ {clinic.availability || 'Contact for availability'}
+                      </Typography>
+                    </Box>
+
+                    <Typography variant="subtitle2" gutterBottom>
+                      Services:
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1.5 }}>
+                      {(clinic.services || []).slice(0, 3).map((service, index) => (
+                        <Chip
+                          key={index}
+                          label={service}
+                          size="small"
+                          sx={{
+                            bgcolor: `${theme.palette.primary.main}15`,
+                            color: theme.palette.primary.main,
+                            fontWeight: 500
+                          }}
+                        />
+                      ))}
+                    </Box>
+
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1, mt: 2 }}>
+                      <Button
+                        size="small"
+                        color="primary"
+                        startIcon={<InfoOutlined />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowExpandedClinicDetails(!showExpandedClinicDetails);
+                        }}
+                      >
+                        Details
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="contained"
+                        color="primary"
+                        sx={{
+                          bgcolor: '#1D4645',
+                          '&:hover': {
+                            bgcolor: '#143433',
+                          }
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate('/book-now', {
+                            state: {
+                              clinic: clinic,
+                              date: extractedInfo.appointmentDate || '',
+                              time: '10:00 AM'
+                            }
+                          });
+                        }}
+                      >
+                        Book Now
+                      </Button>
+                    </Box>
+                  </CardContent>
+
+                  {showExpandedClinicDetails && (
+                    <Box sx={{ p: 2, bgcolor: 'rgba(0, 0, 0, 0.02)', borderTop: '1px solid rgba(0, 0, 0, 0.08)' }}>
+                      <Typography variant="h6" gutterBottom>Detailed Information</Typography>
+
+                      <Box sx={{ mb: 3 }}>
+                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>About the Clinic</Typography>
+                        <Typography variant="body2" paragraph>
+                          {clinic.name} is a premier healthcare facility specializing in {treatmentDetails?.treatmentType || 'specialized'} treatments.
+                          With state-of-the-art equipment and experienced specialists, they provide personalized care
+                          tailored to each patient's unique needs.
+                        </Typography>
+                      </Box>
+
+                      <Box sx={{ mb: 3 }}>
+                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>Doctors</Typography>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                            <Avatar sx={{ width: 50, height: 50 }}>{clinic.name ? clinic.name[0] : 'D'}</Avatar>
+                            <Box>
+                              <Typography variant="subtitle2">Dr. Rajesh Sharma</Typography>
+                              <Typography variant="body2" color="text.secondary">Senior Specialist, 15+ years experience</Typography>
+                            </Box>
+                          </Box>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                            <Avatar sx={{ width: 50, height: 50 }}>A</Avatar>
+                            <Box>
+                              <Typography variant="subtitle2">Dr. Anjali Patel</Typography>
+                              <Typography variant="body2" color="text.secondary">Consultant, 10+ years experience</Typography>
+                            </Box>
+                          </Box>
+                        </Box>
+                      </Box>
+
+                      <Box>
+                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>Facilities</Typography>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                          <Chip label="Modern Equipment" size="small" />
+                          <Chip label="Comfortable Waiting Area" size="small" />
+                          <Chip label="Digital Records" size="small" />
+                          <Chip label="Lab Services" size="small" />
+                          <Chip label="Pharmacy" size="small" />
+                        </Box>
+                      </Box>
+                    </Box>
+                  )}
+                </Card>
+              ))}
+
+              <Button
+                variant="outlined"
+                fullWidth
+                color="primary"
+                size="small"
+                onClick={() => setShowTreatmentsInfo(true)}
+                sx={{ 
+                  mt: 1,
+                  borderColor: '#1D4645',
+                  color: '#1D4645',
+                  '&:hover': {
+                    borderColor: '#143433',
+                    bgcolor: 'rgba(29, 70, 69, 0.05)'
+                  }
+                }}
+              >
+                View Treatment Information
+              </Button>
+            </Box>
+          )}
         </Box>
-        
+
         <Divider />
-        
-        <Box 
-          component="form" 
+
+        {/* Input Fields and Send Buttons */}
+        <Box
+          component="form"
           onSubmit={handleSubmit}
-          sx={{ 
-            p: 2, 
-            display: 'flex', 
+          sx={{
+            p: 2,
+            display: 'flex',
+            flexDirection: {
+              xs: 'column',
+              sm: 'row'
+            },
+            alignItems: 'center',
             gap: 1,
-            bgcolor: 'rgba(0, 0, 0, 0.02)'
+            bgcolor: 'rgba(0, 0, 0, 0.02)',
+            flexShrink: 0,
           }}
         >
           <TextField
@@ -831,211 +1158,85 @@ const AIChatFinal = () => {
             disabled={loading}
             inputRef={inputRef}
             InputProps={{
-              sx: { 
+              sx: {
                 borderRadius: 3,
                 bgcolor: 'background.paper',
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#1D4645',
+                },
+                '&:hover .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#1D4645',
+                },
+                '& input': {
+                  color: '#1D4645',
+                },
+                fontSize: '0.75rem',
+              },
+            }}
+            InputLabelProps={{
+              sx: {
+                color: '#1D4645',
                 '&.Mui-focused': {
-                  boxShadow: `0 0 0 2px ${theme.palette.primary.main}`
-                }
-              }
+                  color: '#1D4645',
+                },
+              },
             }}
           />
-          <Tooltip title="Send message">
-            <span> {/* Span wrapper to fix MUI Tooltip issue with disabled buttons */}
-              <IconButton 
-                type="submit" 
-                color="primary" 
-                disabled={!inputValue.trim() || loading}
-                sx={{ 
-                  bgcolor: theme.palette.primary.main,
-                  color: 'white',
-                  '&:hover': {
-                    bgcolor: theme.palette.primary.dark,
-                  },
-                  '&.Mui-disabled': {
-                    bgcolor: 'rgba(0, 0, 0, 0.12)',
-                    color: 'rgba(0, 0, 0, 0.26)',
-                  }
-                }}
-              >
-                <SendIcon />
-              </IconButton>
-            </span>
-          </Tooltip>
-          <Tooltip title="Voice input (coming soon)">
-            <span> {/* Span wrapper to fix MUI Tooltip issue */}
-              <IconButton 
-                color="primary"
-                sx={{ 
-                  bgcolor: 'background.paper',
-                  border: '1px solid',
-                  borderColor: 'rgba(0, 0, 0, 0.08)',
-                }}
-              >
-                <MicIcon />
-              </IconButton>
-            </span>
-          </Tooltip>
+          <Box
+            sx={{
+              display: 'flex',
+              gap: 1,
+              alignItems: 'center',
+            }}
+          >
+            <Tooltip title="Send message">
+              <span>
+                <IconButton
+                  type="submit"
+                  color="primary"
+                  disabled={!inputValue.trim() || loading}
+                  sx={{
+                    bgcolor: '#1D4645',
+                    color: 'white',
+                    '&:hover': {
+                      bgcolor: '#143433',
+                    },
+                    '&.Mui-disabled': {
+                      bgcolor: 'rgba(0, 0, 0, 0.12)',
+                      color: 'rgba(0, 0, 0, 0.26)',
+                    },
+                  }}
+                >
+                  <Send />
+                </IconButton>
+              </span>
+            </Tooltip>
+
+            <Tooltip title="Voice input (coming soon)">
+              <span>
+                <IconButton
+                  sx={{
+                    bgcolor: 'background.paper',
+                    border: '1px solid',
+                    borderColor: 'rgba(0, 0, 0, 0.08)',
+                    color: '#1D4645',
+                    '&:hover': {
+                      bgcolor: 'rgba(29, 70, 69, 0.05)',
+                    },
+                  }}
+                >
+                  <Mic />
+                </IconButton>
+              </span>
+            </Tooltip>
+          </Box>
         </Box>
       </Paper>
 
-      {/* Clinic recommendations section */}
-      {showRecommendations && bestClinic && (
-        <Box sx={{ mt: 3, p: 3, bgcolor: 'background.paper', borderRadius: 3, boxShadow: theme.shadows[1] }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-            <InfoOutlinedIcon fontSize="small" color="action" />
-            <Typography variant="body2" color="text.secondary">
-              Based on your symptoms and availability, here are the best clinics for your needs
-            </Typography>
-          </Box>
-          
-          {bestClinic.map((clinic, index) => (
-            <Card key={clinic.id || index} sx={{ mb: 3, overflow: 'hidden', borderRadius: 2, boxShadow: theme.shadows[2] }}>
-              <Box sx={{ position: 'relative', height: 180, overflow: 'hidden' }}>
-                <Box 
-                  component="img"
-                  src={clinic.image}
-                  alt={clinic.name}
-                  sx={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                  }}
-                />
-                <Box 
-                  sx={{
-                    position: 'absolute',
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    p: 2,
-                    background: 'linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0))',
-                    color: 'white',
-                  }}
-                >
-                  <Typography variant="h6" fontWeight="bold">{clinic.name}</Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <Rating value={clinic.rating} precision={0.1} readOnly size="small" />
-                    <Typography variant="body2">{clinic.rating || 'N/A'}</Typography>
-                  </Box>
-                </Box>
-              </Box>
-              <CardContent>
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Location: {clinic.location} {clinic.distance ? `(${clinic.distance})` : ''}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Availability: {clinic.availability || 'Contact for availability'}
-                  </Typography>
-                </Box>
-                
-                <Typography variant="subtitle2" gutterBottom>
-                  Services:
-                </Typography>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-                  {(clinic.services || []).map((service, index) => (
-                    <Chip 
-                      key={index}
-                      label={service}
-                      size="small"
-                      sx={{ 
-                        bgcolor: `${theme.palette.primary.main}15`,
-                        color: theme.palette.primary.main,
-                        fontWeight: 500
-                      }}
-                    />
-                  ))}
-                </Box>
-                
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Button 
-                    color="primary"
-                    startIcon={<InfoOutlinedIcon />}
-                    onClick={() => setShowExpandedClinicDetails(!showExpandedClinicDetails)}
-                  >
-                    {showExpandedClinicDetails ? 'Less' : 'More'}
-                  </Button>
-                  <Button 
-                    variant="contained" 
-                    color="primary"
-                    onClick={() => navigate('/book-now', { 
-                      state: { 
-                        clinic: clinic, 
-                        date: extractedInfo.appointmentDate || '',
-                        time: '10:00 AM' // Default time, can be changed later
-                      } 
-                    })}
-                  >
-                    Book Now
-                  </Button>
-                </Box>
-              </CardContent>
-              
-              {showExpandedClinicDetails && (
-                <Box sx={{ p: 2, bgcolor: 'rgba(0, 0, 0, 0.02)', borderTop: '1px solid rgba(0, 0, 0, 0.08)' }}>
-                  <Typography variant="h6" gutterBottom>Detailed Information</Typography>
-                  
-                  <Box sx={{ mb: 3 }}>
-                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>About the Clinic</Typography>
-                    <Typography variant="body2" paragraph>
-                      {clinic.name} is a premier healthcare facility specializing in {treatmentDetails?.treatmentType || 'specialized'} treatments. 
-                      With state-of-the-art equipment and experienced specialists, they provide personalized care 
-                      tailored to each patient's unique needs.
-                    </Typography>
-                  </Box>
-                  
-                  <Box sx={{ mb: 3 }}>
-                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>Doctors</Typography>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Avatar sx={{ width: 50, height: 50 }}>{clinic.name ? clinic.name[0] : 'D'}</Avatar>
-                        <Box>
-                          <Typography variant="subtitle2">Dr. Rajesh Sharma</Typography>
-                          <Typography variant="body2" color="text.secondary">Senior Specialist, 15+ years experience</Typography>
-                        </Box>
-                      </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Avatar sx={{ width: 50, height: 50 }}>A</Avatar>
-                        <Box>
-                          <Typography variant="subtitle2">Dr. Anjali Patel</Typography>
-                          <Typography variant="body2" color="text.secondary">Consultant, 10+ years experience</Typography>
-                        </Box>
-                      </Box>
-                    </Box>
-                  </Box>
-                  
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>Facilities</Typography>
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                      <Chip label="Modern Equipment" size="small" />
-                      <Chip label="Comfortable Waiting Area" size="small" />
-                      <Chip label="Digital Records" size="small" />
-                      <Chip label="Lab Services" size="small" />
-                      <Chip label="Pharmacy" size="small" />
-                    </Box>
-                  </Box>
-                </Box>
-              )}
-            </Card>
-          ))}
-          
-          <Button 
-            variant="contained" 
-            fullWidth
-            color="primary" 
-            onClick={() => setShowTreatmentsInfo(true)}
-            sx={{ mt: 2 }}
-          >
-            View Treatment Information
-          </Button>
-        </Box>
-      )}
-      
       {/* Render TreatmentsInfo dialog when showTreatmentsInfo is true */}
-      <TreatmentsInfo 
-        open={showTreatmentsInfo} 
-        onClose={() => setShowTreatmentsInfo(false)} 
+      <TreatmentsInfo
+        open={showTreatmentsInfo}
+        onClose={() => setShowTreatmentsInfo(false)}
       />
     </Box>
   );

@@ -1,111 +1,197 @@
 import React, { useState, useEffect } from 'react';
 import { addDays, format, isBefore, isAfter, startOfWeek, differenceInDays, startOfMonth, endOfMonth, getDaysInMonth, subMonths, addMonths, startOfDay } from 'date-fns';
-import { Button, Paper, Grid, Typography, Box, Chip, Tooltip, CircularProgress, TextField, FormControlLabel, Checkbox } from '@mui/material';
-import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
-import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
-import EventAvailableIcon from '@mui/icons-material/EventAvailable';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import CancelIcon from '@mui/icons-material/Cancel';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-import { styled } from '@mui/material/styles';
+import {
+  Paper,
+  Typography,
+  Box,
+  Button,
+  IconButton,
+  Menu,
+  MenuItem,
+  CircularProgress,
+  Chip,
+  Grid,
+  styled,
+  useTheme,
+  TextField,
+  FormControlLabel,
+  Checkbox,
+  Tooltip
+} from '@mui/material';
+import {
+  ArrowBackIos,
+  ArrowForwardIos,
+  KeyboardArrowDown,
+  CheckCircle,
+  Cancel,
+  RadioButtonUnchecked,
+  FiberManualRecord
+} from '@mui/icons-material';
 import { getClinicsByTreatmentType, getAvailability } from '../firebase';
 
-// Utility function for combining class names
-const classNames = (classObj) => {
-  return Object.entries(classObj)
-    .filter(([_, value]) => value)
-    .map(([className, _]) => className)
-    .join(' ');
-};
-
-// Styled components for the calendar
+// Styled components
 const CalendarContainer = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(2),
-  borderRadius: theme.spacing(1),
-  maxWidth: '100%',
-  boxShadow: '0px 4px 15px rgba(0, 0, 0, 0.1)',
-  background: '#f8f9fa'
+  padding: theme.spacing(3),
+  maxWidth: 400,
+  margin: '0 auto',
+  borderRadius: theme.spacing(2),
+  boxShadow: theme.shadows[8],
+  position: 'relative'
 }));
 
-const DayButton = styled(Button)(({ theme, isselected, istoday, isdisabled, isavailable, isunavailable }) => ({
-  minWidth: '40px',
-  height: '40px',
-  margin: '4px',
-  borderRadius: '50%',
-  padding: 0,
-  fontSize: '0.85rem',
-  transition: 'all 0.2s',
-  backgroundColor: isselected === 'true' ? theme.palette.primary.main : 
-                   isavailable === 'true' ? theme.palette.success.light :
-                   isunavailable === 'true' ? theme.palette.error.light :
-                   istoday === 'true' ? theme.palette.background.paper : 
-                   'transparent',
-  color: isselected === 'true' ? theme.palette.primary.contrastText : 
-         isdisabled === 'true' ? theme.palette.text.disabled : 
-         isavailable === 'true' ? theme.palette.success.contrastText :
-         isunavailable === 'true' ? theme.palette.error.contrastText :
-         theme.palette.text.primary,
-  border: istoday === 'true' && isselected !== 'true' ? `1px solid ${theme.palette.primary.main}` : 'none',
-  cursor: isdisabled === 'true' ? 'not-allowed' : 'pointer',
-  '&:hover': {
-    backgroundColor: isdisabled === 'true' ? 'transparent' : 
-                    isselected === 'true' ? theme.palette.primary.dark : 
-                    isavailable === 'true' ? theme.palette.success.main :
-                    isunavailable === 'true' ? theme.palette.error.main :
-                    theme.palette.primary.light,
-    color: isdisabled === 'true' ? theme.palette.text.disabled : 
-           isselected === 'true' ? theme.palette.primary.contrastText : 
-           theme.palette.primary.contrastText
-  },
-  '&.Mui-disabled': {
-    color: theme.palette.text.disabled,
-    backgroundColor: isunavailable === 'true' ? theme.palette.error.light : 'transparent'
-  }
-}));
-
-const MonthNavigator = styled(Box)(({ theme }) => ({
+const HeaderBox = styled(Box)(({ theme }) => ({
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
-  marginBottom: theme.spacing(1)
+  marginBottom: theme.spacing(3)
 }));
 
-const WeekRow = styled(Grid)(({ theme }) => ({
+const DropdownBox = styled(Box)(({ theme }) => ({
   display: 'flex',
-  justifyContent: 'center',
-  marginBottom: theme.spacing(1)
+  gap: theme.spacing(1)
+}));
+
+const YearButton = styled(Button)(({ theme }) => ({
+  backgroundColor: 'white',
+  borderColor: '#ccc',
+  color: 'black',
+  '&:hover': {
+    backgroundColor: '#f0f0f0',
+    borderColor: '#aaa',
+  },
+  borderRadius: theme.spacing(1),
+  textTransform: 'none',
+  fontWeight: 600
+}));
+
+const MonthButton = styled(Button)(({ theme }) => ({
+  backgroundColor: 'white',
+  borderColor: '#ccc',
+  color: 'black',
+  '&:hover': {
+    backgroundColor: '#f0f0f0',
+    borderColor: '#aaa',
+  },
+  borderRadius: theme.spacing(1),
+  textTransform: 'none',
+  fontWeight: 600
+}));
+
+const DayHeader = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  justifyContent: 'space-between',
+  marginBottom: theme.spacing(2),
+  paddingX: theme.spacing(1)
 }));
 
 const DayLabel = styled(Typography)(({ theme }) => ({
-  fontSize: '0.75rem',
-  textAlign: 'center',
+  fontSize: '0.875rem',
+  fontWeight: 500,
   color: theme.palette.text.secondary,
-  width: '40px',
-  margin: '0 4px'
+  width: 40,
+  textAlign: 'center'
 }));
 
-const Legend = styled(Box)(({ theme }) => ({
+const CalendarGrid = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: theme.spacing(0.5)
+}));
+
+const WeekRow = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  justifyContent: 'space-between',
+  gap: theme.spacing(0.5)
+}));
+
+const DayButton = styled(Button)(({ theme, status }) => {
+  const getButtonStyles = () => {
+    switch (status) {
+      case 'selected':
+        return {
+          backgroundColor: theme.palette.info.main,
+          color: theme.palette.info.contrastText,
+          borderRadius: '50%',
+          '&:hover': {
+            backgroundColor: theme.palette.info.dark
+          }
+        };
+      case 'today':
+        return {
+          color: 'black',
+          border: `2px solid ${theme.palette.primary.main}`,
+          borderRadius: '50%',
+          '&:hover': {
+            backgroundColor: theme.palette.primary.main,
+            color: 'white'
+          }
+        };
+      case 'available':
+        return {
+          backgroundColor: theme.palette.success.light,
+          color: theme.palette.success.contrastText,
+          borderRadius: '50%',
+          '&:hover': {
+            backgroundColor: theme.palette.success.main
+          }
+        };
+      case 'unavailable':
+        return {
+          color: theme.palette.error.contrastText,
+          backgroundColor: theme.palette.error.light,
+          borderRadius: '50%',
+          '&:hover': {
+            backgroundColor: theme.palette.error.light
+          }
+        };
+      default:
+        return {};
+    }
+  };
+
+  return {
+    minWidth: 40,
+    height: 40,
+    padding: 0,
+    backgroundColor: 'transparent',
+    boxShadow: 'none',
+    border: 'none',
+    fontSize: '0.875rem',
+    fontWeight: 500,
+    transition: 'all 0.2s ease-in-out',
+    color: theme.palette.text.primary,
+    '&:hover': {
+      backgroundColor: 'transparent',
+      transform: 'scale(1.05)'
+    },
+    ...getButtonStyles()
+  };
+});
+
+const LegendBox = styled(Box)(({ theme }) => ({
   display: 'flex',
   justifyContent: 'center',
   alignItems: 'center',
-  marginTop: theme.spacing(2),
   gap: theme.spacing(2),
+  marginTop: theme.spacing(3),
   flexWrap: 'wrap'
 }));
 
 const LegendItem = styled(Box)(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
-  fontSize: '0.75rem',
-  color: theme.palette.text.secondary
+  gap: theme.spacing(0.5)
 }));
 
 const ChatCalendarComponent = ({ onSelectDate, treatmentType = null, location = null }) => {
+  const theme = useTheme();
   const today = new Date();
   const [currentMonth, setCurrentMonth] = useState(today);
   const [selectedDate, setSelectedDate] = useState(null);
   const [availableDates, setAvailableDates] = useState({});
   const [loading, setLoading] = useState(true);
+  const [yearAnchorEl, setYearAnchorEl] = useState(null);
+  const [monthAnchorEl, setMonthAnchorEl] = useState(null);
 
   // Log the props for debugging
   useEffect(() => {
@@ -119,8 +205,39 @@ const ChatCalendarComponent = ({ onSelectDate, treatmentType = null, location = 
   // Normalize treatmentType to lowercase for consistent database queries
   const normalizedTreatmentType = treatmentType ? treatmentType.toLowerCase() : null;
 
-  // Format the currently displayed month
-  const formatMonth = format(currentMonth, 'MMMM yyyy');
+  // Date utility functions
+  const formatDate = (date, formatStr) => {
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+
+    if (formatStr === 'yyyy-MM-dd') return `${year}-${month}-${day}`;
+    if (formatStr === 'd') return String(d.getDate());
+    if (formatStr === 'EEE, MMM d, yyyy') {
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return `${days[d.getDay()]}, ${months[d.getMonth()]} ${d.getDate()}, ${year}`;
+    }
+    return d.toDateString();
+  };
+
+  const isSameDay = (date1, date2) => {
+    const d1 = new Date(date1);
+    const d2 = new Date(date2);
+    return d1.getDate() === d2.getDate() &&
+      d1.getMonth() === d2.getMonth() &&
+      d1.getFullYear() === d2.getFullYear();
+  };
+
+  const isToday = (date) => {
+    return isSameDay(date, new Date());
+  };
+
+  const getFirstDayOfMonth = (date) => {
+    const d = new Date(date);
+    return new Date(d.getFullYear(), d.getMonth(), 1).getDay();
+  };
 
   // Helper function to get availability for a specific date, treatment, and location
   const getAvailabilityForDate = async (treatmentType, location, date) => {
@@ -233,88 +350,36 @@ const ChatCalendarComponent = ({ onSelectDate, treatmentType = null, location = 
     fetchAvailability();
   }, [currentMonth, normalizedTreatmentType, location]);
 
-  // Handle date click
-  const handleDateClick = (date) => {
-    // Format the date as YYYY-MM-DD
-    const formattedDate = format(date, 'yyyy-MM-dd');
+  const years = Array.from({ length: 12 }, (_, i) => 2021 + i);
+  const months = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
 
-    // Check if the date is available
+  const handleDateClick = (date) => {
+    if (isDateDisabled(date)) return;
+
+    const formattedDate = formatDate(date, 'yyyy-MM-dd');
     const dateInfo = availableDates[formattedDate];
+    
     if (dateInfo && dateInfo.available) {
       console.log("Selected available date:", formattedDate);
       setSelectedDate(date);
-      onSelectDate(formattedDate);
+      onSelectDate && onSelectDate(formattedDate);
     } else {
       console.log("Selected unavailable date:", formattedDate);
-      // Optionally provide feedback about unavailable date
-      // For example, show a tooltip or alert
     }
   };
 
-  // Generate custom day content with availability styling
-  const renderDayContents = (day, date) => {
-    const formattedDate = format(date, 'yyyy-MM-dd');
-    const dateInfo = availableDates[formattedDate];
-
-    // Create a tooltip message
-    let tooltipText = "Loading availability...";
-    let isAvailable = false;
-
-    if (dateInfo) {
-      isAvailable = dateInfo.available;
-      if (isAvailable) {
-        const clinicCount = dateInfo.count || 0;
-        tooltipText = `${clinicCount} clinic${clinicCount !== 1 ? 's' : ''} available for ${normalizedTreatmentType || 'treatment'} in ${location || 'this area'}`;
-      } else {
-        tooltipText = `No clinics available for ${normalizedTreatmentType || 'treatment'} in ${location || 'this area'} on this date`;
-      }
-    }
-
-    // Define classes based on availability
-    const dayClasses = classNames({
-      'calendar-day': true,
-      'available-day': dateInfo && dateInfo.available,
-      'unavailable-day': dateInfo && !dateInfo.available,
-      'loading-day': !dateInfo
-    });
-
-    return (
-      <div 
-        className={dayClasses}
-        title={tooltipText} // Native HTML tooltip
-      >
-        {day}
-        {dateInfo && dateInfo.available && (
-          <div className="availability-indicator">
-            <CheckCircleIcon style={{ fontSize: 12, color: '#4caf50' }} />
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  // Handle month navigation
-  const goToPreviousMonth = () => {
-    setCurrentMonth(subMonths(currentMonth, 1));
-  };
-
-  const goToNextMonth = () => {
-    setCurrentMonth(addMonths(currentMonth, 1));
-  };
-
-  // Check if a date should be clickable
-  // Disable past dates and unavailable dates
   const isDateDisabled = (date) => {
-    const today = startOfDay(new Date());
-    const formattedDate = format(date, 'yyyy-MM-dd');
+    const todayStart = startOfDay(new Date());
+    const formattedDate = formatDate(date, 'yyyy-MM-dd');
     const dateInfo = availableDates[formattedDate];
 
-    // Disable dates in the past
-    if (isBefore(startOfDay(date), today)) {
+    if (isBefore(startOfDay(date), todayStart)) {
       return true;
     }
 
-    // Disable dates that are explicitly marked as unavailable
     if (dateInfo && !dateInfo.available) {
       return true;
     }
@@ -322,147 +387,238 @@ const ChatCalendarComponent = ({ onSelectDate, treatmentType = null, location = 
     return false;
   };
 
-  return (
-    <CalendarContainer elevation={3}>
-      <Box display="flex" alignItems="center" justifyContent="center" mb={1}>
-        <EventAvailableIcon color="primary" sx={{ mr: 1 }} />
-        <Typography variant="subtitle1" fontWeight="bold">Select Appointment Date</Typography>
-      </Box>
+  const getDateStatus = (date) => {
+    const formattedDate = formatDate(date, 'yyyy-MM-dd');
+    const dateInfo = availableDates[formattedDate];
 
-      {loading && (
-        <Box display="flex" justifyContent="center" my={2}>
-          <CircularProgress size={24} />
-          <Typography variant="body2" ml={1}>Loading clinic availability...</Typography>
-        </Box>
-      )}
+    if (selectedDate && isSameDay(date, selectedDate)) return 'selected';
+    if (isToday(date)) return 'today';
+    if (dateInfo?.available) return 'available';
+    if (dateInfo && !dateInfo.available) return 'unavailable';
+    return 'default';
+  };
 
-      <MonthNavigator>
-        <Button 
-          startIcon={<ArrowBackIosIcon />} 
-          size="small" 
-          onClick={goToPreviousMonth}
-          disabled={isBefore(subMonths(currentMonth, 1), today)}
-        >
-          Prev
-        </Button>
-        <Typography variant="subtitle2">{formatMonth}</Typography>
-        <Button 
-          endIcon={<ArrowForwardIosIcon />} 
-          size="small" 
-          onClick={goToNextMonth}
-          disabled={differenceInDays(addMonths(currentMonth, 1), today) > 30}
-        >
-          Next
-        </Button>
-      </MonthNavigator>
+  const handleYearChange = (year) => {
+    setCurrentMonth(new Date(year, currentMonth.getMonth(), 1));
+    setYearAnchorEl(null);
+  };
 
-      {/* Days of week headers */}
-      <WeekRow container>
-        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
-          <DayLabel key={index}>{day}</DayLabel>
-        ))}
-      </WeekRow>
+  const handleMonthChange = (monthIndex) => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), monthIndex, 1));
+    setMonthAnchorEl(null);
+  };
 
-      {/* Calendar grid */}
-      {Array.from({ length: 4 }, (_, weekIndex) => (
-        <WeekRow container key={weekIndex}>
-          {Array.from({ length: 7 }, (_, dayIndex) => {
-            const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), weekIndex * 7 + dayIndex + 1);
-            const day = format(date, 'd');
-            const isDisabled = isDateDisabled(date);
-            const isAvailable = availableDates[format(date, 'yyyy-MM-dd')] && availableDates[format(date, 'yyyy-MM-dd')].available;
-            const isUnavailable = availableDates[format(date, 'yyyy-MM-dd')] && !availableDates[format(date, 'yyyy-MM-dd')].available;
+  const renderCalendarGrid = () => {
+    const daysInMonth = getDaysInMonth(currentMonth);
+    const firstDay = getFirstDayOfMonth(currentMonth);
+    const rows = [];
 
-            return (
-              <Tooltip 
-                key={`${weekIndex}-${dayIndex}`}
-                title={
-                  isDisabled ? "Not available for booking" :
-                  isUnavailable ? "No clinics available on this date" :
-                  isAvailable ? "Clinics available for booking" : "Availability unknown"
-                }
-              >
-                <span> {/* Wrapper for disabled buttons */}
-                  <DayButton
-                    isselected={selectedDate && format(date, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd') ? 'true' : 'false'}
-                    istoday={format(date, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd') ? 'true' : 'false'}
-                    isdisabled={isDisabled ? 'true' : 'false'}
-                    isavailable={isAvailable ? 'true' : 'false'}
-                    isunavailable={isUnavailable ? 'true' : 'false'}
-                    onClick={() => handleDateClick(date)}
-                    disabled={isDisabled || isUnavailable}
-                  >
-                    {renderDayContents(day, date)}
-                  </DayButton>
-                </span>
-              </Tooltip>
-            );
-          })}
+    const totalCells = Math.ceil((daysInMonth + firstDay) / 7) * 7;
+
+    for (let week = 0; week < totalCells / 7; week++) {
+      const days = [];
+
+      for (let day = 0; day < 7; day++) {
+        const cellIndex = week * 7 + day;
+        const dayNumber = cellIndex - firstDay + 1;
+
+        if (dayNumber > 0 && dayNumber <= daysInMonth) {
+          const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), dayNumber);
+          const status = getDateStatus(date);
+          const disabled = isDateDisabled(date);
+          const formattedDate = formatDate(date, 'yyyy-MM-dd');
+          const dateInfo = availableDates[formattedDate];
+
+          // Create tooltip message
+          let tooltipText = "Loading availability...";
+          if (dateInfo) {
+            if (dateInfo.available) {
+              const clinicCount = dateInfo.count || 0;
+              tooltipText = `${clinicCount} clinic${clinicCount !== 1 ? 's' : ''} available for ${normalizedTreatmentType || 'treatment'} in ${location || 'this area'}`;
+            } else {
+              tooltipText = `No clinics available for ${normalizedTreatmentType || 'treatment'} in ${location || 'this area'} on this date`;
+            }
+          }
+
+          days.push(
+            <Tooltip key={cellIndex} title={tooltipText}>
+              <span>
+                <DayButton
+                  status={status}
+                  onClick={() => !disabled && handleDateClick(date)}
+                  disabled={disabled}
+                >
+                  {dayNumber}
+                </DayButton>
+              </span>
+            </Tooltip>
+          );
+        } else {
+          days.push(<Box key={cellIndex} sx={{ width: 40, height: 40 }} />);
+        }
+      }
+
+      rows.push(
+        <WeekRow key={week}>
+          {days}
         </WeekRow>
-      ))}
+      );
+    }
 
-      {/* Calendar Legend */}
-      <Legend>
+    return rows;
+  };
+
+  return (
+    <CalendarContainer elevation={8}>
+      {/* Header */}
+      <HeaderBox>
+        <DropdownBox>
+          {/* Month Dropdown */}
+          <MonthButton
+            variant='outlined'
+            endIcon={<KeyboardArrowDown />}
+            onClick={(e) => setMonthAnchorEl(e.currentTarget)}
+          >
+            {months[currentMonth.getMonth()]}
+          </MonthButton>
+
+          <Menu
+            anchorEl={monthAnchorEl}
+            open={Boolean(monthAnchorEl)}
+            onClose={() => setMonthAnchorEl(null)}
+            PaperProps={{
+              style: {
+                maxHeight: 200,
+                width: 140
+              }
+            }}
+          >
+            {months.map((month, index) => (
+              <MenuItem
+                key={month}
+                onClick={() => handleMonthChange(index)}
+                selected={index === currentMonth.getMonth()}
+              >
+                {month}
+              </MenuItem>
+            ))}
+          </Menu>
+
+          {/* Year Dropdown */}
+          <YearButton
+            variant="outlined"
+            endIcon={<KeyboardArrowDown />}
+            onClick={(e) => setYearAnchorEl(e.currentTarget)}
+          >
+            {currentMonth.getFullYear()}
+          </YearButton>
+
+          <Menu
+            anchorEl={yearAnchorEl}
+            open={Boolean(yearAnchorEl)}
+            onClose={() => setYearAnchorEl(null)}
+            PaperProps={{
+              style: {
+                maxHeight: 200,
+                width: 120
+              }
+            }}
+          >
+            {years.map(year => (
+              <MenuItem
+                key={year}
+                onClick={() => handleYearChange(year)}
+                selected={year === currentMonth.getFullYear()}
+              >
+                {year}
+              </MenuItem>
+            ))}
+          </Menu>
+        </DropdownBox>
+
+        {/* Navigation */}
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <IconButton
+            onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))}
+            size="small"
+            disabled={isBefore(subMonths(currentMonth, 1), today)}
+          >
+            <ArrowBackIos />
+          </IconButton>
+          <IconButton
+            onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))}
+            size="small"
+            disabled={differenceInDays(addMonths(currentMonth, 1), today) > 30}
+          >
+            <ArrowForwardIos />
+          </IconButton>
+        </Box>
+      </HeaderBox>
+
+      {/* Days of week header */}
+      <DayHeader>
+        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+          <DayLabel key={day}>{day}</DayLabel>
+        ))}
+      </DayHeader>
+
+      {/* Calendar Grid */}
+      <CalendarGrid>
+        {renderCalendarGrid()}
+      </CalendarGrid>
+
+      {/* Legend */}
+      <LegendBox>
         <LegendItem>
-          <Box 
-            sx={{ 
-              width: 12, 
-              height: 12, 
-              borderRadius: '50%',
-              backgroundColor: 'success.light',
-              mr: 1
-            }} 
-          />
+          <FiberManualRecord sx={{ color: 'success.main', fontSize: 16 }} />
           <Typography variant="caption">Available</Typography>
         </LegendItem>
         <LegendItem>
-          <Box 
-            sx={{ 
-              width: 12, 
-              height: 12, 
-              borderRadius: '50%',
-              backgroundColor: 'error.light',
-              mr: 1
-            }} 
-          />
+          <FiberManualRecord sx={{ color: 'error.main', fontSize: 16 }} />
           <Typography variant="caption">Unavailable</Typography>
         </LegendItem>
         <LegendItem>
-          <Box 
-            sx={{ 
-              width: 12, 
-              height: 12, 
-              borderRadius: '50%',
-              border: '1px solid',
-              borderColor: 'primary.main',
-              mr: 1
-            }} 
-          />
+          <RadioButtonUnchecked sx={{ color: 'primary.main', fontSize: 16 }} />
           <Typography variant="caption">Today</Typography>
         </LegendItem>
         <LegendItem>
-          <Box 
-            sx={{ 
-              width: 12, 
-              height: 12, 
-              borderRadius: '50%',
-              backgroundColor: 'primary.main',
-              mr: 1
-            }} 
-          />
+          <FiberManualRecord sx={{ color: 'info.main', fontSize: 16 }} />
           <Typography variant="caption">Selected</Typography>
         </LegendItem>
-      </Legend>
+      </LegendBox>
 
-      {/* Show selected date */}
+      {/* Selected date display */}
       {selectedDate && (
-        <Box mt={2} textAlign="center">
-          <Chip 
-            label={`Selected: ${format(selectedDate, 'EEE, MMM d, yyyy')}`} 
-            color="primary" 
+        <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
+          <Chip
+            label={`Selected: ${formatDate(selectedDate, 'EEE, MMM d, yyyy')}`}
+            color="primary"
             variant="outlined"
-            icon={<CheckCircleIcon />}
+            icon={<CheckCircle />}
           />
+        </Box>
+      )}
+
+      {/* Loading indicator */}
+      {loading && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'rgba(255, 255, 255, 0.8)',
+            borderRadius: 2
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <CircularProgress size={24} />
+            <Typography variant="body2">Loading clinic availability...</Typography>
+          </Box>
         </Box>
       )}
     </CalendarContainer>
@@ -488,7 +644,7 @@ const BookingConfirmationForm = ({ onSubmit }) => {
   const handleNext = () => {
     if (step === 1) {
       // Validate required fields for step 1
-      if (!formData.fullName || !formData.phone || !isValidPhoneNumber(formData.phone, 'IN')) {
+      if (!formData.fullName || !formData.phone) {
         // Display error message or handle validation failure
         return;
       }
@@ -554,33 +710,6 @@ const BookingConfirmationForm = ({ onSubmit }) => {
       )}
     </form>
   );
-};
-
-const reserveSlot = async (slotId, userId) => {
-  try {
-    await runTransaction(db, async (transaction) => {
-      const slotRef = doc(db, 'slots', slotId);
-      const slotDoc = await transaction.get(slotRef);
-      
-      if (!slotDoc.exists()) {
-        throw new Error('Slot document does not exist');
-      }
-
-      if (slotDoc.data().status !== 'available') {
-        throw new Error('Slot is already booked');
-      }
-
-      transaction.update(slotRef, { 
-        status: 'booked',
-        bookedBy: userId,
-        bookedAt: new Date(),
-      });
-    });
-    console.log('Slot reserved successfully');
-  } catch (error) {
-    console.error('Error reserving slot:', error);
-    throw error;
-  }
 };
 
 export default ChatCalendarComponent;
