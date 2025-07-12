@@ -55,7 +55,7 @@ const Sidebar = () => {
         { name: 'Home', path: '/', icon: <HomeIcon /> },
         { name: 'Free Consultation', path: '/free-consultation', icon: <ChatIcon /> },
         { name: 'Compare Cost', path: '/compare', icon: <InfoOutlinedIcon /> },
-        { name: 'Plan Journey', path: '/plan', icon: <CalendarMonthIcon /> },
+        { name: 'Plan Journey', path: '/plan-journey'},
         { name: 'Treatment', path: '/treatment', icon: <DashboardIcon /> },
         { name: 'Contact Us', path: '/contact' },
         { name: 'Doctor? Here!', path: '/doctor-login' }

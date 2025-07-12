@@ -78,6 +78,25 @@ const DoctorDashboard = () => {
   );
 };
 
+// plan journey app in an iframe
+const PlanJourney = () => {
+  return (
+    <Box sx={{ width: '100%', height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      {/* Plan Journey iframe - takes full height */}
+      <iframe
+        src="https://travel-9hf1.vercel.app/"
+        title="Plan Journey"
+        style={{
+          width: '100%',
+          height: '100%',
+          border: 'none',
+          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+        }}
+      />
+    </Box>
+  );
+};
+
 const LoadingFallback = () => (
   <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
     <CircularProgress />
@@ -187,6 +206,7 @@ const App = () => {
                   </ProtectedRoute>
                 } />
                 <Route path="/book-now" element={<AppointmentBookingPage />} />
+                <Route path="/plan-journey" element={<PlanJourney />} />
                 <Route path="/doctor-dashboard" element={
                   <DoctorProtectedRoute>
                     <DoctorDashboard />
