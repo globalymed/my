@@ -188,7 +188,7 @@ const TestimonialsSection = () => {
                         }}
                     />
                     <Typography variant="body1" sx={{ opacity: 0.9, mt: 2 }}>
-                        
+                        served patients from 40+ countries
                     </Typography>
                 </Box>
 

@@ -34,7 +34,7 @@ const HowItWorksSection = () => {
         variant="h2"
         align="center"
         fontWeight={700}
-        sx={{ mb: 1, color: '#2f2f2f' }}
+        sx={{ mb: 1, color: '#000' }}
       >
         How It Works
       </Typography>
@@ -69,7 +69,7 @@ const HowItWorksSection = () => {
               </Typography>
               <Typography
                 variant="h5"
-                sx={{ fontWeight: 700, color: '#2f2f2f' }}
+                sx={{ fontWeight: 700, color: 'black' }}
               >
                 {index + 1}
               </Typography>

@@ -35,7 +35,7 @@ import {
 
 import ConsultationForm from "../components/HomePage/ConsultationForm.jsx";
 
-import { FaStethoscope, FaHeartbeat, FaUser, FaTooth } from "react-icons/fa";
+import { FaStethoscope, FaHeartbeat, FaUser } from "react-icons/fa";
 import { GrShieldSecurity } from "react-icons/gr";
 
 export default function ConsultationPage() {
@@ -49,50 +49,46 @@ export default function ConsultationPage() {
                     <FaHeartbeat />
                 </Box>
             ),
-            title: "IVF",
+            title: "Cardiology",
             description:
-                "Advanced fertility treatments including in vitro fertilization (IVF), ICSI, and reproductive health consultations.",
+                "Comprehensive heart care including diagnostics, treatment, and preventive care for cardiovascular conditions.",
         },
         {
             icon: (
                 <Box sx={{ fontSize: { xs: 28, sm: 32, md: 36 }, color: "#2196f3" }}>
-                    <FaUser />
+                    <FaStethoscope />
                 </Box>
             ),
-            title: "Hair Transplant",
+            title: "General Medicine",
             description:
-                "State-of-the-art hair restoration procedures including FUE, FUT, and PRP therapy for natural-looking results.",
+                "Primary care services for routine check-ups, illness treatment, and health maintenance.",
         },
         {
             icon: (
                 <Box sx={{ fontSize: { xs: 28, sm: 32, md: 36 }, color: "#4caf50" }}>
-                    <FaTooth />
+                    <FaUser />
                 </Box>
             ),
-            title: "Dental Care",
+            title: "Dermatology",
             description:
-                "Comprehensive dental services including implants, braces, cosmetic dentistry, and routine oral care.",
+                "Skin care treatments including acne treatment, skin cancer screening, and cosmetic procedures.",
         },
         {
             icon: (
                 <Box sx={{ fontSize: { xs: 28, sm: 32, md: 36 }, color: "#9c27b0" }}>
-                    <FaStethoscope />
+                    <GrShieldSecurity />
                 </Box>
             ),
-            title: "Cosmetic Procedure",
+            title: "Preventive Care",
             description:
-                "Aesthetic treatments such as rhinoplasty, liposuction, skin rejuvenation, and non-surgical enhancements.",
+                "Wellness programs, health screenings, and preventive treatments to maintain optimal health.",
         },
     ];
 
     return (
-        <Box sx={{
-            px: { xs: 2, md: 8 },
-            py: 4,
-            background: 'linear-gradient(to bottom right, #ffffff, #fde2e4, #e0c3fc)',
-        }}>
+        <Box>
 
-            <Box sx={{ py: 10,color: "#2f2f2f", textAlign: "center" }}>
+            <Box sx={{ py: 10, background: "linear-gradient(to right, #2563EB, #1E40AF)", color: "white", textAlign: "center" }}>
                 <Container>
                     <Typography variant="h2" fontWeight="bold" gutterBottom>
                         Free Consultation
@@ -154,7 +150,7 @@ export default function ConsultationPage() {
                             ))}
                         </Grid>
 
-                        <Card sx={{ mt: 4, backgroundColor: '#f5f5f5' }}>
+                        <Card sx={{ mt: 4, backgroundColor: '#E3F2FD' }}>
                             <CardHeader title="What to Expect" />
                             <CardContent>
                                 {["Comprehensive health assessment", "Personalized treatment recommendations", "Questions about your health concerns", "No obligation or pressure"].map((item, idx) => (
@@ -169,7 +165,7 @@ export default function ConsultationPage() {
                 </Grid>
             </Container>
 
-            <Box sx={{ py: 10}}>
+            <Box sx={{ py: 10, bgcolor: "#f5f5f5" }}>
                 <Container>
                     <Typography variant="h4" textAlign="center" fontWeight="bold" gutterBottom>
                         Get In Touch

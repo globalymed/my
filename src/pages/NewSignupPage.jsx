@@ -117,7 +117,7 @@ function SignupForm() {
         }
 
         if (!agreedToTerms) {
-            setError('Please agree to the <Link href="/terms" color="primary">Terms of Service</Link> and <Link href="/privacy" color="primary">Privacy Policy</Link>');
+            setError('Please agree to the terms and privacy policy');
             setIsLoading(false);
             return;
         }
@@ -168,11 +168,11 @@ function SignupForm() {
                                     minHeight: 48,
                                     borderRadius: 1.5,
                                     mx: 0.5,
-                                    color: '#2f2f2f', // black color for text and icon
+                                    color: 'black', // black color for text and icon
                                     '&.Mui-selected': {
                                         bgcolor: 'white',
                                         boxShadow: 1,
-                                        color: '#2f2f2f', // still black when selected
+                                        color: 'black', // still black when selected
                                     },
                                 },
                                 '& .MuiTabs-indicator': {
@@ -474,11 +474,11 @@ function SignupForm() {
                             label={
                                 <Typography variant="body2" color="text.secondary">
                                     I agree to the{' '}
-                                    <Link href="/terms" color="primary">
+                                    <Link href="#" color="primary">
                                         Terms of Service
                                     </Link>{' '}
                                     and{' '}
-                                    <Link href="/privacy" color="primary">
+                                    <Link href="#" color="primary">
                                         Privacy Policy
                                     </Link>
                                 </Typography>

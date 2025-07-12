@@ -330,14 +330,6 @@ const LoginPage = () => {
             </Button>
           </form>
 
-          <Box sx={{ textAlign: 'center', mt: 1 }}>
-            <Link href="/privacy" color="primary" underline="hover">Privacy Policy</Link>
-          </Box>
-
-          <Box sx={{ textAlign: 'center', mt: 2 }}>
-            <Link href="/terms" color="primary" underline="hover">Terms of Service</Link>
-          </Box>
-
           <Box sx={{ mt: 3, textAlign: 'center' }}>
             <Typography variant="body2" color="text.secondary">
               Don't have an account?{' '}

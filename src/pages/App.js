@@ -25,8 +25,6 @@ import ContactUs from './ContactUs.jsx';
 import { Login } from '@mui/icons-material';
 import Blog from './Blog.jsx';
 import BlogPostPage from './BlogPostPage.jsx';
-import TermsOfService from './TermsOfService.jsx';
-import PrivacyPolicy from './PrivacyPolicy.jsx';
 
 // Create a component to render the doctor dashboard in an iframe
 const DoctorDashboard = () => {
@@ -97,8 +95,8 @@ const DoctorDashboard = () => {
 };
 
 const LoadingFallback = () => (
-  <Box display="flex" justifyContent="center" alignItems="center" height="100vh" bgcolor="#fff">
-    <img src="/logoWhite.png" alt="MedYatra Logo" style={{ width: 120, height: 120, objectFit: 'contain' }} />
+  <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
+    <CircularProgress />
   </Box>
 );
 
@@ -227,8 +225,6 @@ const App = () => {
                     <DashboardPage />
                   </ProtectedRoute>
                 } />
-                <Route path="/terms" element={<TermsOfService />} />
-                <Route path="/privacy" element={<PrivacyPolicy />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Layout>

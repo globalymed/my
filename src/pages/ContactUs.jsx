@@ -110,12 +110,7 @@ export default function ContactPage() {
 
   return (
     <ThemeProvider theme={theme}>
-      <Box sx={{
-        minHeight: '100vh',
-        background: 'linear-gradient(to bottom right, #ffffff, #fde2e4, #e0c3fc)',
-        py: 6,
-        px: { xs: 2, sm: 3, lg: 4 }
-      }}>
+      <Box sx={{ minHeight: '100vh', backgroundColor: 'grey.50', py: 6, px: { xs: 2, sm: 3, lg: 4 } }}>
         <Container maxWidth="lg">
           {/* Header Section */}
           <Box sx={{ textAlign: 'center', mb: 6 }}>
@@ -149,7 +144,7 @@ export default function ContactPage() {
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                         <Mail sx={{ fontSize: 20, color: 'primary.main' }} />
                         <Typography variant="body1" color="grey.700">
-                          contact@medyatra.space
+                          hello@company.com
                         </Typography>
                       </Box>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -161,7 +156,7 @@ export default function ContactPage() {
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                         <FaLocationDot sx={{ fontSize: 20, color: 'primary.main' }} />
                         <Typography variant="body1" color="grey.700">
-                          New Delhi, India
+                          123 Business St, City, State 12345
                         </Typography>
                       </Box>
                     </Box>
@@ -260,7 +255,7 @@ export default function ContactPage() {
                           required
                           variant="outlined"
                           InputLabelProps={{
-                            style: { fontWeight: 500, color: '#2f2f2f' }
+                            style: { fontWeight: 500, color: '#111827' }
                           }}
                         />
                       </Grid>
@@ -277,7 +272,7 @@ export default function ContactPage() {
                           required
                           variant="outlined"
                           InputLabelProps={{
-                            style: { fontWeight: 500, color: '#2f2f2f' }
+                            style: { fontWeight: 500, color: '#111827' }
                           }}
                         />
                       </Grid>
@@ -298,7 +293,7 @@ export default function ContactPage() {
                       required
                       variant="outlined"
                       InputLabelProps={{
-                        style: { fontWeight: 500, color: '#2f2f2f' }
+                        style: { fontWeight: 500, color: '#111827' }
                       }}
                     />
 
@@ -319,7 +314,7 @@ export default function ContactPage() {
                       required
                       variant="outlined"
                       InputLabelProps={{
-                        style: { fontWeight: 500, color: '#2f2f2f' }
+                        style: { fontWeight: 500, color: '#111827' }
                       }}
                     />
 
@@ -335,11 +330,11 @@ export default function ContactPage() {
                       label={
                         <Typography variant="body2" sx={{ lineHeight: 1.25, color: 'grey.700' }}>
                           I agree to the{" "}
-                          <Link href="/terms" sx={{ color: 'primary.main', textDecoration: 'underline' }}>
+                          <Link href="#" sx={{ color: 'primary.main', textDecoration: 'underline' }}>
                             Terms of Service
                           </Link>{" "}
                           and{" "}
-                          <Link href='/privacy' sx={{ color: 'primary.main', textDecoration: 'underline' }}>
+                          <Link href="#" sx={{ color: 'primary.main', textDecoration: 'underline' }}>
                             Privacy Policy
                           </Link>
                           . I consent to being contacted about my inquiry. *

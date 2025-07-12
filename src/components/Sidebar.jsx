@@ -54,11 +54,11 @@ const Sidebar = () => {
     const mainNavItems = [
         { name: 'Home', path: '/', icon: <HomeIcon /> },
         { name: 'Free Consultation', path: '/free-consultation', icon: <ChatIcon /> },
-        { name: 'Ai chat',  path: '/chat', icon: <InfoOutlinedIcon /> },
-        { name: 'Compare Cost', path: '/compare', icon: <AttachMoney /> },
+        { name: 'Compare Cost', path: '/compare', icon: <InfoOutlinedIcon /> },
+        { name: 'Plan Journey', path: '/plan', icon: <CalendarMonthIcon /> },
         { name: 'Treatment', path: '/treatment', icon: <DashboardIcon /> },
         { name: 'Contact Us', path: '/contact' },
-        { name: 'Doctor Dashboard', path: '/doctors' }
+        { name: 'Doctor? Here!', path: '/doctors' }
     ];
 
     // Items for the hamburger menu
@@ -72,7 +72,7 @@ const Sidebar = () => {
         },
         { text: 'Free Consultation', icon: <SupportAgent />, path: '/free-consultation' },
         { text: 'AI Chat', icon: <ChatIcon />, path: '/chat' },
-        { text: 'Compare Cost', icon: <AttachMoney />, path: '/compare' },
+        { text: 'Compare cost', icon: <AttachMoney />, path: '/compare' },
         { text: 'Contact Us', icon: <Phone />, path: '/contact' },
         { text: 'Dashboard', icon: <Dashboard />, path: '/login' },
         { text: 'Logout', icon: <Logout />, path: '/logout' },
@@ -249,9 +249,9 @@ const Sidebar = () => {
                                     variant="outlined"
                                     sx={{
                                         textTransform: 'none',
-                                        borderColor: '#2f2f2f',
+                                        borderColor: '#000',
                                         color: '#fff',
-                                        backgroundColor: '#2f2f2f',
+                                        backgroundColor: '#000',
                                         borderRadius: 3,
                                         fontSize: '0.9rem',
                                         fontWeight: 700,
@@ -334,7 +334,7 @@ const Sidebar = () => {
                                         variant="outlined"
                                         size="small"
                                         sx={{
-                                            color: '#2f2f2f',
+                                            color: '#000',
                                             borderColor: '#fff',
                                             backgroundColor: '#fff',
                                             textTransform: 'none',
@@ -351,7 +351,7 @@ const Sidebar = () => {
                                         Login
                                     </Button>
                                     <Button variant="outlined" size="small" sx={{
-                                        backgroundColor: '#2f2f2f',
+                                        backgroundColor: '#000',
                                         color: '#fff',
                                         textTransform: 'none',
                                         fontWeight: 500,
