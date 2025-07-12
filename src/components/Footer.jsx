@@ -9,6 +9,8 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  Link,
+  Avatar,
 } from '@mui/material';
 import {
   Email,
@@ -24,22 +26,22 @@ const socialLinks = [
   {
     icon: <Facebook />,
     label: 'Facebook',
-    href: 'https://www.facebook.com/MedYatra',
+    href: 'https://www.facebook.com',
   },
   {
     icon: <Twitter />,
     label: 'Twitter',
-    href: 'https://twitter.com/MedYatra',
+    href: 'https://twitter.com',
   },
   {
     icon: <Instagram />,
     label: 'Instagram',
-    href: 'https://www.instagram.com/MedYatra',
+    href: 'https://www.instagram.com/med.yatra/',
   },
   {
     icon: <LinkedIn />,
     label: 'LinkedIn',
-    href: 'https://www.linkedin.com/company/MedYatra',
+    href: 'https://www.linkedin.com/company/medyatra-official/',
   },
 ];
 
@@ -76,25 +78,7 @@ const Footer = () => {
             <Grid item xs={12} md={4}>
               <Box display="flex" alignItems="center" mb={2}>
                 {/* M Logo */}
-                <Box
-                  sx={{
-                    backgroundColor: 'white',
-                    color: 'black',
-                    fontWeight: 'bold',
-                    px: 2,
-                    py: 1.5,
-                    borderRadius: 1,
-                    fontSize: '2rem',
-                    lineHeight: 1,
-                    mr: 2,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    height: '100%',
-                  }}
-                >
-                  M
-                </Box>
+                <Avatar src="/logoWhite.png" alt="MedYatra Logo" sx={{ width: 80, height: 80, bgcolor: 'transparent', mx: 'auto', mb: 2 }} imgProps={{ style: { objectFit: 'contain', width: '100%', height: '100%' } }} />
 
                 {/* Text Block */}
                 <Box>
@@ -102,7 +86,7 @@ const Footer = () => {
                     MedYatra
                   </Typography>
                   <Typography variant="body2">
-                    Your Health Journey Simplified
+                    Making Medical Travel Effortless
                   </Typography>
                 </Box>
               </Box>
@@ -154,7 +138,7 @@ const Footer = () => {
                     <Email fontSize="medium" />
                   </IconButton>
                   <Typography variant="body1">
-                    support@medyatra.com <br /> (General Inquiries)
+                    contact@medyatra.com <br /> (General Inquiries)
                   </Typography>
                 </Box>
               </Box>
@@ -247,6 +231,8 @@ const Footer = () => {
                   {item.icon}
                 </IconButton>
               ))}
+              <Link href="/terms" sx={{ color: 'inherit', textDecoration: 'underline', mx: 1 }}>Terms of Service</Link>
+              <Link href="/privacy" sx={{ color: 'inherit', textDecoration: 'underline', mx: 1 }}>Privacy Policy</Link>
             </Box>
           </Box>
         </Box>

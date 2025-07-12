@@ -225,8 +225,8 @@ const ClinicRecommenderEnhanced = ({ treatmentType, onClinicSelect }) => {
   useEffect(() => {
     const fetchClinics = async () => {
       if (!effectiveTreatmentType) {
-        console.log("No treatment type specified, using general");
-        console.log("Fallback general clinics count:", FALLBACK_CLINICS.general.length);
+       // console.log("No treatment type specified, using general");
+       // console.log("Fallback general clinics count:", FALLBACK_CLINICS.general.length);
         // Get at most 3 general clinics
         setFilteredClinics(FALLBACK_CLINICS.general.slice(0, RESULTS_LIMIT));
         return;
@@ -234,7 +234,7 @@ const ClinicRecommenderEnhanced = ({ treatmentType, onClinicSelect }) => {
       
       setLoading('clinics', true);
       try {
-        console.log("Fetching clinics for treatment type:", effectiveTreatmentType);
+       // console.log("Fetching clinics for treatment type:", effectiveTreatmentType);
         
         // First try to fetch clinics with exact service match
         const clinicsRef = collection(db, 'clinics');
@@ -252,11 +252,11 @@ const ClinicRecommenderEnhanced = ({ treatmentType, onClinicSelect }) => {
           ...doc.data(),
         }));
         
-        console.log("Exact match clinics found:", clinics.length);
+       // console.log("Exact match clinics found:", clinics.length);
         
         // If no clinics found, try without the array-contains filter
         if (clinics.length === 0) {
-          console.log("No exact matches found, fetching all clinics");
+        //  console.log("No exact matches found, fetching all clinics");
           q = query(
             clinicsRef,
             where('rating', '>=', MIN_RATING),
@@ -269,31 +269,31 @@ const ClinicRecommenderEnhanced = ({ treatmentType, onClinicSelect }) => {
             id: doc.id,
             ...doc.data(),
           }));
-          console.log("Fallback query clinics found:", clinics.length);
+        //  console.log("Fallback query clinics found:", clinics.length);
         }
         
-        console.log("Fetched clinics:", clinics);
+      // console.log("Fetched clinics:", clinics);
         
         // If still no clinics found, use fallback data
         if (clinics.length === 0) {
-          console.log("No clinics found in database, using fallback data");
+        //  console.log("No clinics found in database, using fallback data");
           const type = effectiveTreatmentType.toLowerCase();
           // Ensure we return at most 3 clinics from the fallback data
           const fallbackClinics = FALLBACK_CLINICS[type] || FALLBACK_CLINICS.general;
-          console.log("Fallback clinics available for", type, ":", fallbackClinics.length);
+        //  console.log("Fallback clinics available for", type, ":", fallbackClinics.length);
           clinics = fallbackClinics.slice(0, RESULTS_LIMIT);
         }
         
         // Ensure we only return up to 3 clinics
-        console.log("Final clinics count before setting state:", clinics.length);
+       // console.log("Final clinics count before setting state:", clinics.length);
         setFilteredClinics(clinics.slice(0, RESULTS_LIMIT));
       } catch (error) {
-        console.error('Error fetching clinics:', error);
+       // console.error('Error fetching clinics:', error);
         // Use fallback data on error
-        console.log("Using fallback clinics due to error");
+       // console.log("Using fallback clinics due to error");
         const type = effectiveTreatmentType.toLowerCase();
         const fallbackClinics = FALLBACK_CLINICS[type] || FALLBACK_CLINICS.general;
-        console.log("Error fallback clinics count:", fallbackClinics.length);
+       // console.log("Error fallback clinics count:", fallbackClinics.length);
         setFilteredClinics(fallbackClinics.slice(0, RESULTS_LIMIT));
       } finally {
         setLoading('clinics', false);
@@ -305,14 +305,14 @@ const ClinicRecommenderEnhanced = ({ treatmentType, onClinicSelect }) => {
 
   // Log state value when it changes
   useEffect(() => {
-    console.log("Enhanced component - filteredClinics state updated:", filteredClinics.length, "clinics");
-    console.log("Enhanced clinic details:", filteredClinics);
+   // console.log("Enhanced component - filteredClinics state updated:", filteredClinics.length, "clinics");
+   // console.log("Enhanced clinic details:", filteredClinics);
   }, [filteredClinics]);
 
   // Log filtered results after search
   useEffect(() => {
-    console.log("Search term applied:", searchTerm);
-    console.log("Clinics after search filter:", filteredAndSearchedClinics.length);
+   // console.log("Search term applied:", searchTerm);
+   //console.log("Clinics after search filter:", filteredAndSearchedClinics.length);
   }, [searchTerm, filteredAndSearchedClinics]);
 
   const handleBookNow = (clinic) => {

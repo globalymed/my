@@ -52,12 +52,10 @@ const DropdownBox = styled(Box)(({ theme }) => ({
 }));
 
 const YearButton = styled(Button)(({ theme }) => ({
-  backgroundColor: 'white',
-  borderColor: '#ccc',
-  color: 'black',
+  backgroundColor: theme.palette.primary.main,
+  color: theme.palette.primary.contrastText,
   '&:hover': {
-    backgroundColor: '#f0f0f0',
-    borderColor: '#aaa',
+    backgroundColor: theme.palette.primary.dark
   },
   borderRadius: theme.spacing(1),
   textTransform: 'none',
@@ -65,12 +63,10 @@ const YearButton = styled(Button)(({ theme }) => ({
 }));
 
 const MonthButton = styled(Button)(({ theme }) => ({
-  backgroundColor: 'white',
-  borderColor: '#ccc',
-  color: 'black',
+  backgroundColor: theme.palette.grey[100],
+  color: theme.palette.text.primary,
   '&:hover': {
-    backgroundColor: '#f0f0f0',
-    borderColor: '#aaa',
+    backgroundColor: theme.palette.grey[200]
   },
   borderRadius: theme.spacing(1),
   textTransform: 'none',
@@ -118,7 +114,7 @@ const DayButton = styled(Button)(({ theme, status }) => {
         };
       case 'today':
         return {
-          color: 'black',
+          color: '#2f2f2f',
           border: `2px solid ${theme.palette.primary.main}`,
           borderRadius: '50%',
           '&:hover': {
@@ -159,7 +155,7 @@ const DayButton = styled(Button)(({ theme, status }) => {
     fontSize: '0.875rem',
     fontWeight: 500,
     transition: 'all 0.2s ease-in-out',
-    color: theme.palette.text.primary,
+    color: '#2f2f2f',
     '&:hover': {
       backgroundColor: 'transparent',
       transform: 'scale(1.05)'
@@ -195,26 +191,27 @@ const ChatCalendarComponent = ({ onSelectDate, treatmentType = null, location = 
 
   // Log the props for debugging
   useEffect(() => {
-    console.log("Calendar component received props:", { 
-      treatmentType, 
-      location, 
-      treatmentTypeLower: treatmentType ? treatmentType.toLowerCase() : null 
-    });
+    // console.log("Calendar component received props:", 
+    //   { 
+    //   treatmentType, 
+    //   location, 
+    //   treatmentTypeLower: treatmentType ? treatmentType.toLowerCase() : null 
+    // });
   }, [treatmentType, location]);
 
   // Normalize treatmentType to lowercase for consistent database queries
   const normalizedTreatmentType = treatmentType ? treatmentType.toLowerCase() : null;
 
   // Date utility functions
-  const formatDate = (date, formatStr) => {
+  const formatDate = (date, format) => {
     const d = new Date(date);
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
 
-    if (formatStr === 'yyyy-MM-dd') return `${year}-${month}-${day}`;
-    if (formatStr === 'd') return String(d.getDate());
-    if (formatStr === 'EEE, MMM d, yyyy') {
+    if (format === 'yyyy-MM-dd') return `${year}-${month}-${day}`;
+    if (format === 'd') return String(d.getDate());
+    if (format === 'EEE, MMM d, yyyy') {
       const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       return `${days[d.getDay()]}, ${months[d.getMonth()]} ${d.getDate()}, ${year}`;
@@ -245,13 +242,13 @@ const ChatCalendarComponent = ({ onSelectDate, treatmentType = null, location = 
       // Normalize treatment type to lowercase for database consistency
       const normalizedType = treatmentType ? treatmentType.toLowerCase() : treatmentType;
       
-      console.log(`Checking availability for ${normalizedType} in ${location} on ${date}`);
+      //console.log(`Checking availability for ${normalizedType} in ${location} on ${date}`);
       
       // Step 1: Get clinics matching the treatment type and location
       const clinics = await getClinicsByTreatmentType(normalizedType, location);
       
       if (!clinics || clinics.length === 0) {
-        console.log(`No clinics found for ${normalizedType} in ${location}`);
+        //console.log(`No clinics found for ${normalizedType} in ${location}`);
         return [];
       }
       
@@ -276,7 +273,7 @@ const ChatCalendarComponent = ({ onSelectDate, treatmentType = null, location = 
       
       return availableClinics;
     } catch (error) {
-      console.error(`Error checking availability for ${treatmentType} in ${location} on ${date}:`, error);
+      //console.error(`Error checking availability for ${treatmentType} in ${location} on ${date}:`, error);
       return []; // Return empty array on error
     }
   };
@@ -287,7 +284,7 @@ const ChatCalendarComponent = ({ onSelectDate, treatmentType = null, location = 
       setLoading(true);
 
       try {
-        console.log("Fetching clinic availability for:", normalizedTreatmentType, location);
+       // console.log("Fetching clinic availability for:", normalizedTreatmentType, location);
 
         // Default to general availability if no treatment type or location specified
         const treatment = normalizedTreatmentType || 'general';
@@ -324,9 +321,9 @@ const ChatCalendarComponent = ({ onSelectDate, treatmentType = null, location = 
         }
 
         setAvailableDates(newAvailableDates);
-        console.log("Availability data loaded:", newAvailableDates);
+     //   console.log("Availability data loaded:", newAvailableDates);
       } catch (error) {
-        console.error("Error fetching availability:", error);
+       // console.error("Error fetching availability:", error);
         // Set all dates as available in case of error to prevent blocking
         const newAvailableDates = {};
         const daysInMonth = getDaysInMonth(currentMonth);
@@ -363,11 +360,11 @@ const ChatCalendarComponent = ({ onSelectDate, treatmentType = null, location = 
     const dateInfo = availableDates[formattedDate];
     
     if (dateInfo && dateInfo.available) {
-      console.log("Selected available date:", formattedDate);
+     // console.log("Selected available date:", formattedDate);
       setSelectedDate(date);
       onSelectDate && onSelectDate(formattedDate);
     } else {
-      console.log("Selected unavailable date:", formattedDate);
+     // console.log("Selected unavailable date:", formattedDate);
     }
   };
 
@@ -441,17 +438,14 @@ const ChatCalendarComponent = ({ onSelectDate, treatmentType = null, location = 
           }
 
           days.push(
-            <Tooltip key={cellIndex} title={tooltipText}>
-              <span>
-                <DayButton
-                  status={status}
-                  onClick={() => !disabled && handleDateClick(date)}
-                  disabled={disabled}
-                >
-                  {dayNumber}
-                </DayButton>
-              </span>
-            </Tooltip>
+            <DayButton
+              key={cellIndex}
+              status={status}
+              onClick={() => !disabled && handleDateClick(date)}
+              disabled={disabled}
+            >
+              {dayNumber}
+            </DayButton>
           );
         } else {
           days.push(<Box key={cellIndex} sx={{ width: 40, height: 40 }} />);
@@ -541,21 +535,19 @@ const ChatCalendarComponent = ({ onSelectDate, treatmentType = null, location = 
           <IconButton
             onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))}
             size="small"
-            disabled={isBefore(subMonths(currentMonth, 1), today)}
           >
             <ArrowBackIos />
           </IconButton>
           <IconButton
             onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))}
             size="small"
-            disabled={differenceInDays(addMonths(currentMonth, 1), today) > 30}
           >
             <ArrowForwardIos />
           </IconButton>
         </Box>
       </HeaderBox>
 
-      {/* Days of week header */}
+      {/* Days of week header - Fixed to start with Sunday */}
       <DayHeader>
         {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
           <DayLabel key={day}>{day}</DayLabel>
@@ -617,98 +609,11 @@ const ChatCalendarComponent = ({ onSelectDate, treatmentType = null, location = 
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <CircularProgress size={24} />
-            <Typography variant="body2">Loading clinic availability...</Typography>
+            <Typography variant="body2">Loading availability...</Typography>
           </Box>
         </Box>
       )}
     </CalendarContainer>
-  );
-};
-
-const BookingConfirmationForm = ({ onSubmit }) => {
-  const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState({
-    fullName: '',
-    phone: '',
-    reason: '',
-    insurance: false,
-    insuranceDetails: '',
-  });
-
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    const fieldValue = type === 'checkbox' ? checked : value;
-    setFormData((prevData) => ({ ...prevData, [name]: fieldValue }));
-  };
-
-  const handleNext = () => {
-    if (step === 1) {
-      // Validate required fields for step 1
-      if (!formData.fullName || !formData.phone) {
-        // Display error message or handle validation failure
-        return;
-      }
-    }
-    setStep((prevStep) => prevStep + 1);
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSubmit(formData);
-  };
-
-  return (
-    <form onSubmit={handleSubmit}>
-      {step === 1 && (
-        <>
-          <TextField
-            name="fullName"
-            label="Full Name"
-            value={formData.fullName}
-            onChange={handleChange}
-            required
-          />
-          <TextField
-            name="phone"
-            label="Phone Number"
-            value={formData.phone}
-            onChange={handleChange}
-            required
-          />
-          <Button onClick={handleNext}>Next</Button>
-        </>
-      )}
-      {step === 2 && (
-        <>
-          <TextField
-            name="reason"
-            label="Reason for Visit"
-            value={formData.reason}
-            onChange={handleChange}
-            required
-          />
-          <FormControlLabel
-            control={
-              <Checkbox
-                name="insurance"
-                checked={formData.insurance}
-                onChange={handleChange}
-              />
-            }
-            label="I have insurance"
-          />
-          {formData.insurance && (
-            <TextField
-              name="insuranceDetails"
-              label="Insurance Details"
-              value={formData.insuranceDetails}
-              onChange={handleChange}
-            />
-          )}
-          <Button type="submit">Confirm Booking</Button>
-        </>
-      )}
-    </form>
   );
 };
 
