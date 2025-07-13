@@ -99,11 +99,14 @@ export const getClinicsByTreatmentType = async (treatmentType, location = null) 
     let q;
     
     if (location) {
+      // Ensure location is lowercase for consistent querying
+      const locationLowerCase = location.toLowerCase();
+      
       // Query by both treatment type and location
       q = query(
         clinicsCollection,
         where('treatmentType', '==', treatmentType),
-        where('location', '==', location)
+        where('location', '==', locationLowerCase)
       );
     } else {
       // Query by treatment type only
