@@ -54,11 +54,11 @@ const Sidebar = () => {
     const mainNavItems = [
         { name: 'Home', path: '/', icon: <HomeIcon /> },
         { name: 'Free Consultation', path: '/free-consultation', icon: <ChatIcon /> },
-        { name: 'Ai chat',  path: '/chat', icon: <InfoOutlinedIcon /> },
-        { name: 'Compare Cost', path: '/compare', icon: <AttachMoney /> },
+        { name: 'Compare Cost', path: '/compare', icon: <InfoOutlinedIcon /> },
+        { name: 'Plan Journey', path: '/plan-journey'},
         { name: 'Treatment', path: '/treatment', icon: <DashboardIcon /> },
         { name: 'Contact Us', path: '/contact' },
-        { name: 'Doctor Dashboard', path: '/doctors' }
+        { name: 'Doctor? Here!', path: '/doctor-login' }
     ];
 
     // Items for the hamburger menu

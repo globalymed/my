@@ -3,29 +3,21 @@ import { Route, Routes, Navigate, useNavigate } from 'react-router-dom';
 import { CircularProgress, Box, Button, Typography, useTheme } from '@mui/material';
 import { db } from '../firebase';
 import Layout from './Layout';
+import ChatLayout from './ChatLayout'; // Import the new ChatLayout
 import { ThemeProvider } from '@mui/material/styles';
 import theme from '../theme';
 import LogoutIcon from '@mui/icons-material/Logout';
-import ChatLayout from '../components/ChatLayout';
-import NewLoginPage from './NewLoginPage.jsx';
-import NewSignupPage from './NewSignupPage.jsx';
-import DoctorLoginPage from '../components/DoctorLoginPage';
 
-const AIChat = React.lazy(() => import('../components/AIChatFinal'));
-const ClinicRecommender = React.lazy(() => import('../components/ClinicRecommenderEnhanced'));
-const CalendarComponent = React.lazy(() => import('../components/CalendarComponent'));
-const TimeSlotGrid = React.lazy(() => import('../components/TimeSlotGrid'));
-const BookingConfirmationForm = React.lazy(() => import('../components/BookingConfirmationForm'));
-const AppointmentBookingPage = React.lazy(() => import('../components/AppointmentBookingPage'));
-const LoginPage = React.lazy(() => import('../components/LoginPage'));
-const HomePage = React.lazy(() => import('../components/HomePage.jsx'));
-const DashboardPage = React.lazy(() => import('../components/DashboardPage'));
-import FreeConsultation from './FreeConsultation.jsx';
-import ContactUs from './ContactUs.jsx';
-import Blog from './Blog.jsx';
-import BlogPostPage from './BlogPostPage.jsx';
-import TermsOfService from './TermsOfService.jsx';
-import PrivacyPolicy from './PrivacyPolicy.jsx';
+const AIChat = React.lazy(() => import('./AIChatFinal'));
+const ClinicRecommender = React.lazy(() => import('./ClinicRecommenderEnhanced'));
+const CalendarComponent = React.lazy(() => import('./CalendarComponent'));
+const TimeSlotGrid = React.lazy(() => import('./TimeSlotGrid'));
+const BookingConfirmationForm = React.lazy(() => import('./BookingConfirmationForm'));
+const AppointmentBookingPage = React.lazy(() => import('./AppointmentBookingPage'));
+const LoginPage = React.lazy(() => import('./LoginPage'));
+const DoctorLoginPage = React.lazy(() => import('./DoctorLoginPage'));
+const HomePage = React.lazy(() => import('./HomePage'));
+const DashboardPage = React.lazy(() => import('./DashboardPage'));
 
 // Create a component to render the doctor dashboard in an iframe
 const DoctorDashboard = () => {
@@ -43,56 +35,52 @@ const DoctorDashboard = () => {
   };
 
   return (
-    <Box sx={{ width: '100%', height: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* Dashboard iframe - now takes full height */}
+    <Box sx={{ width: '105%', height: 'calc(100vh - 150px)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+      {/* Logout header */}
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          p: 2,
+          bgcolor: theme.palette.primary.main,
+          color: 'white',
+          borderTopLeftRadius: '8px',
+          borderTopRightRadius: '8px',
+        }}
+      >
+        <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+          Doctor Dashboard
+        </Typography>
+        <Button
+          variant="contained"
+          color="error"
+          onClick={handleLogout}
+          startIcon={<LogoutIcon />}
+          sx={{
+            textTransform: 'none',
+            bgcolor: 'error.main',
+            '&:hover': {
+              bgcolor: 'error.dark',
+            }
+          }}
+        >
+          Logout
+        </Button>
+      </Box>
+
+      {/* Dashboard iframe */}
       <iframe
-        src="https://dd-green-kappa.vercel.app/"
+        src="https://preview--patient-dashboard-ai.lovable.app/"
         title="Doctor Dashboard"
         style={{
           width: '100%',
           height: '100%',
           border: 'none',
+          borderBottomLeftRadius: '8px',
+          borderBottomRightRadius: '8px',
           boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-        }}
-      />
-      
-      {/* Logout button positioned absolutely in bottom left */}
-      <Button
-        variant="contained"
-        color="error"
-        onClick={handleLogout}
-        startIcon={<LogoutIcon />}
-        sx={{
-          position: 'absolute',
-          bottom: '40px',
-          left: '70px',
-          textTransform: 'none',
-          bgcolor: 'error.main',
-          zIndex: 1000,
-          '&:hover': {
-            bgcolor: 'error.dark',
-          }
-        }}
-      >
-        Logout
-      </Button>
-    </Box>
-  );
-};
-
-// plan journey app in an iframe
-const PlanJourney = () => {
-  return (
-    <Box sx={{ width: '100%', height: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* Plan Journey iframe - takes full height */}
-      <iframe
-        src="https://travel-9hf1.vercel.app/"
-        title="Plan Journey"
-        style={{
-          width: '100%',
-          height: '100%',
-          border: 'none',
-          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+          justifyContent: 'center',
         }}
       />
     </Box>
@@ -100,8 +88,8 @@ const PlanJourney = () => {
 };
 
 const LoadingFallback = () => (
-  <Box display="flex" justifyContent="center" alignItems="center" height="100vh" bgcolor="#fff">
-    <img src="/logoWhite.png" alt="MedYatra Logo" style={{ width: 120, height: 120, objectFit: 'contain' }} />
+  <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
+    <CircularProgress />
   </Box>
 );
 
@@ -159,9 +147,10 @@ const DoctorAuthRoute = ({ children }) => {
   useEffect(() => {
     // If doctor is already authenticated, redirect to doctor dashboard
     if (isDoctorAuthenticated) {
-      navigate('/doctor-dashboard');
+      // Direct redirect to bypass SPA routing issues
+      window.location.href = '/doctor-dashboard';
     }
-  }, [isDoctorAuthenticated, navigate]);
+  }, [isDoctorAuthenticated]);
 
   return !isDoctorAuthenticated ? children : <LoadingFallback />;
 };
@@ -177,7 +166,7 @@ const App = () => {
               <AIChat />
             </ChatLayout>
           } />
-
+          
           {/* All other routes with default Layout */}
           <Route path="/*" element={
             <Layout>
@@ -188,12 +177,6 @@ const App = () => {
                     <DashboardPage />
                   </ProtectedRoute>
                 } />
-                <Route path="/free-consultation" element={<FreeConsultation />} />
-                <Route path="/contact" element={<ContactUs />} />
-                <Route path="/treatment" element={<Blog />} />
-                <Route path="/treatment/:id" element={<BlogPostPage />} />
-                <Route path="/newLogin" element={<NewLoginPage />} />
-                <Route path="/newSignup" element={<NewSignupPage />} />
                 <Route path="/recommend" element={<ClinicRecommender />} />
                 <Route path="/book" element={
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -208,7 +191,6 @@ const App = () => {
                   </ProtectedRoute>
                 } />
                 <Route path="/book-now" element={<AppointmentBookingPage />} />
-                <Route path="/plan-journey" element={<PlanJourney />} />
                 <Route path="/doctor-dashboard" element={
                   <DoctorProtectedRoute>
                     <DoctorDashboard />
@@ -229,8 +211,6 @@ const App = () => {
                     <DashboardPage />
                   </ProtectedRoute>
                 } />
-                <Route path="/terms" element={<TermsOfService />} />
-                <Route path="/privacy" element={<PrivacyPolicy />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Layout>
