@@ -626,7 +626,6 @@ const AIChatFinal = () => {
       mx: 'auto',
       p: 1,
       gap: 2,
-      overflow: 'hidden',
     }}>
 
       {!isMobile && messages.length < 1 && (
@@ -640,7 +639,7 @@ const AIChatFinal = () => {
             padding: 4,
           }}
         >
-          {/* Logo Circle with "M" */}
+            {/* Logo Circle with logoWhite.png */}
           <Avatar
             sx={{
               bgcolor: '#ccc',
@@ -648,13 +647,25 @@ const AIChatFinal = () => {
               height: 96,
               fontSize: 40,
               fontWeight: 'bold',
-              mb: 4,
+              mb: 1,
               color: '#000',
+              overflow: 'hidden',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              p: 0,
             }}
-          >
-            M
-          </Avatar>
-
+            src={'/logoDark.jpg'}
+            alt="MedYatra Logo"
+            imgProps={{
+              style: {
+                width: '150%',
+                height: '150%',
+                objectFit: 'contain',
+                objectPosition: 'center',
+              }
+            }}
+          />
           {/* Title */}
           <Typography
             variant="h4"
