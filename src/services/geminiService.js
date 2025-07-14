@@ -246,16 +246,16 @@ const extractInfoFromMessage = async (message, conversationHistory = []) => {
       
       // Only update fields if the API returned something
       if (parsedResponse.medicalIssue && parsedResponse.medicalIssue !== "null") {
-        result.medicalIssue = parsedResponse.medicalIssue;
+        result.medicalIssue = parsedResponse.medicalIssue.toLowerCase();
       }
       if (parsedResponse.location && parsedResponse.location !== "null") {
-        result.location = parsedResponse.location;
+        result.location = parsedResponse.location.toLowerCase();
       }
       if (parsedResponse.appointmentDate && parsedResponse.appointmentDate !== "null") {
         result.appointmentDate = parsedResponse.appointmentDate;
       }
       if (parsedResponse.treatmentType && parsedResponse.treatmentType !== "null") {
-        result.treatmentType = parsedResponse.treatmentType;
+        result.treatmentType = parsedResponse.treatmentType.toLowerCase();
       }
     } catch (error) {
       console.error("Error parsing Gemini response:", error, "\nResponse was:", responseText);
@@ -700,53 +700,103 @@ async function hasProvidedRequestedInfo(extractedInfo, previousQuestion) {
   }
 }
 
+// Define keyword arrays for each treatment type
+const hairKeywords = [
+  'hair loss', 'hairfall', 'hair fall', 'thinning hair', 'alopecia', 'dandruff',
+  'balding', 'receding hairline', 'split ends', 'dry scalp', 'oily scalp',
+  'itchy scalp', 'scalp infection', 'hair breakage', 'hair thinning',
+  'premature graying', 'male pattern baldness', 'female pattern baldness',
+  'frizzy hair', 'hair transplant', 'hair transplantation', 'hair regrowth',
+  'minoxidil', 'finasteride', 'hair tonic', 'hair serum', 'hair mask',
+  'hair spa', 'hair color', 'hair dye', 'hair straightening', 'keratin treatment',
+  'scalp micropigmentation', 'PRP therapy', 'platelet rich plasma',
+  'hair extensions', 'weave', 'wig', 'lace closure', 'hairpiece',
+  'hair volumizing', 'hair thinning', 'traction alopecia', 'alopecia areata',
+  'trichotillomania', 'seborrheic dermatitis', 'telogen effluvium',
+  'anagen effluvium', 'hair nutrition', 'biotin', 'collagen'
+];
+
+
+const ivfKeywords = [
+  'ivf', 'in vitro fertilization', 'art', 'assisted reproductive technology',
+  'embryo transfer', 'egg retrieval', 'oocyte retrieval', 'embryology lab',
+  'fertility treatment', 'fertility counselling', 'fertility clinic',
+  'icsi', 'intracytoplasmic sperm injection', 'ovarian stimulation',
+  'ovarian reserve test', 'amh test', 'anti mullerian hormone',
+  'fsh test', 'follicle stimulating hormone', 'hsg', 'hysterosalpingogram',
+  'laparoscopy', 'tubal ligation reversal', 'donor egg', 'donor sperm',
+  'surrogacy', 'gestational carrier', 'blastocyst transfer',
+  'two week wait', 'luteal phase support', 'progesterone support',
+  'pregnancy test', 'beta hcg', 'miscarriage risk', 'embryo freezing',
+  'oocyte freezing', 'sperm freezing', 'cryopreservation', 'PGT',
+  'preimplantation genetic testing', 'genetic screening', 'endometrial biopsy',
+  'endometrial receptivity assay', 'reproductive endocrinologist',
+  'male factor infertility', 'female factor infertility'
+];
+
+
+const dentalKeywords = [
+  'toothache', 'cavity', 'dental caries', 'gum disease', 'periodontitis',
+  'gingivitis', 'oral hygiene', 'tooth decay', 'root canal', 'endodontics',
+  'dental implant', 'implantology', 'braces', 'orthodontics', 'teeth whitening',
+  'bleaching', 'veneers', 'dental crown', 'dental bridge', 'dentures',
+  'partial denture', 'oral surgery', 'extraction', 'wisdom tooth',
+  'impacted tooth', 'scaling', 'polishing', 'dental cleaning',
+  'mouth ulcer', 'cold sore', 'oral thrush', 'dry mouth', 'xerostomia',
+  'bad breath', 'halitosis', 'TMJ disorder', 'jaw pain', 'crowding',
+  'diastema', 'enamel abrasion', 'tooth sensitivity', 'fluoride treatment',
+  'sealants', 'night guard', 'mouth guard', 'gum recession',
+  'peri-implantitis', 'oral cancer screening', 'dental emergency'
+];
+
+
+const cosmeticKeywords = [
+  'botox', 'filler', 'dermal filler', 'lip augmentation', 'lip filler',
+  'rhinoplasty', 'nose job', 'facelift', 'blepharoplasty', 'eyelid surgery',
+  'brow lift', 'face lift', 'chemical peel', 'laser resurfacing',
+  'microdermabrasion', 'microneedling', 'skin tightening', 'thread lift',
+  'PRP facial', 'vampire facial', 'skin booster', 'mesotherapy',
+  'lipolysis', 'coolsculpting', 'cryolipolysis', 'body contouring',
+  'liposuction', 'tummy tuck', 'abdominoplasty', 'dermaplaning',
+  'scar revision', 'tattoo removal', 'hairline lowering', 'chin implant',
+  'cheek implant', 'jawline contouring', 'ear pinning', 'otoplasty',
+  'fat grafting', 'autologous fat transfer', 'skin lightening',
+  'pigmentation treatment', 'hyperpigmentation', 'melasma',
+  'rosacea treatment', 'acne scar treatment', 'cellulite reduction'
+];
+
 // Helper function to determine treatment type from symptoms
 export const determineTreatmentType = (symptoms) => {
   if (!symptoms) return null;
   
   const lowerSymptoms = symptoms.toLowerCase();
   
-  // Hair-related keywords
-  if (lowerSymptoms.includes('hair loss') || 
-      lowerSymptoms.includes('bald') || 
-      lowerSymptoms.includes('receding') || 
-      lowerSymptoms.includes('thinning hair') ||
-      lowerSymptoms.includes('hair fall') ||
-      lowerSymptoms.includes('hair thinning') ||
-      lowerSymptoms.includes('hair problem')) {
-    return 'hair';
+  // Check for hair-related keywords
+  for (const keyword of hairKeywords) {
+    if (lowerSymptoms.includes(keyword)) {
+      return 'hair';
+    }
   }
   
-  // Dental-related keywords
-  if (lowerSymptoms.includes('tooth') || 
-      lowerSymptoms.includes('teeth') || 
-      lowerSymptoms.includes('dental') ||
-      lowerSymptoms.includes('gum') ||
-      lowerSymptoms.includes('mouth pain')) {
-    return 'dental';
+  // Check for dental-related keywords
+  for (const keyword of dentalKeywords) {
+    if (lowerSymptoms.includes(keyword)) {
+      return 'dental';
+    }
   }
   
-  // Cosmetic-related keywords
-  if (lowerSymptoms.includes('cosmetic') || 
-      lowerSymptoms.includes('botox') || 
-      lowerSymptoms.includes('wrinkle') || 
-      lowerSymptoms.includes('acne') ||
-      lowerSymptoms.includes('skin') ||
-      lowerSymptoms.includes('face') ||
-      lowerSymptoms.includes('nose') ||
-      lowerSymptoms.includes('beauty')) {
-    return 'cosmetic';
+  // Check for cosmetic-related keywords
+  for (const keyword of cosmeticKeywords) {
+    if (lowerSymptoms.includes(keyword)) {
+      return 'cosmetic';
+    }
   }
   
-  // IVF-related keywords
-  if (lowerSymptoms.includes('fertil') || 
-      lowerSymptoms.includes('pregnan') || 
-      lowerSymptoms.includes('ivf') || 
-      lowerSymptoms.includes('conceive') ||
-      lowerSymptoms.includes('birth') ||
-      lowerSymptoms.includes('baby') ||
-      lowerSymptoms.includes('sperm')) {
-    return 'ivf';
+  // Check for IVF-related keywords
+  for (const keyword of ivfKeywords) {
+    if (lowerSymptoms.includes(keyword)) {
+      return 'ivf';
+    }
   }
   
   return null;
@@ -1049,11 +1099,11 @@ export const extractMedicalInfo = async (messages) => {
             
             // Only update fields if they're not already set and the API returned something
             if (!extractedInfo.medicalIssue && parsedResponse.medicalIssue && parsedResponse.medicalIssue !== "null") {
-              extractedInfo.medicalIssue = parsedResponse.medicalIssue;
+              extractedInfo.medicalIssue = parsedResponse.medicalIssue.toLowerCase();
             }
             
             if (!extractedInfo.location && parsedResponse.location && parsedResponse.location !== "null") {
-              extractedInfo.location = parsedResponse.location;
+              extractedInfo.location = parsedResponse.location.toLowerCase();
             }
             
             if (!extractedInfo.appointmentDate && parsedResponse.appointmentDate && parsedResponse.appointmentDate !== "null") {
