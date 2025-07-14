@@ -94,7 +94,7 @@ import {
   Info,
 } from '@mui/icons-material';
 
-import { RecoverySection } from './recovery-section';
+import { RecoverySection } from './RecoverySection.jsx';
 import { JourneySection } from './journey-section';
 import { PostCareSection } from './postcare-section';
 import { ProfileSection } from './profile-section';
