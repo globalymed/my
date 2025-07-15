@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Card,
@@ -11,7 +11,9 @@ import {
   InputAdornment,
   IconButton,
   Link,
-  styled
+  styled,
+  Alert,
+  CircularProgress
 } from '@mui/material';
 import {
   Person,
@@ -19,6 +21,9 @@ import {
   Visibility,
   VisibilityOff
 } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../firebase';
 
 const StyledCard = styled(Card)(({ theme }) => ({
   margin: '50px auto',
@@ -26,8 +31,7 @@ const StyledCard = styled(Card)(({ theme }) => ({
   boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
   borderRadius: '16px',
   backgroundColor: '#fff',
-  minWidth: '90%', // default for xs
-
+  minWidth: '90%',
   [theme.breakpoints.up('sm')]: {
     minWidth: 400,
   },
@@ -111,29 +115,153 @@ const StyledButton = styled(Button)(({ theme }) => ({
 }));
 
 function LoginForm() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+
+  // Auto-focus email field on mount
+  useEffect(() => {
+    const emailInput = document.getElementById('login-email');
+    if (emailInput) {
+      emailInput.focus();
+    }
+  }, []);
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
+    setError('');
+    setEmailError('');
+    setPasswordError('');
   };
 
   const handleTogglePassword = () => {
     setShowPassword(!showPassword);
   };
 
-  const handleSignIn = () => {
-    console.log('Sign in clicked', { activeTab, email, password });
+  // Validate email format
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  // Validate password
+  const validatePassword = (password) => {
+    return password.length >= 8;
+  };
+
+  const handleSignIn = async () => {
+    setIsLoading(true);
+    setError('');
+    setEmailError('');
+    setPasswordError('');
+
+    // Validate form
+    let isValid = true;
+
+    if (!validateEmail(email)) {
+      setEmailError('Please enter a valid email address');
+      isValid = false;
+    }
+
+    if (!validatePassword(password)) {
+      setPasswordError('Password must be at least 8 characters long');
+      isValid = false;
+    }
+
+    if (!isValid) {
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      if (activeTab === 0) {
+        // Patient login
+        const usersCollection = collection(db, 'users');
+        const q = query(usersCollection, where('email', '==', email));
+        const userSnapshot = await getDocs(q);
+
+        if (userSnapshot.empty) {
+          setEmailError('No account found with this email');
+          setIsLoading(false);
+          return;
+        }
+
+        const userDoc = userSnapshot.docs[0];
+        const userData = userDoc.data();
+
+        // Check if password matches
+        if (userData.password !== password) {
+          setPasswordError('Incorrect password');
+          setIsLoading(false);
+          return;
+        }
+
+        // Store user data in localStorage for persistence
+        localStorage.setItem('userData', JSON.stringify({
+          id: userDoc.id,
+          email: userData.email,
+          firstName: userData.firstName,
+          lastName: userData.lastName
+        }));
+
+        // Navigate to dashboard
+        navigate('/dashboard');
+      } else {
+        // Doctor login
+        const docCollection = collection(db, 'doctors');
+        const q = query(docCollection, where('email', '==', email));
+        const docSnapshot = await getDocs(q);
+
+        if (docSnapshot.empty) {
+          setEmailError('No account found with this email');
+          setIsLoading(false);
+          return;
+        }
+
+        const userDoc = docSnapshot.docs[0];
+        const doctorData = userDoc.data();
+
+        // Check if password matches
+        if (doctorData.password !== password) {
+          setPasswordError('Incorrect password');
+          setIsLoading(false);
+          return;
+        }
+
+        // Store doctor data in localStorage for persistence
+        localStorage.setItem('doctorData', JSON.stringify({
+          id: userDoc.id,
+          email: doctorData.email,
+          firstName: doctorData.firstName,
+          lastName: doctorData.lastName
+        }));
+
+        // Navigate to doctor dashboard
+        navigate('/doctor-dashboard');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      setError('An error occurred during login. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <Box sx={{
+    <div>
+      <Box sx={{
       backgroundColor: '#f8f9fa',
+      minHeight: '100vh',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
+      py: 4,
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
     }}>
       <StyledCard>
@@ -183,6 +311,12 @@ function LoginForm() {
             />
           </StyledTabs>
 
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
+
           <Box sx={{ mb: 3 }}>
             <Typography
               variant="body2"
@@ -200,8 +334,15 @@ function LoginForm() {
               variant="outlined"
               placeholder="Enter your email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setEmailError('');
+                setError('');
+              }}
               type="email"
+              id="login-email"
+              error={!!emailError}
+              helperText={emailError}
             />
           </Box>
 
@@ -223,7 +364,13 @@ function LoginForm() {
               placeholder="Enter your password"
               type={showPassword ? 'text' : 'password'}
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setPasswordError('');
+                setError('');
+              }}
+              error={!!passwordError}
+              helperText={passwordError}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
@@ -243,9 +390,14 @@ function LoginForm() {
           <StyledButton
             fullWidth
             onClick={handleSignIn}
+            disabled={isLoading}
             sx={{ mb: 3 }}
           >
-            Sign In
+            {isLoading ? (
+              <CircularProgress size={24} color="inherit" />
+            ) : (
+              'Sign In'
+            )}
           </StyledButton>
 
           <Box sx={{ textAlign: 'center', mb: 2 }}>
@@ -289,13 +441,16 @@ function LoginForm() {
           </Box>
         </CardContent>
       </StyledCard>
-      <Box sx={{ textAlign: 'center', mt: 1 }}>
+      
+    </Box>
+    <Box sx={{ textAlign: 'center', mt: 1 }}>
         <Link href="/privacy" color="primary" underline="hover">Privacy Policy</Link>
       </Box>
-      <Box sx={{ textAlign: 'center', mt: 2 }}>
+      <Box sx={{ textAlign: 'center', mt: 2, paddingBottom: 1 }}>
         <Link href="/terms" color="primary" underline="hover">Terms of Service</Link>
       </Box>
-    </Box>
+
+    </div>
   );
 }
 

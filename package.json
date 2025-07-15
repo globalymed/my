@@ -41,6 +41,7 @@
     "security:audit": "node scripts/security-migration.js",
     "env:validate": "node scripts/validate-env.js",
     "env:setup": "cp .env.example .env && echo 'Created .env file from template. Please update with your actual values.'",
+    "firebase:setup": "node scripts/firebase-setup.js",
     "security:check": "npm run security:audit && npm run env:validate"
   },
   "browserslist": {

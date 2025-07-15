@@ -33,8 +33,12 @@ import {
     VisibilityOff,
     Upload,
 } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
+import { collection, addDoc, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../firebase';
 
 function SignupForm() {
+    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('patient');
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -110,6 +114,28 @@ function SignupForm() {
 
         const currentForm = activeTab === 'patient' ? patientForm : doctorForm;
 
+        // Basic validation
+        if (!currentForm.fullName || !currentForm.email || !currentForm.password) {
+            setError('Please fill in all required fields');
+            setIsLoading(false);
+            return;
+        }
+
+        // Email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(currentForm.email)) {
+            setError('Please enter a valid email address');
+            setIsLoading(false);
+            return;
+        }
+
+        // Password validation
+        if (currentForm.password.length < 8) {
+            setError('Password must be at least 8 characters long');
+            setIsLoading(false);
+            return;
+        }
+
         if (currentForm.password !== currentForm.confirmPassword) {
             setError('Passwords do not match');
             setIsLoading(false);
@@ -117,7 +143,7 @@ function SignupForm() {
         }
 
         if (!agreedToTerms) {
-            setError('Please agree to the <Link href="/terms" color="primary">Terms of Service</Link> and <Link href="/privacy" color="primary">Privacy Policy</Link>');
+            setError('Please agree to the Terms of Service and Privacy Policy');
             setIsLoading(false);
             return;
         }
@@ -129,19 +155,83 @@ function SignupForm() {
         }
 
         try {
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            console.log('Form submitted:', { type: activeTab, data: currentForm });
-            alert(`${activeTab === 'patient' ? 'Patient' : 'Doctor'} account created successfully!`);
+            // Check if email already exists
+            const collectionName = activeTab === 'patient' ? 'users' : 'doctors';
+            const existingUserQuery = query(
+                collection(db, collectionName),
+                where('email', '==', currentForm.email)
+            );
+            const existingUserSnapshot = await getDocs(existingUserQuery);
+
+            if (!existingUserSnapshot.empty) {
+                setError('An account with this email already exists');
+                setIsLoading(false);
+                return;
+            }
+
+            // Prepare user data
+            const userData = {
+                email: currentForm.email,
+                password: currentForm.password,
+                createdAt: new Date(),
+            };
+
+            if (activeTab === 'patient') {
+                // Split full name into first and last name
+                const nameParts = currentForm.fullName.trim().split(' ');
+                const firstName = nameParts[0];
+                const lastName = nameParts.slice(1).join(' ') || '';
+
+                userData.firstName = firstName;
+                userData.lastName = lastName;
+                userData.phone = currentForm.phone;
+                userData.gender = currentForm.gender;
+                userData.age = currentForm.age ? parseInt(currentForm.age) : null;
+            } else {
+                // Doctor data
+                const nameParts = currentForm.fullName.trim().split(' ');
+                const firstName = nameParts[0];
+                const lastName = nameParts.slice(1).join(' ') || '';
+
+                userData.firstName = firstName;
+                userData.lastName = lastName;
+                userData.phone = currentForm.phone;
+                userData.registrationNumber = currentForm.registrationNumber;
+                userData.hospitalName = currentForm.hospitalName;
+                userData.specialization = currentForm.specialization;
+                // Note: In a real app, you'd upload the file to storage here
+                userData.certificationUploaded = !!selectedFile;
+            }
+
+            // Create the user account
+            const docRef = await addDoc(collection(db, collectionName), userData);
+
+            // Store user data in localStorage for auto-login
+            const userSessionData = {
+                id: docRef.id,
+                email: userData.email,
+                firstName: userData.firstName,
+                lastName: userData.lastName
+            };
+
+            if (activeTab === 'patient') {
+                localStorage.setItem('userData', JSON.stringify(userSessionData));
+                navigate('/dashboard');
+            } else {
+                localStorage.setItem('doctorData', JSON.stringify(userSessionData));
+                navigate('/doctor-dashboard');
+            }
+
         } catch (err) {
-            setError('An error occurred. Please try again.');
+            console.error('Signup error:', err);
+            setError('An error occurred during registration. Please try again.');
         } finally {
             setIsLoading(false);
         }
     };
 
     return (
-        <Box sx={{ bgcolor: 'grey.50', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2 }}>
+        <Box sx={{ bgcolor: 'grey.50', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2 }}>
             <Paper elevation={3} sx={{ width: '100%', maxWidth: 1000, borderRadius: 3, overflow: 'hidden' }}>
                 {/* Header */}
                 <Box sx={{ textAlign: 'center', p: 4, pb: 2 }}>

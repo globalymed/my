@@ -25,6 +25,34 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 // Import the password generator utility
 import { generateSecurePassword } from './utils/passwordUtils';
 
+// Validate required environment variables
+const requiredEnvVars = {
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.REACT_APP_FIREBASE_APP_ID,
+  measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID
+};
+
+// Check for missing environment variables
+const missingVars = Object.entries(requiredEnvVars)
+  .filter(([key, value]) => !value)
+  .map(([key]) => `REACT_APP_FIREBASE_${key.toUpperCase()}`);
+
+if (missingVars.length > 0) {
+  console.error('❌ Missing Firebase environment variables:');
+  missingVars.forEach(varName => console.error(`   - ${varName}`));
+  console.error('\n📝 Please create a .env file with your Firebase configuration.');
+  console.error('📚 See .env.example for the required format.');
+  
+  // Provide a more helpful error message
+  throw new Error(
+    `Missing Firebase configuration. Please add the following environment variables to your .env file:\n${missingVars.join('\n')}\n\nSee .env.example for the required format.`
+  );
+}
+
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
