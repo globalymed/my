@@ -11,6 +11,7 @@ import {
     LinearProgress,
     Chip,
     Divider,
+    useTheme
 } from '@mui/material';
 
 import {
@@ -34,7 +35,7 @@ import {
     FaUpload,
     FaPlane, FaHotel, FaCcVisa
 } from 'react-icons/fa';
-import { AccessTime, CalendarMonth, Done, LocationOn } from '@mui/icons-material';
+import { AccessTime, CalendarMonth, CalendarToday, Done, LocationOn, Videocam } from '@mui/icons-material';
 
 const HomeOverview = ({ user, appointments }) => {
 
@@ -67,8 +68,7 @@ const HomeOverview = ({ user, appointments }) => {
             <Grid container spacing={3}>
                 {/* Upcoming Appointment */}
                 <Grid item xs={12} md={7}>
-                    <Card
-                        elevation={0}
+                    <Card elevation={0}
                         sx={{
                             borderRadius: 4,
                             overflow: "hidden",
@@ -77,191 +77,81 @@ const HomeOverview = ({ user, appointments }) => {
                             border: "2px solid #E4E7EC",
                         }}
                     >
-
-                        {/* Header */}
-                        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                            <Typography variant="h6" fontWeight="600">
-                                Upcoming Appointment
-                            </Typography>
-                            <Typography variant="body2" color="error" sx={{ cursor: "pointer" }}>
-                                View All
-                            </Typography>
-                        </Box>
-
-                        {/* Main Content */}
-                        <Box
-                            display="flex"
-                            justifyContent="space-between"
-                            p={2}
-                            borderRadius={3}
-                            gap={2}
-                            sx={{ backgroundColor: "#35A49C", color: "white", position: "relative" }}
-                        >
-                            {/* Left: Doctor Info */}
-                            <Box flex='1' display="flex" flexDirection='column' alignItems="center" gap={2}>
-                                <Box sx={{ position: 'relative', display: 'inline-block' }}>
-                                    <Avatar
-                                        src="https://randomuser.me/api/portraits/women/44.jpg"
-                                        sx={{ width: 120, height: 120 }}
-                                    />
-                                    <Box
-                                        sx={{
-                                            position: 'absolute',
-                                            bottom: 0,
-                                            right: 0,
-                                            bgcolor: '#00f',
-                                            color: 'white',
-                                            borderRadius: '50%',
-                                            p: '2px',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                        }}
-                                    >
-                                        <Done
-                                            fontSize="small"
-                                            sx={{
-                                                color: '#fff',
-                                                fontSize: 14,
-                                            }}
-                                        />
-                                    </Box>
+                        <CardHeader
+                            title={
+                                <Box display="flex" alignItems="center" gap={1}>
+                                    <Calendar size={18} />
+                                    <Typography variant="h6">Upcoming Appointment</Typography>
                                 </Box>
-
-                                <Box>
-                                    <Typography variant="subtitle1" fontWeight="bold">
-                                        Dr. Alison Ogaga
-                                    </Typography>
-                                    <Typography variant="body2">General Practitioner</Typography>
-                                </Box>
-                            </Box>
-
-                            {/* Right: Date, Time, Location, Buttons */}
-                            <Box
-                                flex={2}
-                            >
-                                <Box sx={{
-                                    backgroundColor: "#EDFAF1",
-                                    borderRadius: 2,
-                                    p: 2,
-                                    color: "#35A49C",
-                                    minWidth: 260,
-                                }} >
-                                    <Box display="flex" alignItems="center" gap={2} mb={1}>
-                                        <Box display="flex" alignItems="center" gap={1} mb={1}>
-                                            <CalendarMonth fontSize="small" color='667185' />
-                                            <Typography variant="body2">October 28th, 2023</Typography>
-                                        </Box>
-                                        <Box display="flex" alignItems="center" gap={1} mb={1}>
-                                            <AccessTime fontSize="small" color='667185' />
-                                            <Typography variant="body2">11:30 - 12:00 (30min)</Typography>
-                                        </Box>
-                                    </Box>
-                                    <Box display="flex" alignItems="center" gap={1}>
-                                        <LocationOn fontSize="small" color='667185' />
-                                        <Typography variant="body2">
-                                            Medicare Hospital, 18 Iwaya Rd, Lagos
+                            }
+                        />
+                        <CardContent>
+                            {upcomingAppointment ? (
+                                <Grid container spacing={2} alignItems="center">
+                                    <Grid item xs={12} md={8}>
+                                        <Typography variant="h6">{upcomingAppointment.treatmentType || "Appointment"}</Typography>
+                                        <Typography variant="body2" color="text.secondary">
+                                            {upcomingAppointment.doctorName || "Doctor"}
                                         </Typography>
-                                    </Box>
-                                </Box>
-
-                                {/* line */}
-
-                                <Divider sx={{ my: 2, backgroundColor: "#ccc" }} />
-
-                                {/* Action Buttons */}
-                                <Box
-                                    display="flex"
-                                    justifyContent="center"
-                                    gap={2}
-                                    mt={3}
-                                    alignItems="center"
-                                    flexWrap="wrap"
-                                >
-                                    <Button
-                                        variant="outlined"
-                                        sx={{
-                                            backgroundColor: '#FFFFFF',
-                                            color: '#344054',
-                                            textTransform: 'none',
-                                            borderRadius: 6,
-                                            px: 3,
-                                            borderColor: '#D0D5DD',
-                                            '&:hover': {
-                                                backgroundColor: '#f0f0f0',
-                                                borderColor: '#1D4645',
-                                            },
-                                        }}
-                                    >
-                                        Reschedule
-                                    </Button>
-                                    <Button
-                                        variant="contained"
-                                        sx={{
-                                            borderRadius: 6,
-                                            px: 3,
-                                            backgroundColor: "#FFFFFF",
-                                            textTransform: "none",
-                                            color: "black",
-                                            fontWeight: 600,
-                                            '&:hover': {
-                                                backgroundColor: '#f0f0f0',
-                                                borderColor: '#1D4645',
-                                            },
-                                        }}
-                                        startIcon={
-                                            <img
-                                                src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg"
-                                                width={20}
-                                                alt="whatsapp"
-                                            />
-                                        }
-                                    >
-                                        Confirm appointment
-                                    </Button>
-                                </Box>
-                            </Box>
-
-                            {/* Bell Icon */}
-                            <Box sx={{ position: "absolute", top: -10, right: -10 }}>
-                                <img
-                                    src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png"
-                                    alt="bell"
-                                    width={40}
-                                    style={{ transform: "rotate(10deg)" }}
-                                />
-                            </Box>
-                        </Box>
-
-
-
-                        {/* Pagination Dots */}
-                        <Box display="flex" justifyContent="center" mt={2} gap={1}>
-                            <Box
-                                sx={{
-                                    width: 20,
-                                    height: 10,
-                                    borderRadius: 2,
-                                    backgroundColor: '#47B462',
-                                }}
-                            />
-                            <Box
-                                sx={{
-                                    width: 10,
-                                    height: 10,
-                                    borderRadius: "50%",
-                                    backgroundColor: '#BBB9B9',
-                                }}
-                            />
-                            <Box
-                                sx={{
-                                    width: 10,
-                                    height: 10,
-                                    borderRadius: "50%",
-                                    backgroundColor: '#BBB9B9',
-                                }}
-                            />
-                        </Box>
+                                        <Box display="flex" alignItems="center" mt={1}>
+                                            <AccessTime sx={{ mr: 1 }} />
+                                            <Typography variant="body2">
+                                                {new Date(upcomingAppointment.appointmentDate).toLocaleDateString()} - {upcomingAppointment.appointmentTime || "TBD"}
+                                            </Typography>
+                                        </Box>
+                                        <Box display="flex" alignItems="center" mt={1}>
+                                            <LocationOn sx={{ mr: 1 }} />
+                                            <Typography variant="body2">
+                                                {upcomingAppointment.hospitalName || "Hospital"}
+                                            </Typography>
+                                        </Box>
+                                    </Grid>
+                                    <Grid item xs={12} md={4}>
+                                        <Button
+                                            variant="outlined"
+                                            startIcon={<Videocam />}
+                                            fullWidth
+                                            sx={{
+                                                mb: 1,
+                                                backgroundColor: 'black',
+                                                color: 'white',
+                                                textTransform: 'none',
+                                                borderRadius: 2,
+                                                fontWeight: 600,
+                                                borderColor: '#D1D5DB',
+                                                '&:hover': {
+                                                    borderColor: '#9CA3AF',
+                                                    backgroundColor: '#333',
+                                                    color: 'white',
+                                                },
+                                            }}
+                                        >
+                                            Join Call
+                                        </Button>
+                                        <Button variant="outlined" fullWidth
+                                            sx={{
+                                                textTransform: 'none',
+                                                fontWeight: 600,
+                                                borderColor: '#D1D5DB',
+                                                color: '#374151',
+                                                borderRadius: 2,
+                                                fontSize: 15,
+                                                '&:hover': {
+                                                    borderColor: '#9CA3AF',
+                                                    backgroundColor: '#f0f0f0',
+                                                },
+                                            }}
+                                        >
+                                            Reschedule
+                                        </Button>
+                                    </Grid>
+                                </Grid>
+                            ) : (
+                                <Typography variant="body1" textAlign="center" color="text.secondary">
+                                    No upcoming appointments
+                                </Typography>
+                            )}
+                        </CardContent>
                     </Card>
                 </Grid>
 
@@ -273,152 +163,45 @@ const HomeOverview = ({ user, appointments }) => {
                             overflow: "hidden",
                             position: "relative",
                             p: 2,
-                            backgroundColor: "#FFFFFF",
                             border: "2px solid #E4E7EC",
-                        }}>
-                        <CardContent>
-                            {/* Top section */}
-                            <Box display="flex" alignItems="center" justifyContent='space-between' gap={2}>
-                                <Box display="flex" alignItems="center" gap={2}>
-                                    <Avatar
-                                        src="https://randomuser.me/api/portraits/men/75.jpg"
-                                        sx={{ width: 64, height: 64 }}
-                                    />
-                                    <Box>
-                                        <Typography variant="h6" fontWeight="bold">
-                                            My Profile
-                                        </Typography>
-                                        <Typography color="text.secondary">Jack Smith</Typography>
-                                    </Box>
+                        }}
+                    >
+                        <CardHeader
+                            title={
+                                <Box display="flex" alignItems="center" gap={1}>
+                                    <Stethoscope size={18} />
+                                    <Typography variant="h6">Treatment Progress</Typography>
                                 </Box>
+                            }
+                        />
+                        <CardContent>
+                            <Typography fontWeight={600}>Knee Replacement Surgery</Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                Apollo Hospital, Delhi
+                            </Typography>
 
-                                {/* Uplaod your document button */}
-                                <Button
-                                    variant="outlined"
-                                    sx={{
-                                        borderRadius: 6,
-                                        px: 3,
-                                        py: 1,
-                                        textTransform: 'none',
-                                        fontSize: 13,
-                                        fontWeight: 500,
-                                        color: '#344054',
-                                        borderColor: '#D0D5DD',
-                                        backgroundColor: '#1D4645',
-                                        color: '#FFFFFF',
-                                        '&:hover': {
-                                            backgroundColor: '#f0f0f0',
-                                            borderColor: '#1D4645',
-                                        },
-                                    }}
-                                    startIcon={<FaUpload size={12} />}
-                                >
-                                    Upload your document
-                                </Button>
-
+                            <Box mt={2}>
+                                <Box display="flex" justifyContent="space-between">
+                                    <Typography variant="body2">Progress</Typography>
+                                    <Typography variant="body2">Pre-Surgery</Typography>
+                                </Box>
+                                <LinearProgress variant="determinate" value={25} sx={{ height: 6, borderRadius: 5 }} />
                             </Box>
 
-                            {/* Status and Edit */}
-                            <Box mt={2} display="flex" gap={2} flexWrap="wrap">
-                                <Button
-                                    variant="contained"
-                                    sx={{
-                                        backgroundColor: '#D0FBFF',
-                                        color: 'black',
-                                        borderRadius: 2,
-                                        textTransform: 'none',
-                                        fontWeight: 500,
-                                        fontSize: 13,
-                                        boxShadow: 'none',
-                                        '&:hover': { backgroundColor: '#b6e7e3' },
-                                    }}
-                                >
-                                    IN PROGRESS
-                                </Button>
-                                <Button
-                                    variant="outlined"
-                                    sx={{
-                                        borderRadius: 2,
-                                        textTransform: 'none',
-                                        fontSize: 13,
-                                        fontWeight: 500,
-                                        backgroundColor: '#CDD2DA',
-                                        color: 'black',
-
-                                    }}
-                                    startIcon={<FaPen size={12} color='#667185' />}
-                                >
-                                    Edit
-                                </Button>
+                            <Box mt={2}>
+                                <Box display="flex" alignItems="center" gap={1}>
+                                    <CheckCircle size={14} color="green" />
+                                    <Typography variant="caption">Initial Consultation</Typography>
+                                </Box>
+                                <Box display="flex" alignItems="center" gap={1}>
+                                    <CheckCircle size={14} color="green" />
+                                    <Typography variant="caption">Medical Records Review</Typography>
+                                </Box>
+                                <Box display="flex" alignItems="center" gap={1}>
+                                    <Clock size={14} color="orange" />
+                                    <Typography variant="caption">Pre-Surgery Tests</Typography>
+                                </Box>
                             </Box>
-
-                            {/* Info Section */}
-                            <Box
-                                mt={3}
-                                p={2}
-                                borderRadius={2}
-                                sx={{ backgroundColor: '#EEFAF9' }}
-                            >
-                                <Grid container spacing={2}>
-                                    <Grid item xs={6}>
-                                        <Typography fontWeight={600} color="#FD6E5E" fontSize={14}>
-                                            Appointment Date
-                                        </Typography>
-                                        <Box display="flex" alignItems="center" gap={1} mt={1} color='#22472B'>
-                                            <FaCalendarAlt size={14} color='#667185' />
-                                            <Typography fontSize={14}>October 28th, 2023</Typography>
-                                        </Box>
-                                    </Grid>
-
-                                    <Grid item xs={6}>
-                                        <Typography fontWeight={600} color="#FD6E5E" fontSize={14}>
-                                            ANC Day
-                                        </Typography>
-                                        <Box display="flex" alignItems="center" gap={1} mt={1} color='#22472B'>
-                                            <FaCalendarAlt size={14} color='#667185' />
-                                            <Typography fontSize={14}>Tuesday</Typography>
-                                        </Box>
-                                    </Grid>
-
-                                    <Grid item xs={12}>
-                                        <Box display="flex" alignItems="center" gap={1} mt={1} color='#22472B'>
-                                            <FaMapMarkerAlt size={14} color='#667185' />
-                                            <Typography fontSize={14}>
-                                                Medicare Hospital, 18 Iwaya Rd, Lagos
-                                            </Typography>
-                                        </Box>
-                                    </Grid>
-                                </Grid>
-                            </Box>
-
-                            {/* Divider */}
-                            <Divider sx={{ my: 3 }} />
-
-                            {/* Reminder Button */}
-                            <Button
-                                variant="contained"
-                                sx={{
-                                    borderRadius: 6,
-                                    px: 3,
-                                    backgroundColor: "#FFFFFF",
-                                    textTransform: "none",
-                                    color: "black",
-                                    fontWeight: 600,
-                                    '&:hover': {
-                                        backgroundColor: '#f0f0f0',
-                                        borderColor: '#1D4645',
-                                    },
-                                }}
-                                startIcon={
-                                    <img
-                                        src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg"
-                                        width={20}
-                                        alt="whatsapp"
-                                    />
-                                }
-                            >
-                                Send Reminder
-                            </Button>
                         </CardContent>
                     </Card>
                 </Grid>
@@ -434,7 +217,10 @@ const HomeOverview = ({ user, appointments }) => {
                             borderRadius: 4,
                             overflow: "hidden",
                             position: "relative",
+                            justifyContent: "space-between",
                             p: 2,
+                            display: "flex",
+                            gap: 2,
                             border: "2px solid #E4E7EC",
                         }}
                     >
@@ -485,9 +271,40 @@ const HomeOverview = ({ user, appointments }) => {
                     </Card>
                 </Grid>
 
+                {/* Calendar */}
+                <Grid item xs={12} md={5}>
+                    <Card elevation={0}
+                        sx={{
+                            borderRadius: 4,
+                            overflow: "hidden",
+                            position: "relative",
+                            p: 2,
+                            border: "2px solid #E4E7EC",
+                        }}>
+                        <CardHeader
+                            title={
+                                <Box display="flex" alignItems="center" gap={1}>
+                                    <CalendarMonth size={18} />
+                                    <Typography variant="h6">Calendar</Typography>
+                                </Box>
+                            }
+                        />
+                        <CardContent>
+                            <CalendarCard appointments={appointments} />
+                        </CardContent>
+                    </Card>
+                </Grid>
+
                 {/* Recent Documents */}
                 <Grid item xs={12} md={4}>
-                    <Card>
+                    <Card elevation={0}
+                        sx={{
+                            borderRadius: 4,
+                            overflow: "hidden",
+                            position: "relative",
+                            p: 2,
+                            border: "2px solid #E4E7EC",
+                        }}>
                         <CardHeader
                             title={
                                 <Box display="flex" alignItems="center" gap={1}>
@@ -523,8 +340,15 @@ const HomeOverview = ({ user, appointments }) => {
                 </Grid>
 
                 {/* Post-Care Alerts */}
-                <Grid item xs={12} md={4}>
-                    <Card>
+                <Grid item xs={12} md={3}>
+                    <Card elevation={0}
+                        sx={{
+                            borderRadius: 4,
+                            overflow: "hidden",
+                            position: "relative",
+                            p: 2,
+                            border: "2px solid #E4E7EC",
+                        }}>
                         <CardHeader
                             title={
                                 <Box display="flex" alignItems="center" gap={1}>
@@ -554,8 +378,6 @@ const HomeOverview = ({ user, appointments }) => {
     );
 };
 
-
-
 const BookingCard = ({ icon, title, price, unit, tags, buttonText, color }) => {
     return (
         <Card
@@ -564,11 +386,11 @@ const BookingCard = ({ icon, title, price, unit, tags, buttonText, color }) => {
                 borderRadius: 3,
                 border: "1px solid #E4E7EC",
                 width: 250,
-                p: 3,
+                px: 3,
                 textAlign: "left",
             }}
         >
-            <CardContent sx={{ p: 0 }}>
+            <CardContent sx={{ p: 0, mb: 0, pt: 3, }}>
                 {/* Icon */}
                 <Box
                     sx={{
@@ -626,7 +448,6 @@ const BookingCard = ({ icon, title, price, unit, tags, buttonText, color }) => {
                         borderColor: "#D1D5DB",
                         color: "#374151",
                         borderRadius: 6,
-                        height: 40,
                         fontSize: 15,
                         "&:hover": {
                             borderColor: "#9CA3AF",
@@ -636,6 +457,111 @@ const BookingCard = ({ icon, title, price, unit, tags, buttonText, color }) => {
                 >
                     {buttonText}
                 </Button>
+            </CardContent>
+        </Card>
+    );
+};
+
+const getFormattedMonthYear = (date) => {
+    return date.toLocaleString('default', { month: 'long', year: 'numeric' });
+};
+
+const isSameDay = (d1, d2) => {
+    return (
+        d1.getFullYear() === d2.getFullYear() &&
+        d1.getMonth() === d2.getMonth() &&
+        d1.getDate() === d2.getDate()
+    );
+};
+
+const CalendarCard = ({ appointments }) => {
+    const today = new Date();
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
+
+    const getAppointmentStatus = (dateStr) => {
+        const date = new Date(dateStr);
+        const now = new Date();
+        if (isSameDay(date, now)) return 'today';
+        return date > now ? 'upcoming' : 'past';
+    };
+
+    const appointmentMap = {};
+    (appointments || []).forEach((apt) => {
+        const dateKey = new Date(apt.appointmentDate).getDate();
+        appointmentMap[dateKey] = getAppointmentStatus(apt.appointmentDate);
+    });
+
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+    const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
+
+    const totalSlots = firstDayOfMonth + daysInMonth;
+    const weeks = Math.ceil(totalSlots / 7);
+    const gridDays = Array(weeks * 7).fill(null).map((_, i) => {
+        const dayNum = i - firstDayOfMonth + 1;
+        return dayNum > 0 && dayNum <= daysInMonth ? dayNum : null;
+    });
+
+    const getBgColor = (status) => {
+        if (status === 'today') return '#0288d1';
+        if (status === 'upcoming') return '#1976d2';
+        if (status === 'past') return '#2e7d32';
+        return 'transparent';
+    };
+
+    return (
+        <Card elevation={0}
+            sx={{
+                borderRadius: 4,
+                overflow: "hidden",
+                position: "relative",
+                p: 2,
+                border: "2px solid #E4E7EC",
+            }}>
+            <CardHeader title={<Typography variant="h6">{getFormattedMonthYear(today)}</Typography>} />
+            <CardContent>
+                <Box display="grid" gridTemplateColumns="repeat(7, 1fr)" textAlign="center" gap={1}>
+                    {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+                        <Typography key={day} fontWeight={600}>{day}</Typography>
+                    ))}
+                    {gridDays.map((day, index) => {
+                        const status = appointmentMap[day];
+                        const bgColor = getBgColor(status);
+                        const textColor = bgColor !== 'transparent' ? 'white' : 'inherit';
+                        return (
+                            <Box
+                                key={index}
+                                display="flex"
+                                justifyContent="center"
+                                alignItems="center"
+                                width={32}
+                                height={32}
+                                borderRadius="50%"
+                                bgcolor={bgColor}
+                                color={textColor}
+                                mx="auto"
+                            >
+                                {day || ''}
+                            </Box>
+                        );
+                    })}
+                </Box>
+
+                <Box mt={4} display="flex" flexDirection="column" gap={1}>
+                    <Box display="flex" alignItems="center" gap={1}>
+                        <Box width={12} height={12} borderRadius="50%" bgcolor="#2e7d32" />
+                        <Typography variant="body2">Completed Appointments</Typography>
+                    </Box>
+                    <Box display="flex" alignItems="center" gap={1}>
+                        <Box width={12} height={12} borderRadius="50%" bgcolor="#1976d2" />
+                        <Typography variant="body2">Upcoming Appointments</Typography>
+                    </Box>
+                    <Box display="flex" alignItems="center" gap={1}>
+                        <Box width={12} height={12} borderRadius="50%" bgcolor="#0288d1" />
+                        <Typography variant="body2">Today</Typography>
+                    </Box>
+                </Box>
             </CardContent>
         </Card>
     );

@@ -11,6 +11,7 @@ import {
     Grid,
     Button,
     Divider,
+    styled
 } from '@mui/material';
 import {
     FaClock as Clock,
@@ -20,7 +21,38 @@ import {
     FaCheckCircle as CheckCircle2,
     FaDownload as Download,
 } from 'react-icons/fa';
-import { AccessTime, LocationOn, Videocam } from '@mui/icons-material';
+import {
+    AccessTime, LocationOn, Videocam, Person,
+    LocalHospital,
+    Visibility,
+    VisibilityOff
+} from '@mui/icons-material';
+
+const StyledTabs = styled(Tabs)(({ theme }) => ({
+    '& .MuiTabs-flexContainer': {
+        backgroundColor: '#f5f5f5',
+        borderRadius: '12px',
+        padding: '4px',
+    },
+    '& .MuiTab-root': {
+        textTransform: 'none',
+        minHeight: '48px',
+        fontSize: '16px',
+        fontWeight: 500,
+        color: '#666',
+        borderRadius: '8px',
+        margin: '0 2px',
+        '&.Mui-selected': {
+            backgroundColor: '#ffffff',
+            color: '#333',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+        }
+    },
+    '& .MuiTabs-indicator': {
+        display: 'none'
+    }
+}));
+
 
 function AppointmentsSection({ appointments }) {
     const [tab, setTab] = useState(0);
@@ -55,22 +87,55 @@ function AppointmentsSection({ appointments }) {
                 <Typography color="text.secondary">Manage your medical consultations</Typography>
             </Box>
 
-            <Tabs value={tab} onChange={handleTabChange} textColor="primary" indicatorColor="primary">
-                <Tab label="Upcoming" />
-                <Tab label="Past" />
-                <Tab label="Calendar View" />
-            </Tabs>
+            <StyledTabs
+                value={tab}
+                onChange={handleTabChange}
+                sx={{
+                    width: 'fit-content',
+                }}
+            >
+                <Tab
+                    label="Upcoming"
+                    iconPosition="start"
+                    sx={{ gap: 1 }}
+                />
+                <Tab
+                    label="Past"
+                    iconPosition="start"
+                    sx={{ gap: 1 }}
+                />
+                <Tab
+                    label="Calendar View"
+                    iconPosition="start"
+                    sx={{ gap: 1 }}
+                />
+            </StyledTabs>
+
 
             {tab === 0 && (
                 <Box>
                     {upcomingAppointments.length > 0 ? (
                         upcomingAppointments.map((appointment, index) => (
-                            <Card key={index} sx={{ mb: 2 }}>
+                            <Card elevation={0}
+                                sx={{
+                                    borderRadius: 4,
+                                    overflow: "hidden",
+                                    position: "relative",
+                                    p: 2,
+                                    border: "2px solid #E4E7EC",
+                                    mb: 2,
+                                }} key={index}>
                                 <CardHeader
+                                    sx={{ fontWeight: 600 }}
                                     title={appointment.treatmentType || "Appointment"}
                                     subheader={appointment.doctorName || "Doctor"}
-                                    action={<Chip label="Upcoming" color="primary" />}
+                                    action={<Chip label="Upcoming" sx={{ backgroundColor: 'black', color: 'white' }} />}
+                                    titleTypographyProps={{
+                                        fontSize: "2rem",  // adjust size as needed (e.g. 24px = 1.5rem)
+                                        fontWeight: 700      // bold
+                                    }}
                                 />
+
                                 <CardContent>
                                     <Grid container spacing={2} alignItems="center">
                                         <Grid item xs={12} md={8}>
@@ -87,25 +152,34 @@ function AppointmentsSection({ appointments }) {
                                                 </Typography>
                                             </Box>
                                         </Grid>
-                                        <Grid item xs={12} md={4}>
+                                        <Box sx={{
+                                            display: 'flex',
+                                            flexDirection: 'row', gap: 1, mt: { xs: 2, md: 0 },
+                                            alignItems: 'center', justifyContent: { xs: 'space-between', md: 'flex-end' }
+                                        }} item xs={12} md={4}>
                                             <Button
-                                                variant="contained"
                                                 startIcon={<Videocam />}
-                                                fullWidth
-                                                sx={{ mb: 1 }}
+                                                sx={{ backgroundColor: 'black', px: 5, py: 1, color: 'white', '&:hover': { backgroundColor: '#333' } }}
                                             >
                                                 Join Call
                                             </Button>
-                                            <Button variant="outlined" fullWidth>
+                                            <Button variant="outlined" sx={{ px: 5, py: 1, color: 'black', backgroundColor: 'white' }}>
                                                 Reschedule
                                             </Button>
-                                        </Grid>
+                                        </Box>
                                     </Grid>
                                 </CardContent>
                             </Card>
                         ))
                     ) : (
-                        <Card>
+                        <Card elevation={0}
+                            sx={{
+                                borderRadius: 4,
+                                overflow: "hidden",
+                                position: "relative",
+                                p: 2,
+                                border: "2px solid #E4E7EC",
+                            }}>
                             <CardContent>
                                 <Typography variant="body1" textAlign="center" color="text.secondary">
                                     No upcoming appointments
@@ -119,7 +193,14 @@ function AppointmentsSection({ appointments }) {
 
             {tab === 1 && (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    <Card>
+                    <Card elevation={0}
+                        sx={{
+                            borderRadius: 4,
+                            overflow: "hidden",
+                            position: "relative",
+                            p: 2,
+                            border: "2px solid #E4E7EC",
+                        }}>
                         <CardHeader
                             title={
                                 <Box display="flex" justifyContent="space-between">
@@ -129,7 +210,18 @@ function AppointmentsSection({ appointments }) {
                                             Dr. Rajesh Kumar - Orthopedic Surgeon
                                         </Typography>
                                     </Box>
-                                    <Chip label="Completed" variant="outlined" />
+                                    <Chip  sx={{
+                                        color: 'black',
+                                        backgroundColor: '#e0f7fa',
+                                        borderColor: '#006064',
+                                        borderWidth: 1,
+                                        fontWeight: 600,
+                                        borderStyle: 'solid',
+                                        '&:hover': {
+                                            backgroundColor: '#b2ebf2',
+                                            borderColor: '#004d40'
+                                        }
+                                    }} label="Completed" variant="outlined" />
                                 </Box>
                             }
                         />
@@ -148,8 +240,30 @@ function AppointmentsSection({ appointments }) {
                                     </Box>
                                 </Grid>
                                 <Grid item xs={12} md={6} display="flex" gap={2}>
-                                    <Button variant="outlined" fullWidth>View Summary</Button>
-                                    <Button variant="outlined" fullWidth startIcon={<Download size={16} />}>Prescription</Button>
+                                    <Button
+                                        variant="outlined"
+                                        sx={{
+                                            backgroundColor: 'white',
+                                            color: 'black',
+                                            borderColor: '#333',
+                                            '&:hover': {
+                                                backgroundColor: '#f0f0f0',
+                                                borderColor: '#555'
+                                            }
+                                        }}
+                                        fullWidth>View Summary</Button>
+                                    <Button
+                                        variant="outlined"
+                                        sx={{
+                                            backgroundColor: 'white',
+                                            color: 'black',
+                                            borderColor: '#333',
+                                            '&:hover': {
+                                                backgroundColor: '#f0f0f0',
+                                                borderColor: '#555'
+                                            }
+                                        }}
+                                        fullWidth startIcon={<Download size={16} />}>Prescription</Button>
                                 </Grid>
                             </Grid>
                         </CardContent>
@@ -221,7 +335,14 @@ export const CalendarSection = ({ upcomingAppointments = [], pastAppointments = 
     const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
     return (
-        <Card>
+        <Card elevation={0}
+            sx={{
+                borderRadius: 4,
+                overflow: "hidden",
+                position: "relative",
+                p: 2,
+                border: "2px solid #E4E7EC",
+            }}>
             <CardHeader title={<Typography variant="h6">
                 {today.toLocaleString('default', { month: 'long' })} {year}
             </Typography>} />
