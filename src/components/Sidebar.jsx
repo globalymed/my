@@ -54,7 +54,7 @@ const Sidebar = () => {
     const mainNavItems = [
         { name: 'Home', path: '/', icon: <HomeIcon /> },
         { name: 'Free Consultation', path: '/free-consultation', icon: <ChatIcon /> },
-        { name: 'Compare Cost', path: '/compare', icon: <InfoOutlinedIcon /> },
+        { name: 'Compare Cost', path: '/compare-cost', icon: <InfoOutlinedIcon /> },
         { name: 'Plan Journey', path: '/plan-journey'},
         { name: 'Treatment', path: '/treatment', icon: <DashboardIcon /> },
         { name: 'Contact Us', path: '/contact' },
@@ -72,7 +72,7 @@ const Sidebar = () => {
         },
         { text: 'Free Consultation', icon: <SupportAgent />, path: '/free-consultation' },
         { text: 'AI Chat', icon: <ChatIcon />, path: '/chat' },
-        { text: 'Compare Cost', icon: <AttachMoney />, path: '/compare' },
+        { text: 'Compare Cost', icon: <AttachMoney />, path: '/compare-cost' },
         { text: 'Contact Us', icon: <Phone />, path: '/contact' },
         { text: 'Dashboard', icon: <Dashboard />, path: '/login' },
         { text: 'Logout', icon: <Logout />, path: '/logout' },

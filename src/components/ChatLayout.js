@@ -64,7 +64,7 @@ const ChatLayout = ({ children }) => {
         },
         { text: 'Free Consultation', icon: <SupportAgent />, path: '/consultation' },
         { text: 'AI Chat', icon: <ChatIcon />, path: '/chat' },
-        { text: 'Compare cost', icon: <AttachMoney />, path: '/compare' },
+        { text: 'Compare cost', icon: <AttachMoney />, path: '/compare-cost' },
         { text: 'Contact', icon: <PhoneIcon />, path: '/contact' },
         { text: 'Dashboard', icon: <Dashboard />, path: '/login' },
         { text: 'Logout', icon: <Logout />, path: '/logout' },
