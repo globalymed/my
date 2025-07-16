@@ -9,6 +9,7 @@ import {
     Grid
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'; // ✅ Correct default import
+import { useNavigate } from 'react-router-dom';
 
 const faq = [
     {
@@ -38,7 +39,8 @@ const faq = [
     }
 ];
 
-const FAQSection = () => {
+const FAQSection = (props) => {
+    const navigate = useNavigate();
     return (
         <Box sx={{ py: { xs: 6, md: 10 }, px: { xs: 2, md: 8 }, backgroundColor: '#F8EEE2CC' }}>
             <Box maxWidth="lg" mx="auto">
@@ -100,8 +102,9 @@ const FAQSection = () => {
                                         borderColor: '#999999',
                                     },
                                 }}
+                                onClick={() => navigate('/free-consultation')}
                             >
-                                Contact Support
+                                Contact Us Now ! 
                             </Button>
                         </Box>
                     </Grid>
