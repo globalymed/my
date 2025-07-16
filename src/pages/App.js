@@ -3,6 +3,8 @@ import { Route, Routes, Navigate, useNavigate } from 'react-router-dom';
 import { CircularProgress, Box, Button, Typography, useTheme } from '@mui/material';
 import { db } from '../firebase';
 import Layout from './Layout';
+import { PostHogProvider } from 'posthog-js/react';
+import posthog from '../utils/posthog';
 import { ThemeProvider } from '@mui/material/styles';
 import theme from '../theme';
 import LogoutIcon from '@mui/icons-material/Logout';
@@ -169,7 +171,8 @@ const DoctorAuthRoute = ({ children }) => {
 
 const App = () => {
   return (
-    <ThemeProvider theme={theme}>
+    <PostHogProvider client={posthog}>
+      <ThemeProvider theme={theme}>
       <Suspense fallback={<LoadingFallback />}>
         <Routes>
           {/* Chat route with ChatLayout */}
@@ -240,6 +243,7 @@ const App = () => {
         </Routes>
       </Suspense>
     </ThemeProvider>
+    </PostHogProvider>
   );
 };
 
