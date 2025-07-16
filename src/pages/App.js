@@ -58,7 +58,7 @@ const DoctorDashboard = () => {
           boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
         }}
       />
-      
+
       {/* Logout button positioned absolutely in bottom left */}
       <Button
         variant="contained"
@@ -182,16 +182,18 @@ const App = () => {
             </ChatLayout>
           } />
 
+          <Route path="/dashboard" element={
+            <ProtectedRoute>
+              <DashboardPage />
+            </ProtectedRoute>
+          } />
+
+
           {/* All other routes with default Layout */}
           <Route path="/*" element={
             <Layout>
               <Routes>
                 <Route path="/" element={<HomePage />} />
-                <Route path="/dashboard" element={
-                  <ProtectedRoute>
-                    <DashboardPage />
-                  </ProtectedRoute>
-                } />
                 <Route path="/free-consultation" element={<FreeConsultation />} />
                 <Route path="/contact" element={<ContactUs />} />
                 <Route path="/compare-cost" element={<CompareCost />} />

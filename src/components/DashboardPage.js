@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { MediyatraDashboard } from "./Patient Dashboard/mediyatra-dashboard";
+import { MedyatraDashboard } from "./Patient Dashboard/mediyatra-dashboard";
 import {
   getUserAppointments,
   deleteAppointment,
@@ -12,6 +12,7 @@ import {
 import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { TrackChanges as TargetIcon } from '@mui/icons-material';
 import { Person } from '@mui/icons-material';
+import { Box } from "@mui/material";
 
 const DashboardPage = () => {
   const navigate = useNavigate();
@@ -116,13 +117,15 @@ const DashboardPage = () => {
   }
 
   return (
-    <MediyatraDashboard
-      user={user}
-      appointments={appointments}
-      onLogout={handleLogout}
-      error={error}
-      loading={loading}
-    />
+    <Box sx={{ width: '100%', height: '100vh', display: 'flex', flexDirection: 'column'}}>
+      <MedyatraDashboard
+        user={user}
+        appointments={appointments}
+        onLogout={handleLogout}
+        error={error}
+        loading={loading}
+      />
+    </Box>
   );
 };
 
