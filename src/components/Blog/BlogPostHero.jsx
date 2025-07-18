@@ -1,27 +1,70 @@
-import React from "react"
+import React, { useEffect, useState } from "react"
 import { Box, Container, Typography, Chip, Stack, Paper, Avatar } from "@mui/material"
 import { CalendarToday, AccessTime, Person } from "@mui/icons-material"
 
 // Props
 const BlogPostHero = ({ slug }) => {
-  // Mock data - in real app, fetch based on slug
-  const post = {
-    title: "Understanding Cardiac Health: A Comprehensive Guide to Heart Disease Prevention",
-    image: "https://preview-blog-landing-page-kzmp1mycf5zc3dxvr145.vusercontent.net/placeholder.svg?height=400&width=1200",
-    treatmentType: "Cardiology",
-    date: "2024-01-15",
-    author: "Dr. Sarah Johnson",
-    readTime: "8 min read",
-    tags: ["Heart Health", "Prevention", "Cardiology"],
+
+  const [post, setPost] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const getSanityImageUrl = (imageRef) => {
+    if (!imageRef) return "";
+
+    const ref = imageRef.asset?._ref || "";
+    const [_, id, dimension, format] = ref.split("-"); // skip 'image'
+    return `https://cdn.sanity.io/images/${process.env.REACT_APP_SANITY_PROJECT_ID}/production/${id}-${dimension}.${format}`;
+  };
+
+  function formatPublishedDate(dateString) {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
   }
+
+  const fetchBlogData = async () => {
+    try {
+      const query = `*[_type == "post" && slug.current == "${slug}"]{
+          _id,
+          title,
+          slug,
+          publishedAt,
+          image,
+          body
+        }`;
+      const encodedQuery = encodeURIComponent(query);
+      const response = await fetch(
+        `https://${process.env.REACT_APP_SANITY_PROJECT_ID}.api.sanity.io/v2025-07-16/data/query/production?query=${encodedQuery}&perspective=drafts`
+      );
+      const data = await response.json();
+      setPost(data.result[0]);
+      setLoading(false);
+    } catch (err) {
+      console.error("Error fetching blog:", err);
+      setError("Failed to fetch blog data");
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchBlogData();
+  }, [slug]);
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>{error}</div>;
 
   return (
     <Box sx={{ position: "relative" }}>
       {/* Hero Background Image */}
       <Box
         sx={{
-          height: "50vh",
-          backgroundImage: `url(${post.image})`,
+          height: "60vh",
+          backgroundImage: `url(${getSanityImageUrl(post.image)})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
           position: "relative",
@@ -56,7 +99,7 @@ const BlogPostHero = ({ slug }) => {
           {/* Treatment + Tags */}
           <Stack direction="row" spacing={1} flexWrap="wrap" mb={2}>
             <Chip label={post.treatmentType} sx={{ bgcolor: "#fee2e2", color: "#991b1b" }} />
-            {post.tags.map((tag) => (
+            {post.tag && post.tags.map((tag) => (
               <Chip key={tag} label={tag} variant="outlined" />
             ))}
           </Stack>
@@ -80,7 +123,7 @@ const BlogPostHero = ({ slug }) => {
             <Stack direction="row" spacing={1} alignItems="center">
               <CalendarToday fontSize="small" />
               <Typography variant="body2">
-                {new Date(post.date).toLocaleDateString()}
+                {formatPublishedDate(post.publishedAt)}
               </Typography>
             </Stack>
             <Stack direction="row" spacing={1} alignItems="center">
