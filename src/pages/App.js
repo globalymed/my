@@ -29,6 +29,7 @@ import BlogPostPage from './BlogPostPage.jsx';
 import TermsOfService from './TermsOfService.jsx';
 import PrivacyPolicy from './PrivacyPolicy.jsx';
 import CompareCost from './compareCost.jsx';
+import PostHogPageViewTracker from '../utils/PostHogPageViewTracker';
 
 // Create a component to render the doctor dashboard in an iframe
 const DoctorDashboard = () => {
@@ -172,6 +173,7 @@ const DoctorAuthRoute = ({ children }) => {
 const App = () => {
   return (
     <PostHogProvider client={posthog}>
+      <PostHogPageViewTracker/>
       <ThemeProvider theme={theme}>
       <Suspense fallback={<LoadingFallback />}>
         <Routes>

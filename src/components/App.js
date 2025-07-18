@@ -9,6 +9,7 @@ import ChatLayout from './ChatLayout'; // Import the new ChatLayout
 import { ThemeProvider } from '@mui/material/styles';
 import theme from '../theme';
 import LogoutIcon from '@mui/icons-material/Logout';
+import PostHogPageViewTracker from '../utils/PostHogPageViewTracker';
 
 const AIChat = React.lazy(() => import('./AIChatFinal'));
 const ClinicRecommender = React.lazy(() => import('./ClinicRecommenderEnhanced'));
@@ -160,6 +161,7 @@ const DoctorAuthRoute = ({ children }) => {
 const App = () => {
   return (
     <PostHogProvider client={posthog}>
+      <PostHogPageViewTracker/>
       <ThemeProvider theme={theme}>
       <Suspense fallback={<LoadingFallback />}>
         <Routes>
