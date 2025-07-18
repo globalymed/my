@@ -29,27 +29,52 @@ const BlogPostHero = ({ slug }) => {
 
   const fetchBlogData = async () => {
     try {
+      const projectId = process.env.REACT_APP_SANITY_PROJECT_ID;
+
+      if (!projectId) {
+        throw new Error('Sanity project ID is not configured');
+      }
+
+      if (!slug) {
+        throw new Error('Slug is required');
+      }
+
       const query = `*[_type == "post" && slug.current == "${slug}"]{
-          _id,
-          title,
-          slug,
-          publishedAt,
-          image,
-          body
-        }`;
+        _id,
+        title,
+        slug,
+        publishedAt,
+        image,
+        body
+      }`;
+
       const encodedQuery = encodeURIComponent(query);
-      const response = await fetch(
-        `https://${process.env.REACT_APP_SANITY_PROJECT_ID}.api.sanity.io/v2025-07-16/data/query/production?query=${encodedQuery}&perspective=drafts`
-      );
+      const url = `https://${projectId}.api.sanity.io/v2021-10-21/data/query/production?query=${encodedQuery}`;
+
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const data = await response.json();
-      setPost(data.result[0]);
+      // console.log("API Response:", data);
+
+      if (data.result && data.result.length > 0) {
+        setPost(data.result[0]);
+      } else {
+        console.log("No posts found for slug:", slug);
+        setError("Blog post not found");
+      }
+
       setLoading(false);
     } catch (err) {
       console.error("Error fetching blog:", err);
-      setError("Failed to fetch blog data");
+      setError(`Failed to fetch blog data: ${err.message}`);
       setLoading(false);
     }
   };
+
 
   useEffect(() => {
     fetchBlogData();
