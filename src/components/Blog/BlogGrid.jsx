@@ -26,7 +26,7 @@ const BlogGrid = () => {
 
     const handleCardClick = (slug) => {
         navigate(`/treatment/${blog.slug.current}`);
-        console.log(window.location.pathname); // Debugging line to check the current path
+        // console.log(window.location.pathname); // Debugging line to check the current path
     };
 
     const fetchBlogs = async () => {
@@ -95,7 +95,7 @@ const BlogGrid = () => {
             <Grid container spacing={4}>
                 {posts.map((post) => {
 
-                    console.log("Post data:", post); // Debugging line to check post data
+                    // console.log("Post data:", post); // Debugging line to check post data
                     const badgeStyle = {
                         bg: "#f3f4f6",
                         color: "#1f2937"

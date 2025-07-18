@@ -45,7 +45,13 @@ const BlogPostHero = ({ slug }) => {
         slug,
         publishedAt,
         image,
-        body
+        author->{
+          name,
+          image,
+          bio
+        },
+        body,
+        timeToRead,
       }`;
 
       const encodedQuery = encodeURIComponent(query);
@@ -58,7 +64,7 @@ const BlogPostHero = ({ slug }) => {
       }
 
       const data = await response.json();
-      // console.log("API Response:", data);
+      console.log("API Response:", data);
 
       if (data.result && data.result.length > 0) {
         setPost(data.result[0]);
@@ -122,12 +128,12 @@ const BlogPostHero = ({ slug }) => {
           }}
         >
           {/* Treatment + Tags */}
-          <Stack direction="row" spacing={1} flexWrap="wrap" mb={2}>
+          {/* <Stack direction="row" spacing={1} flexWrap="wrap" mb={2}>
             <Chip label={post.treatmentType} sx={{ bgcolor: "#fee2e2", color: "#991b1b" }} />
             {post.tag && post.tags.map((tag) => (
               <Chip key={tag} label={tag} variant="outlined" />
             ))}
-          </Stack>
+          </Stack> */}
 
           {/* Title */}
           <Typography
@@ -143,7 +149,7 @@ const BlogPostHero = ({ slug }) => {
           <Stack direction="row" spacing={4} flexWrap="wrap" color="text.secondary">
             <Stack direction="row" spacing={1} alignItems="center">
               <Person fontSize="small" />
-              <Typography variant="body2">{post.author}</Typography>
+              <Typography variant="body2">{post.author.name}</Typography>
             </Stack>
             <Stack direction="row" spacing={1} alignItems="center">
               <CalendarToday fontSize="small" />
@@ -153,7 +159,9 @@ const BlogPostHero = ({ slug }) => {
             </Stack>
             <Stack direction="row" spacing={1} alignItems="center">
               <AccessTime fontSize="small" />
-              <Typography variant="body2">{post.readTime}</Typography>
+              <Typography variant="body2">
+                {post.timeToRead && `${post.timeToRead} Minutes`}
+              </Typography>
             </Stack>
           </Stack>
         </Paper>
