@@ -24,7 +24,7 @@ const BlogPostPage = () => {
         <Grid container spacing={4}>
           {/* Sidebar */}
           <Grid item xs={12} lg={3}>
-            <TableOfContents />
+            <TableOfContents slug={id} />
           </Grid>
 
           {/* Main Post Content */}
