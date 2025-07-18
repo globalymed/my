@@ -64,7 +64,7 @@ const BlogPostHero = ({ slug }) => {
       }
 
       const data = await response.json();
-      console.log("API Response:", data);
+      // console.log("API Response:", data);
 
       if (data.result && data.result.length > 0) {
         setPost(data.result[0]);
@@ -149,7 +149,9 @@ const BlogPostHero = ({ slug }) => {
           <Stack direction="row" spacing={4} flexWrap="wrap" color="text.secondary">
             <Stack direction="row" spacing={1} alignItems="center">
               <Person fontSize="small" />
-              <Typography variant="body2">{post.author.name}</Typography>
+              <Typography variant="body2">
+                {post.author?.name ? post.author.name : "Unknown"}
+              </Typography>
             </Stack>
             <Stack direction="row" spacing={1} alignItems="center">
               <CalendarToday fontSize="small" />

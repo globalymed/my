@@ -97,17 +97,54 @@ const DynamicBlogRenderer = ({ slug }) => {
 
     // Handle different block styles
     switch (block.style) {
+      case 'h1':
+        const h1Id = generateSlug(text);
+        return (
+          <Box key={index} id={h1Id} sx={{ mb: 4, mt: 6 }}>
+            <Typography variant="h2" component="h1" gutterBottom sx={{
+              fontWeight: 'bold',
+              color: 'text.primary',
+              borderBottom: 3,
+              borderColor: 'primary.main',
+              pb: 2,
+              scrollMarginTop: '120px',
+              fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' }
+            }}>
+              {text}
+            </Typography>
+          </Box>
+        );
+
+      case 'h2':
+        const h2Id = generateSlug(text);
+        return (
+          <Box key={index} id={h2Id} sx={{ mb: 4, mt: 5 }}>
+            <Typography variant="h3" component="h2" gutterBottom sx={{
+              fontWeight: 'bold',
+              color: 'text.primary',
+              borderBottom: 2,
+              borderColor: 'primary.main',
+              pb: 1.5,
+              scrollMarginTop: '120px',
+              fontSize: { xs: '1.75rem', sm: '2rem', md: '2.25rem' }
+            }}>
+              {text}
+            </Typography>
+          </Box>
+        );
+
       case 'h3':
         const h3Id = generateSlug(text);
         return (
-          <Box key={index} id={h3Id} sx={{ mb: 4, mt: 6 }}>
+          <Box key={index} id={h3Id} sx={{ mb: 3, mt: 4 }}>
             <Typography variant="h4" component="h3" gutterBottom sx={{
               fontWeight: 'bold',
               color: 'text.primary',
               borderBottom: 2,
               borderColor: 'primary.light',
               pb: 1,
-              scrollMarginTop: '120px' // Offset for sticky header
+              scrollMarginTop: '120px',
+              fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' }
             }}>
               {text}
             </Typography>
@@ -121,7 +158,20 @@ const DynamicBlogRenderer = ({ slug }) => {
             <Typography variant="h5" component="h4" gutterBottom sx={{
               fontWeight: 'semibold',
               color: 'text.primary',
-              scrollMarginTop: '120px' // Offset for sticky header
+              scrollMarginTop: '120px',
+              fontSize: { xs: '1.25rem', sm: '1.5rem', md: '1.75rem' },
+              position: 'relative',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                left: -16,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                width: 4,
+                height: '100%',
+                backgroundColor: 'primary.main',
+                borderRadius: 2
+              }
             }}>
               {text}
             </Typography>
@@ -129,11 +179,14 @@ const DynamicBlogRenderer = ({ slug }) => {
         );
 
       case 'h5':
+        const h5Id = generateSlug(text);
         return (
-          <Box key={index} sx={{ mb: 2, mt: 3 }}>
+          <Box key={index} id={h5Id} sx={{ mb: 2, mt: 3 }}>
             <Typography variant="h6" component="h5" gutterBottom sx={{
               fontWeight: 'medium',
-              color: 'text.secondary'
+              color: 'text.secondary',
+              scrollMarginTop: '120px',
+              fontSize: { xs: '1.125rem', sm: '1.25rem' }
             }}>
               {text}
             </Typography>
@@ -141,11 +194,14 @@ const DynamicBlogRenderer = ({ slug }) => {
         );
 
       case 'h6':
+        const h6Id = generateSlug(text);
         return (
-          <Box key={index} sx={{ mb: 2, mt: 2 }}>
+          <Box key={index} id={h6Id} sx={{ mb: 2, mt: 2 }}>
             <Typography variant="subtitle1" component="h6" gutterBottom sx={{
               fontWeight: 'bold',
-              color: 'error.dark'
+              color: 'error.dark',
+              scrollMarginTop: '120px',
+              fontSize: { xs: '1rem', sm: '1.125rem' }
             }}>
               {text}
             </Typography>
@@ -157,6 +213,7 @@ const DynamicBlogRenderer = ({ slug }) => {
         if (block.children?.some(child => child.marks?.includes('code'))) {
           const isProTip = text.includes('Pro Tip:');
           const isImportant = text.includes('Important:');
+          const doYouKnow = text.includes('Did You Know');
 
           if (isProTip) {
             return (
@@ -203,34 +260,59 @@ const DynamicBlogRenderer = ({ slug }) => {
               </Alert>
             );
           }
+
+          if (doYouKnow) {
+            return (
+              <Alert
+                key={index}
+                icon={<CheckCircleIcon />}
+                severity="warning"
+                sx={{
+                  my: 3,
+                  // backgroundColor: '#fef2f2',
+                  // borderColor: '#fecaca',
+                  backgroundColor: '#eff6ff',
+                  borderColor: '#bfdbfe',
+                  '& .MuiAlert-message': { width: '100%' }
+                }}
+              >
+                <AlertTitle sx={{ color: '#991b1b', fontWeight: 'bold' }}>
+                  Did You Kno?
+                </AlertTitle>
+                <Typography sx={{ color: '#ca8a04' }}>
+                  {text.replace('Did You Know?', '').trim()}
+                </Typography>
+              </Alert>
+            );
+          }
         }
 
         // Handle "Did You Know?" blocks
-        if (text.includes('About 80% of premature heart attacks')) {
-          return (
-            <Card key={index} sx={{
-              my: 3,
-              backgroundColor: '#fef2f2',
-              borderColor: '#fecaca',
-              border: 1,
-              borderStyle: 'solid'
-            }}>
-              <CardContent>
-                <Box display="flex" gap={2} alignItems="flex-start">
-                  <FavoriteIcon sx={{ color: '#dc2626', mt: 0.5 }} />
-                  <Box>
-                    <Typography variant="subtitle1" fontWeight={600} sx={{ color: '#991b1b', mb: 1 }}>
-                      Did You Know?
-                    </Typography>
-                    <Typography sx={{ color: '#b91c1c' }}>
-                      {text}
-                    </Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          );
-        }
+        // if (text.includes('About 80% of premature heart attacks')) {
+        //   return (
+        //     <Card key={index} sx={{
+        //       my: 3,
+        //       backgroundColor: '#fef2f2',
+        //       borderColor: '#fecaca',
+        //       border: 1,
+        //       borderStyle: 'solid'
+        //     }}>
+        //       <CardContent>
+        //         <Box display="flex" gap={2} alignItems="flex-start">
+        //           <FavoriteIcon sx={{ color: '#dc2626', mt: 0.5 }} />
+        //           <Box>
+        //             <Typography variant="subtitle1" fontWeight={600} sx={{ color: '#991b1b', mb: 1 }}>
+        //               Did You Know?
+        //             </Typography>
+        //             <Typography sx={{ color: '#b91c1c' }}>
+        //               {text}
+        //             </Typography>
+        //           </Box>
+        //         </Box>
+        //       </CardContent>
+        //     </Card>
+        //   );
+        // }
 
         // Regular paragraph
         if (text.trim()) {

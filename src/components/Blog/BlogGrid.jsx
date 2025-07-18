@@ -36,6 +36,11 @@ const BlogGrid = () => {
         title,
         slug,
         publishedAt,
+        author->{
+          name,
+          image,
+          bio
+        },
         image,
         body
       }`;
@@ -43,6 +48,7 @@ const BlogGrid = () => {
             const url = `https://${process.env.REACT_APP_SANITY_PROJECT_ID}.api.sanity.io/v2021-10-21/data/query/production?query=${encodeURIComponent(query)}`;
             const response = await fetch(url);
             const result = await response.json();
+            // console.log("Fetched blog posts:", result); // Debugging line to check fetched data
 
             setPosts(result.result || []);
         } catch (err) {
@@ -183,7 +189,7 @@ const BlogGrid = () => {
                                         <Box sx={{ display: "flex", gap: 2 }}>
                                             <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                                                 <PersonIcon sx={{ fontSize: 14 }} />
-                                                {post.author || "Unknown"}
+                                                {post.author?.name ? post.author.name : "Unknown"}
                                             </Box>
                                             <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                                                 <AccessTimeIcon sx={{ fontSize: 14 }} />

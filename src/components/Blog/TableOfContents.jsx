@@ -94,6 +94,7 @@ const DynamicTableOfContents = ({ slug }) => {
   useEffect(() => {
     fetchBlogData();
   }, [slug]);
+  
   const [activeId, setActiveId] = useState('');
   const [isSticky, setIsSticky] = useState(false);
   const [tocItems, setTocItems] = useState([]);
@@ -104,14 +105,25 @@ const DynamicTableOfContents = ({ slug }) => {
 
     const items = [];
     blogData.body.forEach((block, index) => {
-      if (block.style === 'h3' || block.style === 'h4') {
+      // Handle all heading levels: h1, h2, h3, h4
+      if (['h1', 'h2', 'h3', 'h4'].includes(block.style)) {
         const text = block.children?.map(child => child.text).join('') || '';
         if (text.trim()) {
           const slug = generateSlug(text);
+          
+          // Map heading styles to levels for proper indentation
+          const levelMap = {
+            'h1': 1,
+            'h2': 2,
+            'h3': 3,
+            'h4': 4
+          };
+          
           items.push({
             id: slug,
             title: text,
-            level: block.style === 'h3' ? 1 : 2,
+            level: levelMap[block.style],
+            style: block.style,
             index
           });
         }
@@ -151,6 +163,121 @@ const DynamicTableOfContents = ({ slug }) => {
     }
   };
 
+  // Get styling for different heading levels
+  const getHeadingStyles = (item) => {
+    const baseStyles = {
+      py: 1,
+      borderRadius: 1,
+      textAlign: 'left',
+      color: activeId === item.id ? '#1d4ed8' : '#4b5563',
+      backgroundColor: activeId === item.id ? '#dbeafe' : 'transparent',
+      fontWeight: activeId === item.id ? 600 : 400,
+      '&:hover': {
+        backgroundColor: activeId === item.id ? '#dbeafe' : '#f3f4f6',
+      },
+      transition: 'background-color 0.2s',
+    };
+
+    // Different padding and font sizes for different heading levels
+    switch (item.level) {
+      case 1: // h1
+        return {
+          ...baseStyles,
+          pl: 1,
+          fontSize: '1rem',
+          fontWeight: activeId === item.id ? 700 : 600,
+          borderLeft: activeId === item.id ? '3px solid #1d4ed8' : '3px solid transparent',
+        };
+      case 2: // h2
+        return {
+          ...baseStyles,
+          pl: 2,
+          fontSize: '0.9rem',
+          fontWeight: activeId === item.id ? 600 : 500,
+          borderLeft: activeId === item.id ? '2px solid #1d4ed8' : '2px solid transparent',
+        };
+      case 3: // h3
+        return {
+          ...baseStyles,
+          pl: 3,
+          fontSize: '0.85rem',
+          fontWeight: activeId === item.id ? 500 : 400,
+        };
+      case 4: // h4
+        return {
+          ...baseStyles,
+          pl: 4,
+          fontSize: '0.8rem',
+          fontWeight: activeId === item.id ? 500 : 400,
+          color: activeId === item.id ? '#1d4ed8' : '#6b7280',
+        };
+      default:
+        return baseStyles;
+    }
+  };
+
+  // Get typography props for different heading levels
+  const getTypographyProps = (item) => {
+    switch (item.level) {
+      case 1:
+        return { fontSize: 16, fontWeight: activeId === item.id ? 700 : 600 };
+      case 2:
+        return { fontSize: 14, fontWeight: activeId === item.id ? 600 : 500 };
+      case 3:
+        return { fontSize: 13, fontWeight: activeId === item.id ? 500 : 400 };
+      case 4:
+        return { fontSize: 12, fontWeight: activeId === item.id ? 500 : 400 };
+      default:
+        return { fontSize: 14 };
+    }
+  };
+
+  if (loading) {
+    return (
+      <Card variant="outlined">
+        <CardHeader
+          title={
+            <Box display="flex" alignItems="center" gap={1}>
+              <ListIcon fontSize="small" />
+              <Typography variant="subtitle1" fontWeight={600}>
+                Table of Contents
+              </Typography>
+            </Box>
+          }
+        />
+        <Divider />
+        <CardContent sx={{ pt: 1 }}>
+          <Box display="flex" justifyContent="center" alignItems="center" py={2}>
+            <CircularProgress size={24} />
+          </Box>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card variant="outlined">
+        <CardHeader
+          title={
+            <Box display="flex" alignItems="center" gap={1}>
+              <ListIcon fontSize="small" />
+              <Typography variant="subtitle1" fontWeight={600}>
+                Table of Contents
+              </Typography>
+            </Box>
+          }
+        />
+        <Divider />
+        <CardContent sx={{ pt: 1 }}>
+          <Typography variant="body2" color="error" textAlign="center">
+            Failed to load contents
+          </Typography>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (tocItems.length === 0) return null;
 
   return (
@@ -179,24 +306,11 @@ const DynamicTableOfContents = ({ slug }) => {
               <ListItemButton
                 key={item.id}
                 onClick={() => scrollToSection(item.id)}
-                sx={{
-                  pl: item.level === 2 ? 4 : 2,
-                  py: 1,
-                  borderRadius: 1,
-                  fontSize: '0.875rem',
-                  textAlign: 'left',
-                  color: activeId === item.id ? '#1d4ed8' : '#4b5563',
-                  backgroundColor: activeId === item.id ? '#dbeafe' : 'transparent',
-                  fontWeight: activeId === item.id ? 500 : 400,
-                  '&:hover': {
-                    backgroundColor: activeId === item.id ? '#dbeafe' : '#f3f4f6',
-                  },
-                  transition: 'background-color 0.2s',
-                }}
+                sx={getHeadingStyles(item)}
               >
                 <ListItemText
                   primary={item.title}
-                  primaryTypographyProps={{ fontSize: 14 }}
+                  primaryTypographyProps={getTypographyProps(item)}
                 />
               </ListItemButton>
             ))}
