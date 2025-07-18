@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import {
     AppBar,
     Box,
@@ -39,6 +39,9 @@ import { FaStethoscope, FaHeartbeat, FaUser, FaTooth } from "react-icons/fa";
 import { GrShieldSecurity } from "react-icons/gr";
 
 export default function ConsultationPage() {
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, []);
     const [menuAnchorEl, setMenuAnchorEl] = useState(null)
 
 

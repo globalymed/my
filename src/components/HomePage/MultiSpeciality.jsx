@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Box, Typography, Grid, Card, CardContent, CardMedia, Button, Chip, Divider } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 
 const treatments = [
     {
@@ -69,91 +70,99 @@ const treatments = [
 ];
 
 
-const TreatmentCard = ({ treatment }) => (
+const TreatmentCard = ({ treatment }) => {
+  const navigate = useNavigate();
+  return (
     <Card
-    sx={{
-      maxWidth: 300,
-      width: '100%',
-      height: '100%', // allow Grid to stretch them evenly
-      display: 'flex',
-      flexDirection: 'column',
-      borderRadius: 1,
-      boxShadow: 3,
-      position: 'relative',
-    }}
-  >
-    <Box position="relative">
-      <CardMedia component="img" height="200" image={treatment.image} alt="Doctor" />
-      <Chip
-        label={treatment.tag}
-        size="small"
-        sx={{
-          position: 'absolute',
-          top: 8,
-          right: 8,
-          backgroundColor: '#EAFBF5',
-          color: '#005C4B',
-          fontWeight: 600,
-        }}
-      />
-    </Box>
-
-    <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-      <Typography fontWeight={700} fontSize="1rem" gutterBottom>
-        {treatment.name}
-      </Typography>
-      <Typography fontWeight={600} fontSize="0.9rem" sx={{ color: '#333' }}>
-        {treatment.subtitle}
-      </Typography>
-      <Typography variant="body2" sx={{ mt: 1 }}>
-        {treatment.description}
-      </Typography>
-
-      <Box mt={2}>
-        <Typography fontWeight={600}>Types:</Typography>
-        {treatment.types.map((type, i) => (
-          <Typography variant="body2" key={i} sx={{ color: 'text.secondary', mb: 1 }}>
-            {type}
-          </Typography>
-        ))}
+      sx={{
+        maxWidth: 300,
+        width: '100%',
+        height: '100%', // allow Grid to stretch them evenly
+        display: 'flex',
+        flexDirection: 'column',
+        borderRadius: 1,
+        boxShadow: 3,
+        position: 'relative',
+      }}
+    >
+      <Box position="relative">
+        <CardMedia component="img" height="200" image={treatment.image} alt="Doctor" />
+        <Chip
+          label={treatment.tag}
+          size="small"
+          sx={{
+            position: 'absolute',
+            top: 8,
+            right: 8,
+            backgroundColor: '#EAFBF5',
+            color: '#005C4B',
+            fontWeight: 600,
+          }}
+        />
       </Box>
 
-      <Typography fontWeight={600} fontSize="0.9rem" sx={{ mt: 2, textAlign: 'center' }}>
-        Travel, treatment & transformation – <br /> all handled by Medyatra
-      </Typography>
-
-      <Divider sx={{ my: 2 }} />
-
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography color='#000' fontWeight={700}>{treatment.fee}</Typography>
-        <Typography variant="caption" color="#666666">
-          Consultation fee
+      <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <Typography fontWeight={700} fontSize="1rem" gutterBottom>
+          {treatment.name}
         </Typography>
-      </Box>
+        <Typography fontWeight={600} fontSize="0.9rem" sx={{ color: '#333' }}>
+          {treatment.subtitle}
+        </Typography>
+        <Typography variant="body2" sx={{ mt: 1 }}>
+          {treatment.description}
+        </Typography>
 
-      <Button
-        variant="outlined"
-        fullWidth
-        sx={{
-          mt: 'auto',
-          backgroundColor: '#1D4645',
-          borderColor: '#1D4645',
-          color: '#fff',
-          borderRadius: 2,
-          textTransform: 'none',
-          '&:hover': {
-            backgroundColor: '#333',
-            borderColor: '#333',
-          },
-        }}
-      >
-        Free Consultation
-      </Button>
-    </CardContent>
-  </Card>
-);
+        <Box mt={2}>
+          <Typography fontWeight={600}>Types:</Typography>
+          {treatment.types.map((type, i) => (
+            <Typography variant="body2" key={i} sx={{ color: 'text.secondary', mb: 1 }}>
+              {type}
+            </Typography>
+          ))}
+        </Box>
+
+        <Typography fontWeight={600} fontSize="0.9rem" sx={{ mt: 2, textAlign: 'center' }}>
+          Travel, treatment & transformation – <br /> all handled by Medyatra
+        </Typography>
+
+        <Divider sx={{ my: 2 }} />
+
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+          <Typography color='#000' fontWeight={700}>{treatment.fee}</Typography>
+          <Typography variant="caption" color="#666666">
+            Consultation fee
+          </Typography>
+        </Box>
+
+        <Button
+          variant="outlined"
+          fullWidth
+          sx={{
+            mt: 'auto',
+            backgroundColor: '#1D4645',
+            borderColor: '#1D4645',
+            color: '#fff',
+            borderRadius: 2,
+            textTransform: 'none',
+            '&:hover': {
+              backgroundColor: '#333',
+              borderColor: '#333',
+            },
+          }}
+          onClick={() => navigate('/free-consultation')}
+        >
+          Free Consultation
+        </Button>
+      </CardContent>
+    </Card>
+  );
+};
 
 const MultiSpecialitySection = () => {
+    const navigate = useNavigate();
+    useEffect(() => {
+      window.scrollTo(0, 0);
+    }, []);
     return (
         <Box sx={{ py: 8, px: { xs: 2, md: 8 }, backgroundColor: '#f9f0e7' }}>
             <Typography variant="h2" fontWeight={700} textAlign="center">
@@ -188,6 +197,7 @@ const MultiSpecialitySection = () => {
                             borderColor: '#333333',
                         },
                     }}
+                    onClick={() => navigate('/free-consultation')}
                 >
                     View All Doctors
                 </Button>

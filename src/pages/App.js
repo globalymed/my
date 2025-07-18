@@ -26,6 +26,7 @@ import Blog from './Blog.jsx';
 import BlogPostPage from './BlogPostPage.jsx';
 import TermsOfService from './TermsOfService.jsx';
 import PrivacyPolicy from './PrivacyPolicy.jsx';
+import CompareCost from './compareCost.jsx';
 
 // Create a component to render the doctor dashboard in an iframe
 const DoctorDashboard = () => {
@@ -190,6 +191,7 @@ const App = () => {
                 } />
                 <Route path="/free-consultation" element={<FreeConsultation />} />
                 <Route path="/contact" element={<ContactUs />} />
+                <Route path="/compare-cost" element={<CompareCost />} />
                 <Route path="/treatment" element={<Blog />} />
                 <Route path="/treatment/:id" element={<BlogPostPage />} />
                 <Route path="/newLogin" element={<NewLoginPage />} />

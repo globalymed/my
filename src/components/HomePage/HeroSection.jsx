@@ -103,6 +103,7 @@ const HeroSection = () => {
                             <Button
                                 fullWidth
                                 variant="outlined"
+                                onClick={() => navigate('/compare-cost')}
                                 sx={{
                                     backgroundColor: '#FFFFFF',
                                     color: '#1D4645',
