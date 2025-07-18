@@ -6,51 +6,45 @@ import {
     CardContent,
     CardHeader,
     Button,
-    Avatar,
     Grid,
     LinearProgress,
     Chip,
-    Divider,
     useTheme
 } from '@mui/material';
 
+// --- Key Change: Using icons exclusively from @mui/icons-material for consistency ---
 import {
-    FaCalendarAlt as Calendar,
-    FaClock as Clock,
-    FaMapMarkerAlt as MapPin,
-    FaVideo as Video,
-    FaStethoscope as Stethoscope,
-    FaCheckCircle as CheckCircle,
-    FaPlane as Plane,
-    FaFileAlt as FileText,
-    FaUpload as Upload,
-    FaBell as AlertCircle,
-    FaPills as Pill,
-    FaCamera as Camera,
-    FaPhone as Phone,
-    FaPen,
-    FaCalendarAlt,
-    FaMapMarkerAlt,
-    FaWhatsapp,
-    FaUpload,
-    FaPlane, FaHotel, FaCcVisa
-} from 'react-icons/fa';
-import { AccessTime, CalendarMonth, CalendarToday, Done, LocationOn, Videocam } from '@mui/icons-material';
+    AccessTime,
+    Article,
+    CalendarToday,
+    CameraAlt,
+    CheckCircle,
+    CreditCard, // Replaces FaCcVisa
+    Flight,     // Replaces FaPlane
+    Hotel,      // Replaces FaHotel
+    ListAlt,    // Replaces FaBell/AlertCircle for "Action Items"
+    LocationOn,
+    Medication, // Replaces FaPills
+    MedicalServices, // Replaces FaStethoscope
+    Phone,
+    Schedule,   // Replaces FaClock
+    Upload,
+    Videocam
+} from '@mui/icons-material';
+
 
 const HomeOverview = ({ user, appointments }) => {
+    const theme = useTheme();
 
-    // console.log("User data in HomeOverview:", user);
-    // console.log("Appointments data in HomeOverview:", appointments);
-
+    // Find the next upcoming appointment
     const upcomingAppointment = appointments?.find(apt =>
         new Date(apt.appointmentDate) > new Date()
     );
 
-    // console.log("Upcoming appointment:", upcomingAppointment);
+    // Placeholder for meeting link if it doesn't exist
     if (upcomingAppointment && !upcomingAppointment.meetingLink) {
-        upcomingAppointment.meetingLink = "https://example.com/meeting-link"; // Placeholder if no link exists
+        upcomingAppointment.meetingLink = "https://example.com/meeting-link";
     }
-
 
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -58,29 +52,22 @@ const HomeOverview = ({ user, appointments }) => {
             {/* Welcome Message */}
             <Box>
                 <Typography variant="h4" fontWeight="bold">
-                    Welcome back,  {user?.firstName || user?.name || 'User'}
+                    Welcome back, {user?.firstName || user?.name || 'User'}
                 </Typography>
-                <Typography variant="body2" color="#475367">
+                <Typography variant="body2" color="text.secondary">
                     It’s a sunny day today, we hope you’re taking good care of your health 😊
                 </Typography>
             </Box>
 
+            {/* Main Grid Layout */}
             <Grid container spacing={3}>
-                {/* Upcoming Appointment */}
+                {/* Row 1: Upcoming Appointment & Treatment Progress */}
                 <Grid item xs={12} md={7}>
-                    <Card elevation={0}
-                        sx={{
-                            borderRadius: 4,
-                            overflow: "hidden",
-                            position: "relative",
-                            p: 2,
-                            border: "2px solid #E4E7EC",
-                        }}
-                    >
+                    <Card elevation={0} sx={{ borderRadius: 4, p: 2, border: "1px solid #E4E7EC", height: '100%' }}>
                         <CardHeader
                             title={
                                 <Box display="flex" alignItems="center" gap={1}>
-                                    <Calendar size={18} />
+                                    <CalendarToday />
                                     <Typography variant="h6">Upcoming Appointment</Typography>
                                 </Box>
                             }
@@ -88,289 +75,181 @@ const HomeOverview = ({ user, appointments }) => {
                         <CardContent>
                             {upcomingAppointment ? (
                                 <Grid container spacing={2} alignItems="center">
-                                    <Grid item xs={12} md={8}>
+                                    <Grid item xs={12} sm={8}>
                                         <Typography variant="h6">{upcomingAppointment.treatmentType || "Appointment"}</Typography>
                                         <Typography variant="body2" color="text.secondary">
-                                            {upcomingAppointment.doctorName || "Doctor"}
+                                            {upcomingAppointment.doctorName || "Doctor Name"}
                                         </Typography>
-                                        <Box display="flex" alignItems="center" mt={1}>
-                                            <AccessTime sx={{ mr: 1 }} />
+                                        <Box display="flex" alignItems="center" mt={1} gap={1}>
+                                            <AccessTime fontSize="small" />
                                             <Typography variant="body2">
                                                 {new Date(upcomingAppointment.appointmentDate).toLocaleDateString()} - {upcomingAppointment.appointmentTime || "TBD"}
                                             </Typography>
                                         </Box>
-                                        <Box display="flex" alignItems="center" mt={1}>
-                                            <LocationOn sx={{ mr: 1 }} />
+                                        <Box display="flex" alignItems="center" mt={1} gap={1}>
+                                            <LocationOn fontSize="small" />
                                             <Typography variant="body2">
-                                                {upcomingAppointment.hospitalName || "Hospital"}
+                                                {upcomingAppointment.hospitalName || "Hospital Name"}
                                             </Typography>
                                         </Box>
                                     </Grid>
-                                    <Grid item xs={12} md={4}>
-                                        <Button
-                                            variant="outlined"
-                                            startIcon={<Videocam />}
-                                            fullWidth
-                                            sx={{
-                                                mb: 1,
-                                                backgroundColor: 'black',
-                                                color: 'white',
-                                                textTransform: 'none',
-                                                borderRadius: 2,
-                                                fontWeight: 600,
-                                                borderColor: '#D1D5DB',
-                                                '&:hover': {
-                                                    borderColor: '#9CA3AF',
-                                                    backgroundColor: '#333',
-                                                    color: 'white',
-                                                },
-                                            }}
-                                        >
+                                    <Grid item xs={12} sm={4} display="flex" flexDirection="column" gap={1}>
+                                        <Button variant="contained" startIcon={<Videocam />} fullWidth sx={{ textTransform: 'none', borderRadius: 2, bgcolor: 'black', '&:hover': { bgcolor: '#333' } }}>
                                             Join Call
                                         </Button>
-                                        <Button variant="outlined" fullWidth
-                                            sx={{
-                                                textTransform: 'none',
-                                                fontWeight: 600,
-                                                borderColor: '#D1D5DB',
-                                                color: '#374151',
-                                                borderRadius: 2,
-                                                fontSize: 15,
-                                                '&:hover': {
-                                                    borderColor: '#9CA3AF',
-                                                    backgroundColor: '#f0f0f0',
-                                                },
-                                            }}
-                                        >
+                                        <Button variant="outlined" fullWidth sx={{ textTransform: 'none', borderRadius: 2 }}>
                                             Reschedule
                                         </Button>
                                     </Grid>
                                 </Grid>
                             ) : (
-                                <Typography variant="body1" textAlign="center" color="text.secondary">
-                                    No upcoming appointments
+                                <Typography variant="body1" textAlign="center" color="text.secondary" sx={{ pt: 4 }}>
+                                    No upcoming appointments found.
                                 </Typography>
                             )}
                         </CardContent>
                     </Card>
                 </Grid>
 
-                {/* Treatment Summary */}
                 <Grid item xs={12} md={5}>
-                    <Card elevation={0}
-                        sx={{
-                            borderRadius: 4,
-                            overflow: "hidden",
-                            position: "relative",
-                            p: 2,
-                            border: "2px solid #E4E7EC",
-                        }}
-                    >
+                    <Card elevation={0} sx={{ borderRadius: 4, p: 2, border: "1px solid #E4E7EC", height: '100%' }}>
                         <CardHeader
                             title={
                                 <Box display="flex" alignItems="center" gap={1}>
-                                    <Stethoscope size={18} />
+                                    <MedicalServices />
                                     <Typography variant="h6">Treatment Progress</Typography>
                                 </Box>
                             }
                         />
                         <CardContent>
-                            <Typography fontWeight={600}>Knee Replacement Surgery</Typography>
-                            <Typography variant="body2" color="text.secondary">
-                                Apollo Hospital, Delhi
-                            </Typography>
-
-                            <Box mt={2}>
-                                <Box display="flex" justifyContent="space-between">
-                                    <Typography variant="body2">Progress</Typography>
-                                    <Typography variant="body2">Pre-Surgery</Typography>
+                            <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} alignItems="center" gap={2}>
+                                <Box flex={1}>
+                                    <Typography fontWeight={600}>Knee Replacement</Typography>
+                                    <Typography variant="body2" color="text.secondary">
+                                        Apollo Hospital, Delhi
+                                    </Typography>
                                 </Box>
-                                <LinearProgress variant="determinate" value={25} sx={{ height: 6, borderRadius: 5 }} />
+                                <Box flex={1} width="100%">
+                                    <Box display="flex" justifyContent="space-between">
+                                        <Typography variant="body2">Progress</Typography>
+                                        <Typography variant="body2" fontWeight={600}>Pre-Surgery</Typography>
+                                    </Box>
+                                    <LinearProgress variant="determinate" value={25} sx={{ height: 8, borderRadius: 5, mt: 0.5 }} />
+                                </Box>
                             </Box>
+                            <Box mt={2} display="flex" flexDirection="column" gap={0.5}>
+                                <Box display="flex" alignItems="center" gap={1}>
+                                    <CheckCircle fontSize="small" color="success" />
+                                    <Typography variant="body2">Initial Consultation</Typography>
+                                </Box>
+                                <Box display="flex" alignItems="center" gap={1}>
+                                    <CheckCircle fontSize="small" color="success" />
+                                    <Typography variant="body2">Medical Records Review</Typography>
+                                </Box>
 
-                            <Box mt={2}>
                                 <Box display="flex" alignItems="center" gap={1}>
-                                    <CheckCircle size={14} color="green" />
-                                    <Typography variant="caption">Initial Consultation</Typography>
-                                </Box>
-                                <Box display="flex" alignItems="center" gap={1}>
-                                    <CheckCircle size={14} color="green" />
-                                    <Typography variant="caption">Medical Records Review</Typography>
-                                </Box>
-                                <Box display="flex" alignItems="center" gap={1}>
-                                    <Clock size={14} color="orange" />
-                                    <Typography variant="caption">Pre-Surgery Tests</Typography>
+                                    <Schedule fontSize="small" color="warning" />
+                                    <Typography variant="body2">Pre-Surgery Tests</Typography>
                                 </Box>
                             </Box>
                         </CardContent>
                     </Card>
                 </Grid>
 
-                {/* Travel Snapshot */}
-                <Grid item
-                    xs={12}
-                    md={7}
-                >
-                    <Card
-                        elevation={0}
-                        sx={{
-                            borderRadius: 4,
-                            overflow: "hidden",
-                            position: "relative",
-                            justifyContent: "space-between",
-                            p: 2,
-                            display: "flex",
-                            gap: 2,
-                            border: "2px solid #E4E7EC",
-                        }}
-                    >
-                        <Box>
-                            <BookingCard
-                                icon={<FaCcVisa size={28} color="#1A237E" />}
-                                title="Get Your Visa Instantly"
-                                price="XXX"
-                                unit="per person"
-                                tags={[
-                                    { label: "Normal", bg: "#CCF4F1" },
-                                    { label: "Tourist Visa", bg: "#CCF4F1" },
-                                ]}
-                                buttonText="Get Visa"
-                                color="#CCF4F1"
-                            />
-                        </Box>
 
-                        <Box>
-                            <BookingCard
-                                icon={<FaPlane size={28} color="#039BE5" />}
-                                title="Book Flight Easily"
-                                price="200$"
-                                unit="per person"
-                                tags={[
-                                    { label: "Business", bg: "#F9E9EC" },
-                                    { label: "Economy", bg: "#F9E9EC" },
-                                ]}
-                                buttonText="Book Ticket"
-                                color="#F9E9EC"
-                            />
-                        </Box>
+                {/* --- Key Change: Fixed the layout by making this Grid item a container for its children --- */}
+                <Grid item xs={12} md={7} container spacing={3}>
+                    {/* Travel Snapshot */}
+                    <Grid item xs={12}>
+                        <Card elevation={0} sx={{ borderRadius: 4, p: 2, border: "1px solid #E4E7EC" }}>
+                            <Typography variant="h6" mb={2}>Travel Snapshot</Typography>
+                            <Grid container spacing={2}>
+                                <Grid item xs={12} sm={4}>
+                                    <BookingCard
+                                        icon={<CreditCard sx={{ fontSize: 28, color: "#1A237E" }} />}
+                                        title="Get Your Visa Instantly"
+                                        price="XXX"
+                                        unit="per person"
+                                        tags={[{ label: "Normal" }, { label: "Tourist Visa" }]}
+                                        buttonText="Get Visa"
+                                        color="#E8EAF6"
+                                    />
+                                </Grid>
+                                <Grid item xs={12} sm={4}>
+                                    <BookingCard
+                                        icon={<Flight sx={{ fontSize: 28, color: "#0277BD" }} />}
+                                        title="Book Flight Easily"
+                                        price="$200"
+                                        unit="per person"
+                                        tags={[{ label: "Business" }, { label: "Economy" }]}
+                                        buttonText="Book Ticket"
+                                        color="#E1F5FE"
+                                    />
+                                </Grid>
+                                <Grid item xs={12} sm={4}>
+                                    <BookingCard
+                                        icon={<Hotel sx={{ fontSize: 28, color: "#303F9F" }} />}
+                                        title="Hotel Rooms Booking"
+                                        price="$150"
+                                        unit="per night"
+                                        tags={[{ label: "Normal" }, { label: "Luxury" }]}
+                                        buttonText="Book Room"
+                                        color="#C5CAE9"
+                                    />
+                                </Grid>
+                            </Grid>
+                        </Card>
+                    </Grid>
 
-                        <Box>
-                            <BookingCard
-                                icon={<FaHotel size={28} color="#3F51B5" />}
-                                title="Hotel Rooms Booking"
-                                price="150$"
-                                unit="per night"
-                                tags={[
-                                    { label: "Normal", bg: "#DFEAFD" },
-                                    { label: "Luxuary", bg: "#DFEAFD" },
-                                ]}
-                                buttonText="Book Room"
-                                color="#DFEAFD"
-                            />
-                        </Box>
-                    </Card>
+                    {/* Recent Documents & Action Items */}
+                    <Grid item xs={12} sm={7}>
+                        <Card elevation={0} sx={{ borderRadius: 4, p: 2, border: "1px solid #E4E7EC", height: '100%' }}>
+                            <CardHeader title={<Box display="flex" alignItems="center" gap={1}><Article /><Typography variant="h6">Recent Documents</Typography></Box>} />
+                            <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                                <Box display="flex" justifyContent="space-between" alignItems="center">
+                                    <Typography variant="body2">Blood Test Report</Typography>
+                                    <Chip label="New" size="small" color="primary" />
+                                </Box>
+                                <Box display="flex" justifyContent="space-between" alignItems="center">
+                                    <Typography variant="body2">X-Ray Results</Typography>
+                                    <Chip label="Reviewed" size="small" variant="outlined" />
+                                </Box>
+                                <Box display="flex" justifyContent="space-between" alignItems="center">
+                                    <Typography variant="body2">Insurance Form</Typography>
+                                    <Chip label="Pending" size="small" color="warning" variant="outlined" />
+                                </Box>
+                                <Button variant="outlined" size="small" startIcon={<Upload />} sx={{ mt: 2, textTransform: 'none' }}>
+                                    Upload New
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    </Grid>
+                    <Grid item xs={12} sm={5}>
+                        <Card elevation={0} sx={{ borderRadius: 4, p: 2, border: "1px solid #E4E7EC", height: '100%' }}>
+                            <CardHeader title={<Box display="flex" alignItems="center" gap={1}><ListAlt /><Typography variant="h6">Action Items</Typography></Box>} />
+                            <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                                <Box display="flex" alignItems="center" gap={1}>
+                                    <Medication fontSize="small" color="primary" />
+                                    <Typography variant="body2">Take morning medication</Typography>
+                                </Box>
+                                <Box display="flex" alignItems="center" gap={1}>
+                                    <CameraAlt fontSize="small" color="success" />
+                                    <Typography variant="body2">Upload pre-surgery photos</Typography>
+                                </Box>
+                                <Box display="flex" alignItems="center" gap={1}>
+                                    <Phone fontSize="small" color="warning" />
+                                    <Typography variant="body2">Confirm transport pickup</Typography>
+                                </Box>
+                            </CardContent>
+                        </Card>
+                    </Grid>
                 </Grid>
 
                 {/* Calendar */}
                 <Grid item xs={12} md={5}>
-                    <Card elevation={0}
-                        sx={{
-                            borderRadius: 4,
-                            overflow: "hidden",
-                            position: "relative",
-                            p: 2,
-                            border: "2px solid #E4E7EC",
-                        }}>
-                        <CardHeader
-                            title={
-                                <Box display="flex" alignItems="center" gap={1}>
-                                    <CalendarMonth size={18} />
-                                    <Typography variant="h6">Calendar</Typography>
-                                </Box>
-                            }
-                        />
-                        <CardContent>
-                            <CalendarCard appointments={appointments} />
-                        </CardContent>
-                    </Card>
-                </Grid>
-
-                {/* Recent Documents */}
-                <Grid item xs={12} md={4}>
-                    <Card elevation={0}
-                        sx={{
-                            borderRadius: 4,
-                            overflow: "hidden",
-                            position: "relative",
-                            p: 2,
-                            border: "2px solid #E4E7EC",
-                        }}>
-                        <CardHeader
-                            title={
-                                <Box display="flex" alignItems="center" gap={1}>
-                                    <FileText size={18} />
-                                    <Typography variant="h6">Recent Documents</Typography>
-                                </Box>
-                            }
-                        />
-                        <CardContent>
-                            <Box display="flex" justifyContent="space-between">
-                                <Typography variant="body2">Blood Test Report</Typography>
-                                <Chip label="New" size="small" color="secondary" />
-                            </Box>
-                            <Box display="flex" justifyContent="space-between">
-                                <Typography variant="body2">X-Ray Results</Typography>
-                                <Chip label="Reviewed" size="small" variant="outlined" />
-                            </Box>
-                            <Box display="flex" justifyContent="space-between">
-                                <Typography variant="body2">Insurance Form</Typography>
-                                <Chip label="Pending" size="small" variant="outlined" />
-                            </Box>
-                            <Button
-                                variant="outlined"
-                                fullWidth
-                                size="small"
-                                startIcon={<Upload size={14} />}
-                                sx={{ mt: 2 }}
-                            >
-                                Upload New
-                            </Button>
-                        </CardContent>
-                    </Card>
-                </Grid>
-
-                {/* Post-Care Alerts */}
-                <Grid item xs={12} md={3}>
-                    <Card elevation={0}
-                        sx={{
-                            borderRadius: 4,
-                            overflow: "hidden",
-                            position: "relative",
-                            p: 2,
-                            border: "2px solid #E4E7EC",
-                        }}>
-                        <CardHeader
-                            title={
-                                <Box display="flex" alignItems="center" gap={1}>
-                                    <AlertCircle size={18} />
-                                    <Typography variant="h6">Action Items</Typography>
-                                </Box>
-                            }
-                        />
-                        <CardContent>
-                            <Box display="flex" alignItems="center" gap={1}>
-                                <Pill size={14} color="blue" />
-                                <Typography variant="body2">Take morning medication</Typography>
-                            </Box>
-                            <Box display="flex" alignItems="center" gap={1}>
-                                <Camera size={14} color="green" />
-                                <Typography variant="body2">Upload pre-surgery photos</Typography>
-                            </Box>
-                            <Box display="flex" alignItems="center" gap={1}>
-                                <Phone size={14} color="orange" />
-                                <Typography variant="body2">Confirm transport pickup</Typography>
-                            </Box>
-                        </CardContent>
+                    <Card elevation={0} sx={{ borderRadius: 4, p: 2, border: "1px solid #E4E7EC", height: '100%' }}>
+                        {/* --- Key Change: CalendarCard no longer renders its own Card shell --- */}
+                        <CalendarCard appointments={appointments} />
                     </Card>
                 </Grid>
             </Grid>
@@ -380,192 +259,105 @@ const HomeOverview = ({ user, appointments }) => {
 
 const BookingCard = ({ icon, title, price, unit, tags, buttonText, color }) => {
     return (
-        <Card
-            elevation={0}
-            sx={{
-                borderRadius: 3,
-                border: "1px solid #E4E7EC",
-                width: 250,
-                px: 3,
-                textAlign: "left",
-            }}
-        >
-            <CardContent sx={{ p: 0, mb: 0, pt: 3, }}>
-                {/* Icon */}
-                <Box
-                    sx={{
-                        width: 56,
-                        height: 56,
-                        borderRadius: 2,
-                        backgroundColor: color,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        mb: 2,
-                    }}
-                >
-                    {icon}
-                </Box>
-
-                {/* Title */}
-                <Typography fontWeight="600" fontSize={17} mb={1}>
-                    {title}
-                </Typography>
-
-                {/* Price */}
-                <Typography variant="h5" fontWeight="bold" sx={{ display: "inline" }}>
-                    {price}
-                </Typography>
-                <Typography
-                    variant="body2"
-                    sx={{ display: "inline", color: "#6B7280", ml: 1 }}
-                >
-                    {unit}
-                </Typography>
-
-                {/* Tags */}
-                <Box display="flex" gap={1} mt={2} mb={3} flexWrap="wrap">
-                    {tags.map((tag, idx) => (
-                        <Chip
-                            key={idx}
-                            label={tag.label}
-                            sx={{
-                                backgroundColor: tag.bg,
-                                color: "black",
-                                fontWeight: 500,
-                            }}
-                        />
-                    ))}
-                </Box>
-
-                {/* Button */}
-                <Button
-                    fullWidth
-                    variant="outlined"
-                    sx={{
-                        textTransform: "none",
-                        fontWeight: 600,
-                        borderColor: "#D1D5DB",
-                        color: "#374151",
-                        borderRadius: 6,
-                        fontSize: 15,
-                        "&:hover": {
-                            borderColor: "#9CA3AF",
-                            backgroundColor: "#F9FAFB",
-                        },
-                    }}
-                >
-                    {buttonText}
-                </Button>
-            </CardContent>
-        </Card>
+        <Box sx={{
+            borderRadius: 3, border: "1px solid #E4E7EC", p: 2, textAlign: "left",
+            display: 'flex', flexDirection: 'column', height: '100%', bgcolor: 'background.paper'
+        }}>
+            <Box sx={{ width: 56, height: 56, borderRadius: 2, backgroundColor: color, display: "flex", alignItems: "center", justifyContent: "center", mb: 2 }}>
+                {icon}
+            </Box>
+            <Typography fontWeight="600" fontSize={17} mb={1}>{title}</Typography>
+            <Box>
+                <Typography variant="h5" fontWeight="bold" component="span">{price}</Typography>
+                <Typography variant="body2" component="span" sx={{ color: "text.secondary", ml: 0.5 }}>{unit}</Typography>
+            </Box>
+            <Box display="flex" gap={1} mt={2} flexWrap="wrap">
+                {tags.map((tag, idx) => (
+                    <Chip key={idx} label={tag.label} sx={{ bgcolor: color, fontWeight: 500 }} size="small" />
+                ))}
+            </Box>
+            <Box sx={{ flexGrow: 1 }} /> {/* Pushes button to the bottom */}
+            <Button fullWidth variant="outlined" sx={{ textTransform: "none", fontWeight: 600, mt: 2 }}>
+                {buttonText}
+            </Button>
+        </Box>
     );
 };
 
-const getFormattedMonthYear = (date) => {
-    return date.toLocaleString('default', { month: 'long', year: 'numeric' });
-};
-
-const isSameDay = (d1, d2) => {
-    return (
-        d1.getFullYear() === d2.getFullYear() &&
-        d1.getMonth() === d2.getMonth() &&
-        d1.getDate() === d2.getDate()
-    );
-};
+// --- Helper Functions for Calendar ---
+const getFormattedMonthYear = (date) => date.toLocaleString('default', { month: 'long', year: 'numeric' });
+const isSameDay = (d1, d2) => d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate();
 
 const CalendarCard = ({ appointments }) => {
     const today = new Date();
     const currentMonth = today.getMonth();
     const currentYear = today.getFullYear();
+    const theme = useTheme();
 
     const getAppointmentStatus = (dateStr) => {
         const date = new Date(dateStr);
-        const now = new Date();
-        if (isSameDay(date, now)) return 'today';
-        return date > now ? 'upcoming' : 'past';
+        if (isSameDay(date, today)) return 'today';
+        return date > today ? 'upcoming' : 'past';
     };
 
-    const appointmentMap = {};
-    (appointments || []).forEach((apt) => {
+    const appointmentMap = (appointments || []).reduce((acc, apt) => {
         const dateKey = new Date(apt.appointmentDate).getDate();
-        appointmentMap[dateKey] = getAppointmentStatus(apt.appointmentDate);
-    });
+        acc[dateKey] = getAppointmentStatus(apt.appointmentDate);
+        return acc;
+    }, {});
 
     const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const firstDayOfWeek = new Date(currentYear, currentMonth, 1).getDay(); // 0=Sun, 1=Mon...
 
-    const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
-
-    const totalSlots = firstDayOfMonth + daysInMonth;
-    const weeks = Math.ceil(totalSlots / 7);
-    const gridDays = Array(weeks * 7).fill(null).map((_, i) => {
-        const dayNum = i - firstDayOfMonth + 1;
-        return dayNum > 0 && dayNum <= daysInMonth ? dayNum : null;
+    const gridDays = Array.from({ length: firstDayOfWeek + daysInMonth }, (_, i) => {
+        const dayNum = i - firstDayOfWeek + 1;
+        return dayNum > 0 ? dayNum : null;
     });
 
-    const getBgColor = (status) => {
-        if (status === 'today') return '#0288d1';
-        if (status === 'upcoming') return '#1976d2';
-        if (status === 'past') return '#2e7d32';
-        return 'transparent';
+    const getDayStyle = (day) => {
+        const status = appointmentMap[day];
+        if (!status) return {};
+        const colors = {
+            today: { bgcolor: theme.palette.info.main, color: theme.palette.info.contrastText },
+            upcoming: { bgcolor: theme.palette.primary.main, color: theme.palette.primary.contrastText },
+            past: { bgcolor: theme.palette.success.main, color: theme.palette.success.contrastText },
+        };
+        return colors[status];
     };
 
     return (
-        <Card elevation={0}
-            sx={{
-                borderRadius: 4,
-                overflow: "hidden",
-                position: "relative",
-                p: 2,
-                border: "2px solid #E4E7EC",
-            }}>
+        <>
             <CardHeader title={<Typography variant="h6">{getFormattedMonthYear(today)}</Typography>} />
             <CardContent>
                 <Box display="grid" gridTemplateColumns="repeat(7, 1fr)" textAlign="center" gap={1}>
-                    {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-                        <Typography key={day} fontWeight={600}>{day}</Typography>
+                    {["S", "M", "T", "W", "T", "F", "S"].map((day, i) => (
+                        <Typography key={i} variant="body2" fontWeight={600} color="text.secondary">{day}</Typography>
                     ))}
-                    {gridDays.map((day, index) => {
-                        const status = appointmentMap[day];
-                        const bgColor = getBgColor(status);
-                        const textColor = bgColor !== 'transparent' ? 'white' : 'inherit';
-                        return (
-                            <Box
-                                key={index}
-                                display="flex"
-                                justifyContent="center"
-                                alignItems="center"
-                                width={32}
-                                height={32}
-                                borderRadius="50%"
-                                bgcolor={bgColor}
-                                color={textColor}
-                                mx="auto"
-                            >
-                                {day || ''}
-                            </Box>
-                        );
-                    })}
+                    {gridDays.map((day, index) => (
+                        <Box key={index} display="flex" justifyContent="center" alignItems="center"
+                            sx={{ width: 32, height: 32, borderRadius: '50%', mx: "auto", ...getDayStyle(day) }}
+                        >
+                            {day}
+                        </Box>
+                    ))}
                 </Box>
-
                 <Box mt={4} display="flex" flexDirection="column" gap={1}>
-                    <Box display="flex" alignItems="center" gap={1}>
-                        <Box width={12} height={12} borderRadius="50%" bgcolor="#2e7d32" />
-                        <Typography variant="body2">Completed Appointments</Typography>
+                    <Box display="flex" alignItems="center" gap={1.5}>
+                        <Box width={12} height={12} borderRadius="50%" bgcolor={theme.palette.success.main} />
+                        <Typography variant="body2">Completed</Typography>
                     </Box>
-                    <Box display="flex" alignItems="center" gap={1}>
-                        <Box width={12} height={12} borderRadius="50%" bgcolor="#1976d2" />
-                        <Typography variant="body2">Upcoming Appointments</Typography>
+                    <Box display="flex" alignItems="center" gap={1.5}>
+                        <Box width={12} height={12} borderRadius="50%" bgcolor={theme.palette.primary.main} />
+                        <Typography variant="body2">Upcoming</Typography>
                     </Box>
-                    <Box display="flex" alignItems="center" gap={1}>
-                        <Box width={12} height={12} borderRadius="50%" bgcolor="#0288d1" />
+                    <Box display="flex" alignItems="center" gap={1.5}>
+                        <Box width={12} height={12} borderRadius="50%" bgcolor={theme.palette.info.main} />
                         <Typography variant="body2">Today</Typography>
                     </Box>
                 </Box>
             </CardContent>
-        </Card>
+        </>
     );
 };
-
 
 export default HomeOverview;

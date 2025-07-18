@@ -66,6 +66,7 @@ import { NotificationsSection } from "./notifications-section"
 import { MessagesSection } from "./messages-section"
 import HomeOverview from "./HomeOverview.jsx"
 import AppointmentsSection from "./AppointmentSection.jsx"
+import DocumentsSection from "./DocumentSection.jsx"
 
 // Define a basic theme
 const theme = createTheme({
@@ -217,83 +218,83 @@ function AppSidebar({ activeSection, setActiveSection, open, onClose, variant = 
   )
 }
 
-function DocumentsSection() {
-  const [tabIndex, setTabIndex] = React.useState(0)
+// function DocumentsSection() {
+//   const [tabIndex, setTabIndex] = React.useState(0)
 
-  const handleTabChange = (event, newValue) => {
-    setTabIndex(newValue)
-  }
+//   const handleTabChange = (event, newValue) => {
+//     setTabIndex(newValue)
+//   }
 
-  return (
-    <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Box>
-          <Typography variant="h4" gutterBottom>
-            Documents Vault
-          </Typography>
-          <Typography variant="subtitle1" color="text.secondary">
-            Secure storage for all your medical and travel documents
-          </Typography>
-        </Box>
-        <Button variant="contained" startIcon={<Upload />}>
-          Upload New
-        </Button>
-      </Box>
-      <Box display="flex" gap={2} mb={3}>
-        <TextField fullWidth label="Search documents..." variant="outlined" />
-        <Button variant="outlined" startIcon={<FilterList />}>
-          Filter
-        </Button>
-      </Box>
-      <Tabs value={tabIndex} onChange={handleTabChange} aria-label="documents tabs">
-        <Tab label="All Documents" />
-        <Tab label="Medical" />
-        <Tab label="Travel" />
-        <Tab label="Insurance" />
-      </Tabs>
-      <Box mt={3}>
-        {tabIndex === 0 && (
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={6} lg={4}>
-              <Card>
-                <CardHeader
-                  title="Blood Test Report"
-                  subheader="Lab Results - Dec 10, 2024"
-                  action={<Chip label="New" color="primary" />}
-                />
-                <CardContent>
-                  <Typography variant="body2" color="text.secondary">
-                    Uploaded by: Dr. Kumar
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Size: 2.4 MB
-                  </Typography>
-                  <Box display="flex" gap={2} mt={2}>
-                    <Button
-                      variant="outlined"
-                      startIcon={<Search />}
-                      fullWidth
-                    >
-                      View
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      startIcon={<Download />}
-                      fullWidth
-                    >
-                      Download
-                    </Button>
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-            {/* Add more document cards here */}
-          </Grid>
-        )}
-      </Box>
-    </Box>
-  )
-}
+//   return (
+//     <Box>
+//       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+//         <Box>
+//           <Typography variant="h4" gutterBottom>
+//             Documents Vault
+//           </Typography>
+//           <Typography variant="subtitle1" color="text.secondary">
+//             Secure storage for all your medical and travel documents
+//           </Typography>
+//         </Box>
+//         <Button variant="contained" startIcon={<Upload />}>
+//           Upload New
+//         </Button>
+//       </Box>
+//       <Box display="flex" gap={2} mb={3}>
+//         <TextField fullWidth label="Search documents..." variant="outlined" />
+//         <Button variant="outlined" startIcon={<FilterList />}>
+//           Filter
+//         </Button>
+//       </Box>
+//       <Tabs value={tabIndex} onChange={handleTabChange} aria-label="documents tabs">
+//         <Tab label="All Documents" />
+//         <Tab label="Medical" />
+//         <Tab label="Travel" />
+//         <Tab label="Insurance" />
+//       </Tabs>
+//       <Box mt={3}>
+//         {tabIndex === 0 && (
+//           <Grid container spacing={3}>
+//             <Grid item xs={12} md={6} lg={4}>
+//               <Card>
+//                 <CardHeader
+//                   title="Blood Test Report"
+//                   subheader="Lab Results - Dec 10, 2024"
+//                   action={<Chip label="New" color="primary" />}
+//                 />
+//                 <CardContent>
+//                   <Typography variant="body2" color="text.secondary">
+//                     Uploaded by: Dr. Kumar
+//                   </Typography>
+//                   <Typography variant="body2" color="text.secondary">
+//                     Size: 2.4 MB
+//                   </Typography>
+//                   <Box display="flex" gap={2} mt={2}>
+//                     <Button
+//                       variant="outlined"
+//                       startIcon={<Search />}
+//                       fullWidth
+//                     >
+//                       View
+//                     </Button>
+//                     <Button
+//                       variant="outlined"
+//                       startIcon={<Download />}
+//                       fullWidth
+//                     >
+//                       Download
+//                     </Button>
+//                   </Box>
+//                 </CardContent>
+//               </Card>
+//             </Grid>
+//             {/* Add more document cards here */}
+//           </Grid>
+//         )}
+//       </Box>
+//     </Box>
+//   )
+// }
 
 function MainContent({ activeSection, user, appointments }) {
   const renderContent = () => {
