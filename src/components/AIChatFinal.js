@@ -42,6 +42,10 @@ import {
 
 const FALLBACK_RESPONSE = "I'd like to help you find the right specialist. Could you tell me more about your symptoms or what type of medical treatment you're looking for?";
 
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '../firebase';
+import { LocationOnOutlined } from '@mui/icons-material';
+
 const AIChatFinal = () => {
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
@@ -64,7 +68,51 @@ const AIChatFinal = () => {
   const [allParametersCollected, setAllParametersCollected] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
+  const [availableLocations, setAvailableLocations] = useState([]);
+  const [isLoadingLocations, setIsLoadingLocations] = useState(true);
 
+  // Fetch unique locations from clinics collection
+  useEffect(() => {
+    const fetchLocations = async () => {
+      try {
+        setIsLoadingLocations(true);
+        const clinicsRef = collection(db, 'clinics');
+        const clinicsSnapshot = await getDocs(clinicsRef);
+        const locations = new Set();
+        
+        clinicsSnapshot.forEach((doc) => {
+          const clinic = doc.data();
+          if (clinic.location) {
+            locations.add(clinic.location);
+          }
+        });
+        
+        setAvailableLocations(Array.from(locations));
+      } catch (error) {
+        console.error('Error fetching locations:', error);
+      } finally {
+        setIsLoadingLocations(false);
+      }
+    };
+
+    fetchLocations();
+  }, []);
+
+  const handleLocationSelect = (location) => {
+    setExtractedInfo(prev => ({
+      ...prev,
+      location
+    }));
+    
+    // Add message to chat about selected location
+    setMessages(prev => [...prev, {
+      text: `I'm in ${location}`,
+      sender: 'user'
+    }]);
+    
+    // Clear input field if location was selected from suggestions
+    setInputValue('');
+  };
 
   const quickActions = [
     {
@@ -100,20 +148,20 @@ const AIChatFinal = () => {
   useEffect(() => {
     const initializeChatSession = async () => {
       try {
-       // console.log("Initializing chat session");
+        // console.log("Initializing chat session");
         const session = await createChatSession();
 
         if (session) {
           // console.log("Chat session initialized successfully");
           setChatSession(session);
         } else {
-         // console.error("Failed to initialize chat session - null session returned");
+          // console.error("Failed to initialize chat session - null session returned");
 
           // Even though we don't have a chat session, we can still show the UI
           // We'll fall back to local processing when the user sends messages
         }
       } catch (error) {
-       // console.error("Error initializing chat session:", error);
+      // console.error("Error initializing chat session:", error);
 
         // Even on error, we'll show the UI and use local fallbacks
       }
@@ -267,7 +315,7 @@ const AIChatFinal = () => {
             duration: info.appointmentDate || 'As soon as possible',
             location: info.location
           });
-          
+
           // Select the best clinic based on the treatment type, location, and date
           const clinics = await selectBestClinic(info.treatmentType, info.location, info.appointmentDate);
           if (clinics && clinics.length > 0) {
@@ -306,7 +354,7 @@ const AIChatFinal = () => {
             // Try to determine treatment type from medical issue
             const inferredType = determineTreatmentType(info.medicalIssue);
             if (inferredType) {
-              //console.log("Inferred treatment type:", inferredType);
+             //console.log("Inferred treatment type:", inferredType);
               setExtractedInfo(prev => ({ ...prev, treatmentType: inferredType }));
               
               // Now process with the inferred treatment type
@@ -316,7 +364,7 @@ const AIChatFinal = () => {
                 info.appointmentDate
               );
               if (clinic) {
-               // console.log("Found clinic with inferred treatment type:", clinic);
+                // console.log("Found clinic with inferred treatment type:", clinic);
                 setTreatmentDetails({
                   treatmentType: inferredType,
                   symptoms: info.medicalIssue,
@@ -325,7 +373,7 @@ const AIChatFinal = () => {
                 });
                 setBestClinic(clinic);
                 setShowRecommendations(true);
-                
+
                 // DO NOT add a message here - let the Gemini API handle responses
               }
             }
@@ -338,36 +386,36 @@ const AIChatFinal = () => {
         setIsProcessing(false);
       }
     };
-    
+
     processConversation();
   }, [messages]);
 
   // Handle date selection from the calendar
   const handleDateSelect = async (date) => {
-   // console.log("Selected available date:", date);
-    
+    // console.log("Selected available date:", date);
+
     // Update the extracted info with the selected date
-    const updatedInfo = { 
-      ...extractedInfo, 
-      appointmentDate: date 
+    const updatedInfo = {
+      ...extractedInfo,
+      appointmentDate: date
     };
     setExtractedInfo(updatedInfo);
-    
+
     // Add a user message showing the selected date
-    setMessages(prev => [...prev, { 
-      text: `I'd like to schedule my appointment on ${date}.`, 
-      sender: 'user' 
+    setMessages(prev => [...prev, {
+      text: `I'd like to schedule my appointment on ${date}.`,
+      sender: 'user'
     }]);
-    
+
     // Set loading to show a response is coming
     setLoading(true);
-    
+
     // Now check for clinic availability immediately rather than waiting for the next message cycle
     try {
       if (updatedInfo.treatmentType || determineTreatmentType(updatedInfo.medicalIssue)) {
         const treatmentType = updatedInfo.treatmentType || determineTreatmentType(updatedInfo.medicalIssue);
-       // console.log("All parameters collected, searching for clinic now...");
-        
+        // console.log("All parameters collected, searching for clinic now...");
+
         // Set treatment details based on extracted information
         setTreatmentDetails({
           treatmentType: treatmentType,
@@ -375,80 +423,80 @@ const AIChatFinal = () => {
           duration: date,
           location: updatedInfo.location
         });
-        
+
         // Select the best clinics based on all parameters (now returns an array)
         const clinics = await selectBestClinic(
-          treatmentType, 
-          updatedInfo.location, 
+          treatmentType,
+          updatedInfo.location,
           date
         );
-        
+
         // Also check for alternative dates (next 7 days) if no clinic is available on the selected date
         let alternativeDates = [];
-        
+
         if (!clinics || clinics.length === 0) {
           const tomorrow = new Date();
           tomorrow.setDate(tomorrow.getDate() + 1);
-          
+
           // Check next 7 days for availability
           for (let i = 1; i <= 7; i++) {
             const nextDate = new Date(tomorrow);
             nextDate.setDate(tomorrow.getDate() + i);
             const formattedNextDate = format(nextDate, 'yyyy-MM-dd');
-            
+
             const alternativeClinic = await selectBestClinic(
               treatmentType,
               updatedInfo.location,
               formattedNextDate
             );
-            
+
             if (alternativeClinic && alternativeClinic.length > 0) {
               alternativeDates.push({
                 date: formattedNextDate,
                 formattedDate: format(nextDate, 'EEE, MMM d, yyyy')
               });
-              
+
               // Limit to 3 alternative dates
               if (alternativeDates.length >= 3) break;
             }
           }
         }
-        
+
         // Add a short delay to ensure messages appear in proper sequence
         setTimeout(() => {
           if (clinics && clinics.length > 0) {
-           // console.log("Found available clinic:", clinics[0]);
+            // console.log("Found available clinic:", clinics[0]);
             setBestClinic(clinics); // Now storing an array of clinics
             setShowRecommendations(true);
             setAllParametersCollected(true);
-            
+
             // Add clinic recommendation message
             const clinicCount = clinics.length;
             const clinicNames = clinics.map(c => c.name).join(", ");
-            
-            setMessages(prev => [...prev, { 
-              text: `Great news! I've found ${clinicCount} ${clinicCount === 1 ? 'clinic' : 'clinics'} that match your requirements in ${updatedInfo.location} for your ${treatmentType} needs. ${clinicCount === 1 ? 'This clinic is' : 'These clinics are'} available on ${date}: ${clinicNames}. Would you like more information about ${clinicCount === 1 ? 'this clinic' : 'these clinics'}?`, 
-              sender: 'ai' 
+
+            setMessages(prev => [...prev, {
+              text: `Great news! I've found ${clinicCount} ${clinicCount === 1 ? 'clinic' : 'clinics'} that match your requirements in ${updatedInfo.location} for your ${treatmentType} needs. ${clinicCount === 1 ? 'This clinic is' : 'These clinics are'} available on ${date}: ${clinicNames}. Would you like more information about ${clinicCount === 1 ? 'this clinic' : 'these clinics'}?`,
+              sender: 'ai'
             }]);
           } else {
             //console.log("No available clinics found for the selected date and location");
-            
+
             if (alternativeDates.length > 0) {
               // Suggest alternative dates
               const alternativesText = alternativeDates
                 .map(alt => alt.formattedDate)
                 .join(", ");
-                
-              setMessages(prev => [...prev, { 
-                text: `I'm sorry, but there are no clinics available in ${updatedInfo.location} for ${treatmentType} treatment on ${date}. However, I found availability on the following dates: ${alternativesText}. Would you like to select one of these dates instead?`, 
+
+              setMessages(prev => [...prev, {
+                text: `I'm sorry, but there are no clinics available in ${updatedInfo.location} for ${treatmentType} treatment on ${date}. However, I found availability on the following dates: ${alternativesText}. Would you like to select one of these dates instead?`,
                 sender: 'ai',
                 alternativeDates: alternativeDates // Store alternative dates in the message
               }]);
             } else {
               // No alternatives found
-              setMessages(prev => [...prev, { 
-                text: `I'm sorry, but there are no clinics available in ${updatedInfo.location} for ${treatmentType} treatment on ${date} or the next 7 days. Would you like to try a different location or treatment type?`, 
-                sender: 'ai' 
+              setMessages(prev => [...prev, {
+                text: `I'm sorry, but there are no clinics available in ${updatedInfo.location} for ${treatmentType} treatment on ${date} or the next 7 days. Would you like to try a different location or treatment type?`,
+                sender: 'ai'
               }]);
             }
           }
@@ -456,33 +504,47 @@ const AIChatFinal = () => {
         }, 1000);
       }
     } catch (error) {
-    //  console.error("Error processing date selection:", error);
+     //  console.error("Error processing date selection:", error);
       setLoading(false);
-      setMessages(prev => [...prev, { 
-        text: "I'm sorry, but there was an error processing your request. Please try again or select a different date.", 
-        sender: 'ai' 
+      setMessages(prev => [...prev, {
+        text: "I'm sorry, but there was an error processing your request. Please try again or select a different date.",
+        sender: 'ai'
       }]);
     }
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    
+
     if (!inputValue.trim()) return;
-    
+
     setMessages(prev => [...prev, { text: inputValue, sender: 'user' }]);
     setLoading(true);
-    
+
     const sanitizedInput = inputValue.trim();
     setInputValue('');
-    
+
     try {
+      // Check if the input might be a location if we're expecting one
+      const lastAiMessage = messages.find(m => m.sender === 'ai');
+      if (lastAiMessage && 
+          !extractedInfo.location && 
+          (lastAiMessage.text.toLowerCase().includes('location') ||
+           lastAiMessage.text.toLowerCase().includes('city') ||
+           lastAiMessage.text.toLowerCase().includes('where'))) {
+        // Update location in extracted info
+        setExtractedInfo(prev => ({
+          ...prev,
+          location: sanitizedInput
+        }));
+      }
+
       let response = ''; // Initialize the response variable
-      
+
       // If we have a chat session, use it to send the message to the AI
       if (chatSession) {
-       // console.log("Using chat session to send message");
-        
+        // console.log("Using chat session to send message");
+
         // Create context from all extracted information
         let context = "";
         if (extractedInfo.medicalIssue) {
@@ -497,46 +559,46 @@ const AIChatFinal = () => {
         if (extractedInfo.treatmentType) {
           context += `The treatment they need is: ${extractedInfo.treatmentType}. `;
         }
-        
+
         if (context) {
-      //    console.log("Added context to request:", context);
+          //    console.log("Added context to request:", context);
         }
-        
+
         // Send the context along with the user's message
         const message = sanitizedInput;
         const contextForGemini = context;
-        
+
         if (contextForGemini.toLowerCase().includes("calendar")) {
           response = await generateCalendarResponse(chatSession, message, contextForGemini);
         } else {
           response = await sendMessage(chatSession, message, contextForGemini);
         }
-        
+
         // If the AI is asking for date selection, show the calendar component
         // Removed this block of code
-        
+
         // If we got a fallback response, try to determine if this is a symptom and provide a more specific response
         if (response === FALLBACK_RESPONSE) {
           const symptomType = determineTreatmentType(sanitizedInput);
           if (symptomType) {
-          //  console.log("Detected symptom type:", symptomType);
+            //  console.log("Detected symptom type:", symptomType);
             response = `I see you're mentioning symptoms related to ${symptomType} treatment. Could you tell me more about your specific concerns? This will help me find the best clinic for you.`;
           }
         }
       } else {
         // Fall back to simple detection if no Gemini is available
-       // console.log("No chat session available, falling back to local detection");
+        // console.log("No chat session available, falling back to local detection");
         const symptomType = determineTreatmentType(sanitizedInput);
         if (symptomType) {
-         // console.log("Detected symptom type:", symptomType);
+        // console.log("Detected symptom type:", symptomType);
           response = `I see you're mentioning symptoms related to ${symptomType} treatment. Could you tell me more about your specific concerns? This will help me find the best clinic for you.`;
         } else {
           response = FALLBACK_RESPONSE;
         }
       }
-      
+
       addAIResponseWithCalendar(response);
-      
+
     } catch (error) {
      // console.error("Error in AI response:", error);
       addAIResponseWithCalendar(FALLBACK_RESPONSE);
@@ -547,37 +609,37 @@ const AIChatFinal = () => {
 
   const selectBestClinic = async (treatmentType, location, appointmentDate) => {
     try {
-    //  console.log(`Selecting best clinic for: ${treatmentType} in ${location} on ${appointmentDate}`);
-      
+      //  console.log(`Selecting best clinic for: ${treatmentType} in ${location} on ${appointmentDate}`);
+
       // Normalize treatment type to lowercase for database consistency
       const normalizedType = treatmentType ? treatmentType.toLowerCase() : null;
-      
-     // console.log(`Using normalized treatment type: ${normalizedType}`);
-      
+
+      // console.log(`Using normalized treatment type: ${normalizedType}`);
+
       // Guard clause: If missing any parameter, return null
       if (!normalizedType || !location || !appointmentDate) {
-       // console.log("Missing required parameters for clinic selection");
+        // console.log("Missing required parameters for clinic selection");
         return null;
       }
-      
+
       // Step 1: Get all clinics matching treatment type and location
       const clinics = await getClinicsByTreatmentType(normalizedType, location);
-      
+
       if (!clinics || clinics.length === 0) {
-      // console.log(`No clinics found for ${normalizedType} in ${location}`);
+// console.log(`No clinics found for ${normalizedType} in ${location}`);
         return null;
       }
-      
-     // console.log(`Found ${clinics.length} clinics matching ${normalizedType} in ${location}`);
-      
+
+      // console.log(`Found ${clinics.length} clinics matching ${normalizedType} in ${location}`);
+
       // Step 2: Filter for clinics available on the requested date
       const availableClinics = [];
-      
+
       for (const clinic of clinics) {
         const availability = await getAvailability(clinic.id, appointmentDate);
-        
-        if (availability && 
-            availability.length > 0 && 
+
+        if (availability &&
+          availability.length > 0 &&
             availability[0].availableDay) {
           availableClinics.push({
             ...clinic,
@@ -585,21 +647,21 @@ const AIChatFinal = () => {
           });
         }
       }
-      
+
       if (availableClinics.length === 0) {
      //   console.log(`No clinics available on ${appointmentDate}`);
         return null;
       }
-      
+
     //  console.log(`Found ${availableClinics.length} clinics available on ${appointmentDate}`);
-      
+
       // Step 3: Sort by rating and return up to three clinics (instead of just the best one)
       availableClinics.sort((a, b) => b.rating - a.rating);
-      
+
       // Return up to 3 clinics
       const topClinics = availableClinics.slice(0, 3);
-     // console.log(`Returning top ${topClinics.length} clinics sorted by rating`);
-      
+      // console.log(`Returning top ${topClinics.length} clinics sorted by rating`);
+
       // For backward compatibility, if we need to return a single clinic, return the array
       // This change will allow us to modify other parts of the code to handle multiple clinics
       return topClinics;
@@ -639,7 +701,7 @@ const AIChatFinal = () => {
             padding: 4,
           }}
         >
-            {/* Logo Circle with logoWhite.png */}
+          {/* Logo Circle with logoWhite.png */}
           <Avatar
             sx={{
               bgcolor: '#ccc',
@@ -866,6 +928,77 @@ const AIChatFinal = () => {
                   {message.text}
                 </Typography>
 
+                {/* Show location buttons when AI asks for location */}
+                {message.sender === 'ai' && 
+                 !extractedInfo.location && 
+                 (message.text.toLowerCase().includes('location') || 
+                  message.text.toLowerCase().includes('city') || 
+                  message.text.toLowerCase().includes('where')) && 
+                 availableLocations.length > 0 && (
+                  <Box 
+                    sx={{ 
+                      mt: 2,
+                      p: 2, 
+                      bgcolor: 'background.paper',
+                      borderRadius: 2,
+                      border: '1px solid',
+                      borderColor: 'rgba(0, 0, 0, 0.08)',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                    }}
+                  >
+                    <Typography 
+                      variant="subtitle2" 
+                      sx={{ 
+                        mb: 1.5, 
+                        fontWeight: 600,
+                        color: 'text.secondary',
+                        fontSize: '0.875rem'
+                      }}
+                    >
+                      Popular locations:
+                    </Typography>
+                    <Box 
+                      sx={{ 
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+                        gap: 1.5 
+                      }}
+                    >
+                      {availableLocations.map((location) => (
+                        <Button
+                          key={location}
+                          variant="outlined"
+                          onClick={() => handleLocationSelect(location)}
+                          sx={{
+                            p: 1.5,
+                            borderRadius: 2,
+                            textTransform: 'none',
+                            borderColor: 'rgba(0, 0, 0, 0.12)',
+                            color: '#1D4645',
+                            fontWeight: 500,
+                            '&:hover': {
+                              borderColor: '#1D4645',
+                              bgcolor: 'rgba(29, 70, 69, 0.05)',
+                              transform: 'translateY(-1px)',
+                              boxShadow: '0 4px 8px rgba(0,0,0,0.05)'
+                            },
+                            '&:active': {
+                              transform: 'translateY(0)',
+                            },
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 1
+                          }}
+                        >
+                          <LocationOnOutlined sx={{ fontSize: 18 }} />
+                          {location}
+                        </Button>
+                      ))}
+                    </Box>
+                  </Box>
+                )}
+
                 {message.sender === 'ai' && message.showCalendar && (
                   <Box
                     mt={2}
@@ -930,8 +1063,8 @@ const AIChatFinal = () => {
               </Paper>
             </Box>
           )}
-
-          {/* CLINIC RECOMMENDATIONS MOVED INSIDE CHAT CONTAINER */}
+        
+      {/* CLINIC RECOMMENDATIONS MOVED INSIDE CHAT CONTAINER */}
           {showRecommendations && bestClinic && (
             <Box sx={{ 
               mt: 2, 
@@ -944,14 +1077,14 @@ const AIChatFinal = () => {
               alignSelf: 'flex-start',
               width: '100%'
             }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                <InfoOutlined fontSize="small" color="action" />
-                <Typography variant="body2" color="text.secondary">
-                  Based on your symptoms and availability, here are the best clinics for your needs
-                </Typography>
-              </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+            <InfoOutlined fontSize="small" color="action" />
+            <Typography variant="body2" color="text.secondary">
+              Based on your symptoms and availability, here are the best clinics for your needs
+            </Typography>
+          </Box>
 
-              {bestClinic.map((clinic, index) => (
+          {bestClinic.map((clinic, index) => (
                 <Card 
                   key={clinic.id || index} 
                   sx={{ 
@@ -975,78 +1108,78 @@ const AIChatFinal = () => {
                   })}
                 >
                   <Box sx={{ position: 'relative', height: 120, overflow: 'hidden' }}>
-                    <Box
-                      component="img"
-                      src={clinic.image}
-                      alt={clinic.name}
-                      sx={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                      }}
-                    />
-                    <Box
-                      sx={{
-                        position: 'absolute',
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
+                <Box
+                  component="img"
+                  src={clinic.image}
+                  alt={clinic.name}
+                  sx={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                  }}
+                />
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
                         p: 1.5,
-                        background: 'linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0))',
-                        color: 'white',
-                      }}
-                    >
+                    background: 'linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0))',
+                    color: 'white',
+                  }}
+                >
                       <Typography variant="subtitle1" fontWeight="bold">{clinic.name}</Typography>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        <Rating value={clinic.rating} precision={0.1} readOnly size="small" />
-                        <Typography variant="body2">{clinic.rating || 'N/A'}</Typography>
-                      </Box>
-                    </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Rating value={clinic.rating} precision={0.1} readOnly size="small" />
+                    <Typography variant="body2">{clinic.rating || 'N/A'}</Typography>
                   </Box>
+                </Box>
+              </Box>
                   <CardContent sx={{ p: 2 }}>
                     <Box sx={{ mb: 1.5 }}>
-                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
                         📍 {clinic.location} {clinic.distance ? `(${clinic.distance})` : ''}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
                         ⏰ {clinic.availability || 'Contact for availability'}
-                      </Typography>
-                    </Box>
+                  </Typography>
+                </Box>
 
-                    <Typography variant="subtitle2" gutterBottom>
-                      Services:
-                    </Typography>
+                <Typography variant="subtitle2" gutterBottom>
+                  Services:
+                </Typography>
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1.5 }}>
                       {(clinic.services || []).slice(0, 3).map((service, index) => (
-                        <Chip
-                          key={index}
-                          label={service}
-                          size="small"
-                          sx={{
-                            bgcolor: `${theme.palette.primary.main}15`,
-                            color: theme.palette.primary.main,
-                            fontWeight: 500
-                          }}
-                        />
-                      ))}
-                    </Box>
+                    <Chip
+                      key={index}
+                      label={service}
+                      size="small"
+                      sx={{
+                        bgcolor: `${theme.palette.primary.main}15`,
+                        color: theme.palette.primary.main,
+                        fontWeight: 500
+                      }}
+                    />
+                  ))}
+                </Box>
 
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1, mt: 2 }}>
-                      <Button
+                  <Button
                         size="small"
-                        color="primary"
-                        startIcon={<InfoOutlined />}
+                    color="primary"
+                    startIcon={<InfoOutlined />}
                         onClick={(e) => {
                           e.stopPropagation();
                           setShowExpandedClinicDetails(!showExpandedClinicDetails);
                         }}
-                      >
+                  >
                         Details
-                      </Button>
-                      <Button
+                  </Button>
+                  <Button
                         size="small"
-                        variant="contained"
-                        color="primary"
+                    variant="contained"
+                    color="primary"
                         sx={{
                           bgcolor: '#1D4645',
                           '&:hover': {
@@ -1056,73 +1189,73 @@ const AIChatFinal = () => {
                         onClick={(e) => {
                           e.stopPropagation();
                           navigate('/book-now', {
-                            state: {
-                              clinic: clinic,
-                              date: extractedInfo.appointmentDate || '',
+                      state: {
+                        clinic: clinic,
+                        date: extractedInfo.appointmentDate || '',
                               time: '10:00 AM'
                             }
                           });
                         }}
-                      >
-                        Book Now
-                      </Button>
-                    </Box>
-                  </CardContent>
+                  >
+                    Book Now
+                  </Button>
+                </Box>
+              </CardContent>
 
-                  {showExpandedClinicDetails && (
-                    <Box sx={{ p: 2, bgcolor: 'rgba(0, 0, 0, 0.02)', borderTop: '1px solid rgba(0, 0, 0, 0.08)' }}>
-                      <Typography variant="h6" gutterBottom>Detailed Information</Typography>
+              {showExpandedClinicDetails && (
+                <Box sx={{ p: 2, bgcolor: 'rgba(0, 0, 0, 0.02)', borderTop: '1px solid rgba(0, 0, 0, 0.08)' }}>
+                  <Typography variant="h6" gutterBottom>Detailed Information</Typography>
 
-                      <Box sx={{ mb: 3 }}>
-                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>About the Clinic</Typography>
-                        <Typography variant="body2" paragraph>
-                          {clinic.name} is a premier healthcare facility specializing in {treatmentDetails?.treatmentType || 'specialized'} treatments.
-                          With state-of-the-art equipment and experienced specialists, they provide personalized care
-                          tailored to each patient's unique needs.
-                        </Typography>
-                      </Box>
+                  <Box sx={{ mb: 3 }}>
+                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>About the Clinic</Typography>
+                    <Typography variant="body2" paragraph>
+                      {clinic.name} is a premier healthcare facility specializing in {treatmentDetails?.treatmentType || 'specialized'} treatments.
+                      With state-of-the-art equipment and experienced specialists, they provide personalized care
+                      tailored to each patient's unique needs.
+                    </Typography>
+                  </Box>
 
-                      <Box sx={{ mb: 3 }}>
-                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>Doctors</Typography>
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                            <Avatar sx={{ width: 50, height: 50 }}>{clinic.name ? clinic.name[0] : 'D'}</Avatar>
-                            <Box>
-                              <Typography variant="subtitle2">Dr. Rajesh Sharma</Typography>
-                              <Typography variant="body2" color="text.secondary">Senior Specialist, 15+ years experience</Typography>
-                            </Box>
-                          </Box>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                            <Avatar sx={{ width: 50, height: 50 }}>A</Avatar>
-                            <Box>
-                              <Typography variant="subtitle2">Dr. Anjali Patel</Typography>
-                              <Typography variant="body2" color="text.secondary">Consultant, 10+ years experience</Typography>
-                            </Box>
-                          </Box>
+                  <Box sx={{ mb: 3 }}>
+                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>Doctors</Typography>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Avatar sx={{ width: 50, height: 50 }}>{clinic.name ? clinic.name[0] : 'D'}</Avatar>
+                        <Box>
+                          <Typography variant="subtitle2">Dr. Rajesh Sharma</Typography>
+                          <Typography variant="body2" color="text.secondary">Senior Specialist, 15+ years experience</Typography>
                         </Box>
                       </Box>
-
-                      <Box>
-                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>Facilities</Typography>
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                          <Chip label="Modern Equipment" size="small" />
-                          <Chip label="Comfortable Waiting Area" size="small" />
-                          <Chip label="Digital Records" size="small" />
-                          <Chip label="Lab Services" size="small" />
-                          <Chip label="Pharmacy" size="small" />
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Avatar sx={{ width: 50, height: 50 }}>A</Avatar>
+                        <Box>
+                          <Typography variant="subtitle2">Dr. Anjali Patel</Typography>
+                          <Typography variant="body2" color="text.secondary">Consultant, 10+ years experience</Typography>
                         </Box>
                       </Box>
                     </Box>
-                  )}
-                </Card>
-              ))}
+                  </Box>
 
-              <Button
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>Facilities</Typography>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                      <Chip label="Modern Equipment" size="small" />
+                      <Chip label="Comfortable Waiting Area" size="small" />
+                      <Chip label="Digital Records" size="small" />
+                      <Chip label="Lab Services" size="small" />
+                      <Chip label="Pharmacy" size="small" />
+                    </Box>
+                  </Box>
+                </Box>
+              )}
+            </Card>
+          ))}
+
+          <Button
                 variant="outlined"
-                fullWidth
-                color="primary"
+            fullWidth
+            color="primary"
                 size="small"
-                onClick={() => setShowTreatmentsInfo(true)}
+            onClick={() => setShowTreatmentsInfo(true)}
                 sx={{ 
                   mt: 1,
                   borderColor: '#1D4645',
@@ -1132,11 +1265,11 @@ const AIChatFinal = () => {
                     bgcolor: 'rgba(29, 70, 69, 0.05)'
                   }
                 }}
-              >
-                View Treatment Information
-              </Button>
-            </Box>
-          )}
+          >
+            View Treatment Information
+          </Button>
+        </Box>
+      )}
         </Box>
 
         <Divider />
