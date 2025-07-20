@@ -17,6 +17,7 @@ import {
   Avatar,
   LinearProgress,
   useTheme,
+  styled
 } from '@mui/material';
 import {
   Flight,
@@ -36,6 +37,31 @@ import {
   TrendingUp,
 } from '@mui/icons-material';
 
+const StyledTabs = styled(Tabs)(({ theme }) => ({
+  '& .MuiTabs-flexContainer': {
+    backgroundColor: '#f5f5f5',
+    borderRadius: '12px',
+    padding: '4px',
+  },
+  '& .MuiTab-root': {
+    textTransform: 'none',
+    minHeight: '48px',
+    fontSize: '16px',
+    fontWeight: 500,
+    color: '#666',
+    borderRadius: '8px',
+    margin: '0 2px',
+    '&.Mui-selected': {
+      backgroundColor: '#ffffff',
+      color: '#333',
+      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+    }
+  },
+  '& .MuiTabs-indicator': {
+    display: 'none'
+  }
+}));
+
 function TabPanel({ children, value, index, ...other }) {
   return (
     <div
@@ -50,7 +76,7 @@ function TabPanel({ children, value, index, ...other }) {
   );
 }
 
-export function JourneySection() {
+const JourneySection = () => {
   const theme = useTheme();
   const [tabValue, setTabValue] = useState(0);
 
@@ -91,15 +117,24 @@ export function JourneySection() {
         {/* Quick Actions */}
         <Stack direction="row" spacing={2}>
           <Button
-            variant="contained"
             startIcon={<Download />}
+            sx={{ backgroundColor: 'black', px: 5, py: 1, color: 'white', '&:hover': { backgroundColor: '#333' } }}
           >
             Download Itinerary
           </Button>
           <Button
-            variant="outlined"
             startIcon={<Edit />}
-          >
+            variant="outlined"
+            sx={{
+              backgroundColor: '#FFFFFF',
+              color: 'black',
+              textTransform: 'none',
+              borderColor: '#1D4645',
+              '&:hover': {
+                backgroundColor: '#f0f0f0',
+                borderColor: '#1D4645',
+              },
+            }}>
             Modify Plans
           </Button>
         </Stack>
@@ -107,13 +142,19 @@ export function JourneySection() {
         {/* Tabs */}
         <Box sx={{ width: '100%' }}>
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-            <Tabs value={tabValue} onChange={handleTabChange} aria-label="journey tabs">
+            <StyledTabs
+              value={tabValue}
+              onChange={handleTabChange}
+              sx={{
+                width: 'fit-content',
+              }}
+            >
               <Tab label="Overview" />
               <Tab label="Flights" />
               <Tab label="Hotels" />
               <Tab label="Transport" />
               <Tab label="Budget" />
-            </Tabs>
+            </StyledTabs>
           </Box>
 
           {/* Overview Tab */}
@@ -123,12 +164,12 @@ export function JourneySection() {
               <Grid container spacing={3}>
                 {/* Flight Overview */}
                 <Grid item xs={12} md={4}>
-                  <Card>
+                  <Card elevation={0} sx={{ borderRadius: 4, p: 2, border: "1px solid #E4E7EC", height: '100%' }}>
                     <CardHeader
                       title={
                         <Stack direction="row" alignItems="center" spacing={1}>
-                          <Flight color="primary" />
-                          <Typography variant="h6">Flight Details</Typography>
+                          <Flight color="black" />
+                          <Typography color='black' variant="h6">Flight Details</Typography>
                         </Stack>
                       }
                     />
@@ -156,7 +197,10 @@ export function JourneySection() {
                             Delhi (DEL) → NYC
                           </Typography>
                         </Box>
-                        <Chip label="Confirmed" color="success" size="small" />
+                        <Chip label="Confirmed" sx={{
+                          bgcolor: 'black',
+                          color: 'white'
+                        }} size="small" />
                       </Stack>
                     </CardContent>
                   </Card>
@@ -164,11 +208,11 @@ export function JourneySection() {
 
                 {/* Hotel Overview */}
                 <Grid item xs={12} md={4}>
-                  <Card>
+                  <Card elevation={0} sx={{ borderRadius: 4, p: 2, border: "1px solid #E4E7EC", height: '100%' }}>
                     <CardHeader
                       title={
                         <Stack direction="row" alignItems="center" spacing={1}>
-                          <Hotel color="primary" />
+                          <Hotel color="black" />
                           <Typography variant="h6">Accommodation</Typography>
                         </Stack>
                       }
@@ -194,7 +238,9 @@ export function JourneySection() {
                             Check-out: Jan 4, 11:00 AM
                           </Typography>
                         </Box>
-                        <Chip label="20 nights" variant="outlined" size="small" />
+                        <Chip label="20 nights" variant="outlined" sx={{
+                          backgroundColor: '#E4E7EC',
+                        }} size="small" />
                       </Stack>
                     </CardContent>
                   </Card>
@@ -202,11 +248,11 @@ export function JourneySection() {
 
                 {/* Transport Overview */}
                 <Grid item xs={12} md={4}>
-                  <Card>
+                  <Card elevation={0} sx={{ borderRadius: 4, p: 2, border: "1px solid #E4E7EC", height: '100%' }}>
                     <CardHeader
                       title={
                         <Stack direction="row" alignItems="center" spacing={1}>
-                          <DirectionsCar color="primary" />
+                          <DirectionsCar color="black" />
                           <Typography variant="h6">Transportation</Typography>
                         </Stack>
                       }
@@ -240,8 +286,10 @@ export function JourneySection() {
               </Grid>
 
               {/* Timeline */}
-              <Card>
-                <CardHeader title="Journey Timeline" />
+              <Card elevation={0} sx={{ borderRadius: 4, p: 2, border: "1px solid #E4E7EC", height: '100%' }}>
+                <CardHeader title={
+                  <Typography variant="h4">Journey Timeline</Typography>
+                } />
                 <CardContent>
                   <Stack spacing={2}>
                     {timelineData.map((item, index) => (
@@ -257,20 +305,23 @@ export function JourneySection() {
                           gap: 2,
                         }}
                       >
-                        <Box sx={{ minWidth: 80 }}>
-                          <Typography variant="subtitle2" fontWeight="bold">
+                        <Box sx={{ minWidth: 90 }}>
+                          <Typography variant="h5" fontWeight="bold">
                             {item.date}
                           </Typography>
                         </Box>
                         <Box sx={{ flex: 1 }}>
-                          <Typography variant="subtitle2" fontWeight="bold">
+                          <Typography variant="h5" fontWeight="bold">
                             {item.event}
                           </Typography>
                           <Typography variant="body2" color="text.secondary">
                             {item.time}
                           </Typography>
                         </Box>
-                        <Chip label="Upcoming" variant="outlined" size="small" />
+                        <Chip label="Upcoming" variant="outlined" sx={{
+                          color: 'black',
+                          fontWeight: 'bold',
+                        }} size="small" />
                       </Box>
                     ))}
                   </Stack>
@@ -281,9 +332,11 @@ export function JourneySection() {
 
           {/* Flights Tab */}
           <TabPanel value={tabValue} index={1}>
-            <Card>
+            <Card elevation={0} sx={{ borderRadius: 4, p: 2, border: "1px solid #E4E7EC", height: '100%' }}>
               <CardHeader
-                title="Flight Bookings"
+                title={
+                  <Typography variant="h4">Flight Booking</Typography>
+                }
                 subheader="Manage your flight reservations"
               />
               <CardContent>
@@ -292,7 +345,11 @@ export function JourneySection() {
                   <Box sx={{ p: 3, border: 1, borderColor: 'divider', borderRadius: 2 }}>
                     <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
                       <Typography variant="h6">Outbound Flight</Typography>
-                      <Chip label="Confirmed" color="success" />
+                      <Chip label="Confirmed" sx={{
+                        color: 'white',
+                        backgroundColor: 'black',
+                        fontWeight: 'bold',
+                      }} />
                     </Stack>
                     <Grid container spacing={2}>
                       <Grid item xs={6}>
@@ -313,10 +370,32 @@ export function JourneySection() {
                       </Grid>
                     </Grid>
                     <Stack direction="row" spacing={2} mt={2}>
-                      <Button size="small" variant="outlined" startIcon={<Edit />}>
+                      <Button
+                        variant="outlined"
+                        sx={{
+                          backgroundColor: '#FFFFFF',
+                          color: 'black',
+                          textTransform: 'none',
+                          borderColor: '#1D4645',
+                          '&:hover': {
+                            backgroundColor: '#f0f0f0',
+                            borderColor: '#1D4645',
+                          },
+                        }}>
                         Edit
                       </Button>
-                      <Button size="small" variant="outlined">
+                      <Button
+                        variant="outlined"
+                        sx={{
+                          backgroundColor: '#FFFFFF',
+                          color: 'black',
+                          textTransform: 'none',
+                          borderColor: '#1D4645',
+                          '&:hover': {
+                            backgroundColor: '#f0f0f0',
+                            borderColor: '#1D4645',
+                          },
+                        }}>
                         Check-in
                       </Button>
                     </Stack>
@@ -326,7 +405,11 @@ export function JourneySection() {
                   <Box sx={{ p: 3, border: 1, borderColor: 'divider', borderRadius: 2 }}>
                     <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
                       <Typography variant="h6">Return Flight</Typography>
-                      <Chip label="Scheduled" variant="outlined" />
+                      <Chip label="Scheduled" variant="outlined" sx={{
+                        color: 'black',
+                        fontWeight: 'bold',
+                        bgcolor: '#E4E7EC',
+                      }} />
                     </Stack>
                     <Grid container spacing={2}>
                       <Grid item xs={6}>
@@ -347,10 +430,33 @@ export function JourneySection() {
                       </Grid>
                     </Grid>
                     <Stack direction="row" spacing={2} mt={2}>
-                      <Button size="small" variant="outlined" startIcon={<Edit />}>
+                      <Button
+                        variant="outlined"
+                        sx={{
+                          backgroundColor: '#FFFFFF',
+                          color: 'black',
+                          textTransform: 'none',
+                          borderColor: '#1D4645',
+                          '&:hover': {
+                            backgroundColor: '#f0f0f0',
+                            borderColor: '#1D4645',
+                          },
+                        }}>
                         Edit
                       </Button>
-                      <Button size="small" variant="outlined" disabled>
+                      <Button
+                        variant="outlined"
+                        disabled
+                        sx={{
+                          backgroundColor: '#FFFFFF',
+                          color: 'black',
+                          textTransform: 'none',
+                          borderColor: '#1D4645',
+                          '&:hover': {
+                            backgroundColor: '#f0f0f0',
+                            borderColor: '#1D4645',
+                          },
+                        }}>
                         Check-in Unavailable
                       </Button>
                     </Stack>
@@ -362,9 +468,11 @@ export function JourneySection() {
 
           {/* Hotels Tab */}
           <TabPanel value={tabValue} index={2}>
-            <Card>
+            <Card elevation={0} sx={{ borderRadius: 4, p: 2, border: "1px solid #E4E7EC", height: '100%' }}>
               <CardHeader
-                title="Hotel Bookings"
+                title={
+                  <Typography variant="h4">Hotel Booking</Typography>
+                }
                 subheader="Manage your accommodation details"
               />
               <CardContent>
@@ -377,9 +485,11 @@ export function JourneySection() {
 
           {/* Transport Tab */}
           <TabPanel value={tabValue} index={3}>
-            <Card>
+            <Card elevation={0} sx={{ borderRadius: 4, p: 2, border: "1px solid #E4E7EC", height: '100%' }}>
               <CardHeader
-                title="Transportation"
+                title={
+                  <Typography variant="h4">Transportation</Typography>
+                }
                 subheader="Manage your transportation arrangements"
               />
               <CardContent>
@@ -392,12 +502,12 @@ export function JourneySection() {
 
           {/* Budget Tab */}
           <TabPanel value={tabValue} index={4}>
-            <Card>
+            <Card elevation={0} sx={{ borderRadius: 4, p: 2, border: "1px solid #E4E7EC", height: '100%' }}>
               <CardHeader
                 title={
                   <Stack direction="row" alignItems="center" spacing={1}>
                     <AttachMoney color="primary" />
-                    <Typography variant="h6">Budget Summary</Typography>
+                    <Typography variant="h4">Budget Summary</Typography>
                   </Stack>
                 }
               />
@@ -470,21 +580,21 @@ export function JourneySection() {
         </Box>
 
         {/* Additional Services */}
-        <Card>
+        <Card elevation={0} sx={{ borderRadius: 4, p: 2, border: "1px solid #E4E7EC", height: '100%' }}>
           <CardHeader
             title={
               <Stack direction="row" alignItems="center" spacing={1}>
-                <Add color="primary" />
-                <Typography variant="h6">Additional Services</Typography>
+                <Add color="black" />
+                <Typography variant="h4">Additional Services</Typography>
               </Stack>
             }
           />
           <CardContent>
             <Grid container spacing={3}>
               <Grid item xs={12} md={4}>
-                <Box sx={{ p: 3, border: 1, borderColor: 'divider', borderRadius: 2 }}>
+                <Box elevation={0} sx={{ p: 3, border: 1, borderColor: 'divider', borderRadius: 2, height: '100%' }}>
                   <Stack direction="row" alignItems="center" spacing={1} mb={2}>
-                    <Accessibility color="primary" />
+                    <Accessibility color="black" />
                     <Typography variant="subtitle2" fontWeight="bold">
                       Wheelchair Assistance
                     </Typography>
@@ -492,16 +602,28 @@ export function JourneySection() {
                   <Typography variant="body2" color="text.secondary" mb={2}>
                     Airport and hospital mobility support
                   </Typography>
-                  <Button variant="outlined" size="small" fullWidth>
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    sx={{
+                      backgroundColor: '#FFFFFF',
+                      color: 'black',
+                      textTransform: 'none',
+                      borderColor: '#1D4645',
+                      '&:hover': {
+                        backgroundColor: '#f0f0f0',
+                        borderColor: '#1D4645',
+                      },
+                    }}>
                     Add Service
                   </Button>
                 </Box>
               </Grid>
 
               <Grid item xs={12} md={4}>
-                <Box sx={{ p: 3, border: 1, borderColor: 'divider', borderRadius: 2 }}>
+                <Box elevation={0} sx={{ p: 3, border: 1, borderColor: 'divider', borderRadius: 2, height: '100%' }}>
                   <Stack direction="row" alignItems="center" spacing={1} mb={2}>
-                    <Translate color="primary" />
+                    <Translate color="black" />
                     <Typography variant="subtitle2" fontWeight="bold">
                       Translator
                     </Typography>
@@ -509,16 +631,28 @@ export function JourneySection() {
                   <Typography variant="body2" color="text.secondary" mb={2}>
                     Professional medical translation
                   </Typography>
-                  <Button variant="outlined" size="small" fullWidth>
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    sx={{
+                      backgroundColor: '#FFFFFF',
+                      color: 'black',
+                      textTransform: 'none',
+                      borderColor: '#1D4645',
+                      '&:hover': {
+                        backgroundColor: '#f0f0f0',
+                        borderColor: '#1D4645',
+                      },
+                    }}>
                     Add Service
                   </Button>
                 </Box>
               </Grid>
 
               <Grid item xs={12} md={4}>
-                <Box sx={{ p: 3, border: 1, borderColor: 'divider', borderRadius: 2 }}>
+                <Box elevation={0} sx={{ p: 3, border: 1, borderColor: 'divider', borderRadius: 2, height: '100%' }}>
                   <Stack direction="row" alignItems="center" spacing={1} mb={2}>
-                    <Security color="primary" />
+                    <Security color="black" />
                     <Typography variant="subtitle2" fontWeight="bold">
                       Travel Insurance
                     </Typography>
@@ -526,13 +660,18 @@ export function JourneySection() {
                   <Typography variant="body2" color="text.secondary" mb={2}>
                     Comprehensive medical coverage
                   </Typography>
-                  <Chip label="Already Added" color="success" size="small" fullWidth />
+                  <Chip label="Already Added" sx={{
+                    color: 'white',
+                    backgroundColor: 'black',
+                  }} size="small" fullWidth />
                 </Box>
               </Grid>
             </Grid>
           </CardContent>
         </Card>
       </Stack>
-    </Container>
+    </Container >
   );
 }
+
+export default JourneySection;

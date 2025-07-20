@@ -134,7 +134,19 @@ const HomeOverview = ({ user, appointments }) => {
                                         <Typography variant="body2">Progress</Typography>
                                         <Typography variant="body2" fontWeight={600}>Pre-Surgery</Typography>
                                     </Box>
-                                    <LinearProgress variant="determinate" value={25} sx={{ height: 8, borderRadius: 5, mt: 0.5 }} />
+                                    <LinearProgress
+                                        variant="determinate"
+                                        value={25}
+                                        sx={{
+                                            height: 10,
+                                            borderRadius: 5,
+                                            backgroundColor: '#e0e0e0',
+                                            '& .MuiLinearProgress-bar': {
+                                                backgroundColor: 'black',
+                                                borderRadius: 5,
+                                            },
+                                        }}
+                                    />
                                 </Box>
                             </Box>
                             <Box mt={2} display="flex" flexDirection="column" gap={0.5}>
@@ -318,12 +330,13 @@ const CalendarCard = ({ appointments }) => {
         const status = appointmentMap[day];
         if (!status) return {};
         const colors = {
-            today: { bgcolor: theme.palette.info.main, color: theme.palette.info.contrastText },
+            today: { bgcolor: 'transparent', color: 'black', border: '2px solid blue' },
             upcoming: { bgcolor: theme.palette.primary.main, color: theme.palette.primary.contrastText },
             past: { bgcolor: theme.palette.success.main, color: theme.palette.success.contrastText },
         };
         return colors[status];
     };
+
 
     return (
         <>
@@ -351,7 +364,7 @@ const CalendarCard = ({ appointments }) => {
                         <Typography variant="body2">Upcoming</Typography>
                     </Box>
                     <Box display="flex" alignItems="center" gap={1.5}>
-                        <Box width={12} height={12} borderRadius="50%" bgcolor={theme.palette.info.main} />
+                        <Box width={12} height={12} borderRadius="50%" bgcolor="transparent" border="2px solid blue" />
                         <Typography variant="body2">Today</Typography>
                     </Box>
                 </Box>

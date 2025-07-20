@@ -17,7 +17,8 @@ import {
   Grid,
   Paper,
   Avatar,
-  Divider
+  Divider,
+  styled
 } from "@mui/material"
 import {
   Videocam,
@@ -31,7 +32,33 @@ import {
   TrackChanges
 } from "@mui/icons-material"
 
-export function PostCareSection() {
+
+const StyledTabs = styled(Tabs)(({ theme }) => ({
+  '& .MuiTabs-flexContainer': {
+    backgroundColor: '#f5f5f5',
+    borderRadius: '12px',
+    padding: '4px',
+  },
+  '& .MuiTab-root': {
+    textTransform: 'none',
+    minHeight: '48px',
+    fontSize: '16px',
+    fontWeight: 500,
+    color: '#666',
+    borderRadius: '8px',
+    margin: '0 2px',
+    '&.Mui-selected': {
+      backgroundColor: '#ffffff',
+      color: '#333',
+      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+    }
+  },
+  '& .MuiTabs-indicator': {
+    display: 'none'
+  }
+}));
+
+const PostCareSection = () => {
   const [goalProgress, setGoalProgress] = useState(65)
   const [tabValue, setTabValue] = useState(0)
   const daysSinceSurgery = 2
@@ -54,12 +81,19 @@ export function PostCareSection() {
       <Grid container spacing={3}>
         {/* Goal Tracker */}
         <Grid item xs={12} md={8}>
-          <Card>
+          <Card elevation={0}
+            sx={{
+              borderRadius: 4,
+              overflow: "hidden",
+              position: "relative",
+              p: 2,
+              border: "2px solid #E4E7EC",
+            }}>
             <CardHeader
               title={
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <TrackChanges />
-                  <Typography variant="h6">Recovery Goals</Typography>
+                  <Typography variant="h4">Recovery Goals</Typography>
                 </Box>
               }
               subheader="Track your progress toward full recovery"
@@ -67,10 +101,10 @@ export function PostCareSection() {
             <CardContent>
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
-                  <Paper 
-                    elevation={0} 
-                    sx={{ 
-                      p: 3, 
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: 3,
                       textAlign: 'center',
                       background: 'linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%)',
                       borderRadius: 2
@@ -86,10 +120,18 @@ export function PostCareSection() {
                       <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                         Recovery Progress
                       </Typography>
-                      <LinearProgress 
-                        variant="determinate" 
-                        value={goalProgress} 
-                        sx={{ height: 8, borderRadius: 4, mb: 1 }}
+                      <LinearProgress
+                        variant="determinate"
+                        value={goalProgress}
+                        sx={{
+                          height: 10,
+                          borderRadius: 5,
+                          backgroundColor: '#e0e0e0',
+                          '& .MuiLinearProgress-bar': {
+                            backgroundColor: 'black',
+                            borderRadius: 5,
+                          },
+                        }}
                       />
                       <Typography variant="body2">
                         {goalProgress}% complete
@@ -130,12 +172,19 @@ export function PostCareSection() {
 
         <Grid item xs={12}>
           <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-            <Tabs value={tabValue} onChange={handleTabChange} aria-label="post-care tabs">
+            <StyledTabs
+              value={tabValue}
+              onChange={handleTabChange}
+              sx={{
+                width: 'fit-content',
+              }}
+              aria-label="Post Care Tabs"
+            >
               <Tab label="Daily Reminders" />
               <Tab label="Rehab Sessions" />
               <Tab label="Doctor Notes" />
               <Tab label="Goal Tracking" />
-            </Tabs>
+            </StyledTabs>
           </Box>
 
           {/* Daily Reminders Tab */}
@@ -143,7 +192,14 @@ export function PostCareSection() {
             <Grid container spacing={3}>
               {/* Exercise Reminders */}
               <Grid item xs={12} md={4}>
-                <Card>
+                <Card elevation={0}
+                  sx={{
+                    borderRadius: 4,
+                    overflow: "hidden",
+                    position: "relative",
+                    p: 2,
+                    border: "2px solid #E4E7EC",
+                  }}>
                   <CardHeader
                     title={
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -161,7 +217,13 @@ export function PostCareSection() {
                       ].map((item, index) => (
                         <FormControlLabel
                           key={index}
-                          control={<Checkbox checked={item.done} />}
+                          control={
+                            <Checkbox sx={{
+                              color: 'black',
+                              '&.Mui-checked': {
+                                color: 'black',
+                              },
+                            }} checked={item.done} />}
                           label={
                             <Box>
                               <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
@@ -175,7 +237,10 @@ export function PostCareSection() {
                         />
                       ))}
                     </Box>
-                    <Button variant="contained" fullWidth size="small">
+                    <Button
+                      fullWidth
+                      sx={{ backgroundColor: 'black', px: 5, py: 1, color: 'white', '&:hover': { backgroundColor: '#333' } }}
+                    >
                       Mark Exercise Complete
                     </Button>
                   </CardContent>
@@ -184,7 +249,14 @@ export function PostCareSection() {
 
               {/* Diet Reminders */}
               <Grid item xs={12} md={4}>
-                <Card>
+                <Card elevation={0}
+                  sx={{
+                    borderRadius: 4,
+                    overflow: "hidden",
+                    position: "relative",
+                    p: 2,
+                    border: "2px solid #E4E7EC",
+                  }}>
                   <CardHeader
                     title={
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -202,7 +274,12 @@ export function PostCareSection() {
                       ].map((item, index) => (
                         <FormControlLabel
                           key={index}
-                          control={<Checkbox checked={item.done} />}
+                          control={<Checkbox sx={{
+                            color: 'black',
+                            '&.Mui-checked': {
+                              color: 'black',
+                            },
+                          }} checked={item.done} />}
                           label={
                             <Box>
                               <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
@@ -216,7 +293,10 @@ export function PostCareSection() {
                         />
                       ))}
                     </Box>
-                    <Button variant="outlined" fullWidth size="small">
+                    <Button
+                      fullWidth
+                      sx={{ backgroundColor: 'black', px: 5, py: 1, color: 'white', '&:hover': { backgroundColor: '#333' } }}
+                    >
                       View Meal Plan
                     </Button>
                   </CardContent>
@@ -225,7 +305,14 @@ export function PostCareSection() {
 
               {/* Health Monitoring */}
               <Grid item xs={12} md={4}>
-                <Card>
+                <Card elevation={0}
+                  sx={{
+                    borderRadius: 4,
+                    overflow: "hidden",
+                    position: "relative",
+                    p: 2,
+                    border: "2px solid #E4E7EC",
+                  }}>
                   <CardHeader
                     title={
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -243,7 +330,12 @@ export function PostCareSection() {
                       ].map((item, index) => (
                         <FormControlLabel
                           key={index}
-                          control={<Checkbox checked={item.done} />}
+                          control={<Checkbox sx={{
+                            color: 'black',
+                            '&.Mui-checked': {
+                              color: 'black',
+                            },
+                          }} checked={item.done} />}
                           label={
                             <Box>
                               <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
@@ -257,7 +349,10 @@ export function PostCareSection() {
                         />
                       ))}
                     </Box>
-                    <Button variant="outlined" fullWidth size="small">
+                    <Button
+                      fullWidth
+                      sx={{ backgroundColor: 'black', px: 5, py: 1, color: 'white', '&:hover': { backgroundColor: '#333' } }}
+                    >
                       Log Health Data
                     </Button>
                   </CardContent>
@@ -270,7 +365,14 @@ export function PostCareSection() {
           {tabValue === 1 && (
             <Grid container spacing={3}>
               <Grid item xs={12} md={6}>
-                <Card>
+                <Card elevation={0}
+                  sx={{
+                    borderRadius: 4,
+                    overflow: "hidden",
+                    position: "relative",
+                    p: 2,
+                    border: "2px solid #E4E7EC",
+                  }}>
                   <CardHeader
                     title={
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -280,8 +382,8 @@ export function PostCareSection() {
                     }
                   />
                   <CardContent>
-                    <Box 
-                      sx={{ 
+                    <Box
+                      sx={{
                         aspectRatio: '16/9',
                         bgcolor: 'grey.100',
                         borderRadius: 2,
@@ -306,7 +408,10 @@ export function PostCareSection() {
                       <Typography variant="body2">Difficulty:</Typography>
                       <Chip label="Beginner" size="small" />
                     </Box>
-                    <Button variant="contained" fullWidth>
+                    <Button
+                      fullWidth
+                      sx={{ backgroundColor: 'black', px: 5, py: 1, color: 'white', '&:hover': { backgroundColor: '#333' } }}
+                    >
                       Start Session
                     </Button>
                   </CardContent>
@@ -314,7 +419,14 @@ export function PostCareSection() {
               </Grid>
 
               <Grid item xs={12} md={6}>
-                <Card>
+                <Card elevation={0}
+                  sx={{
+                    borderRadius: 4,
+                    overflow: "hidden",
+                    position: "relative",
+                    p: 2,
+                    border: "2px solid #E4E7EC",
+                  }}>
                   <CardHeader title="Upcoming Sessions" />
                   <CardContent>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -346,7 +458,14 @@ export function PostCareSection() {
 
           {/* Doctor Notes Tab */}
           {tabValue === 2 && (
-            <Card>
+            <Card elevation={0}
+              sx={{
+                borderRadius: 4,
+                overflow: "hidden",
+                position: "relative",
+                p: 2,
+                border: "2px solid #E4E7EC",
+              }}>
               <CardHeader
                 title={
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -408,7 +527,14 @@ export function PostCareSection() {
 
           {/* Goal Tracking Tab */}
           {tabValue === 3 && (
-            <Card>
+            <Card elevation={0}
+              sx={{
+                borderRadius: 4,
+                overflow: "hidden",
+                position: "relative",
+                p: 2,
+                border: "2px solid #E4E7EC",
+              }}>
               <CardHeader
                 title={
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -426,9 +552,24 @@ export function PostCareSection() {
                           Short-term Goals (Week 1)
                         </Typography>
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                          <FormControlLabel control={<Checkbox checked />} label="Manage pain effectively" />
-                          <FormControlLabel control={<Checkbox checked />} label="Begin basic exercises" />
-                          <FormControlLabel control={<Checkbox />} label="Achieve 45° knee flexion" />
+                          <FormControlLabel control={<Checkbox sx={{
+                            color: 'black',
+                            '&.Mui-checked': {
+                              color: 'black',
+                            },
+                          }} checked />} label="Manage pain effectively" />
+                          <FormControlLabel control={<Checkbox sx={{
+                            color: 'black',
+                            '&.Mui-checked': {
+                              color: 'black',
+                            },
+                          }} checked />} label="Begin basic exercises" />
+                          <FormControlLabel control={<Checkbox sx={{
+                            color: 'black',
+                            '&.Mui-checked': {
+                              color: 'black',
+                            },
+                          }} />} label="Achieve 45° knee flexion" />
                         </Box>
                       </Paper>
                     </Grid>
@@ -439,17 +580,32 @@ export function PostCareSection() {
                           Medium-term Goals (Month 1)
                         </Typography>
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                          <FormControlLabel control={<Checkbox />} label="Walk without assistance" />
-                          <FormControlLabel control={<Checkbox />} label="Climb stairs safely" />
-                          <FormControlLabel control={<Checkbox />} label="Return to light activities" />
+                          <FormControlLabel control={<Checkbox sx={{
+                            color: 'black',
+                            '&.Mui-checked': {
+                              color: 'black',
+                            },
+                          }} />} label="Walk without assistance" />
+                          <FormControlLabel control={<Checkbox sx={{
+                            color: 'black',
+                            '&.Mui-checked': {
+                              color: 'black',
+                            },
+                          }} />} label="Climb stairs safely" />
+                          <FormControlLabel control={<Checkbox sx={{
+                            color: 'black',
+                            '&.Mui-checked': {
+                              color: 'black',
+                            },
+                          }} />} label="Return to light activities" />
                         </Box>
                       </Paper>
                     </Grid>
                   </Grid>
 
-                  <Paper 
-                    sx={{ 
-                      p: 3, 
+                  <Paper
+                    sx={{
+                      p: 3,
                       background: 'linear-gradient(90deg, #f3e5f5 0%, #e8eaf6 100%)',
                       borderRadius: 2
                     }}
@@ -459,8 +615,13 @@ export function PostCareSection() {
                     </Typography>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Avatar sx={{ bgcolor: 'success.main', width: 32, height: 32 }}>
-                          <CheckCircle />
+                        <Avatar sx={{ bgcolor: 'success.main', width: 32, height: 32, p: 0 }}>
+                          <CheckCircle sx={{
+                            bgcolor: 'white',
+                            color: 'success.main',
+                            borderRadius: '50%',
+                            p: 0,
+                          }} />
                         </Avatar>
                         <Box>
                           <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
@@ -512,3 +673,5 @@ export function PostCareSection() {
     </Box>
   )
 }
+
+export default PostCareSection;

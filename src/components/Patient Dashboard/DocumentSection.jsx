@@ -114,7 +114,16 @@ const DocumentCard = ({ document }) => {
     const getStatusChip = (status) => {
         switch (status) {
             case 'New':
-                return <Chip label={status} color="primary" size="small" />;
+                return (
+                    <Chip
+                        label={status}
+                        size="small"
+                        sx={{
+                            backgroundColor: 'black',
+                            color: 'white', // optional: sets text color
+                        }}
+                    />
+                );
             case 'Reviewed':
                 return <Chip label={status} color="success" size="small" variant="outlined" />;
             case 'Pending':
@@ -126,7 +135,7 @@ const DocumentCard = ({ document }) => {
 
     const getCategoryIcon = (category) => {
         switch (category) {
-            case 'Medical': return <Article color="primary" />;
+            case 'Medical': return <Article color="black" />;
             case 'Travel': return <Flight color="info" />;
             case 'Insurance': return <Shield color="success" />;
             default: return null;
@@ -151,8 +160,35 @@ const DocumentCard = ({ document }) => {
                 </Typography>
             </CardContent>
             <Box sx={{ p: 2, pt: 0, display: 'flex', gap: 2 }}>
-                <Button variant="outlined" startIcon={<Visibility />} fullWidth>View</Button>
-                <Button variant="outlined" startIcon={<Download />} fullWidth>Download</Button>
+                <Button
+                    fullWidth
+                    startIcon={<Visibility />}
+                    variant="outlined"
+                    sx={{
+                        backgroundColor: '#FFFFFF',
+                        color: 'black',
+                        textTransform: 'none',
+                        borderColor: '#1D4645',
+                        '&:hover': {
+                            backgroundColor: '#f0f0f0',
+                            borderColor: '#1D4645',
+                        },
+                    }}>View</Button>
+                <Button
+                    fullWidth
+                    startIcon={<Download />}
+                    variant="outlined"
+                    sx={{
+                        backgroundColor: '#FFFFFF',
+                        color: 'black',
+                        textTransform: 'none',
+                        borderColor: '#1D4645',
+                        '&:hover': {
+                            backgroundColor: '#f0f0f0',
+                            borderColor: '#1D4645',
+                        },
+                    }}
+                >Download</Button>
             </Box>
         </Card>
     );
@@ -208,9 +244,15 @@ const DocumentsSection = () => {
 
             {/* Tabs Section */}
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                <Tabs value={tabIndex} onChange={handleTabChange} aria-label="documents tabs">
+                <StyledTabs
+                value={tabIndex}
+                onChange={handleTabChange}
+                sx={{
+                    width: 'fit-content',
+                }}
+            >
                     {categoryTabs.map(label => <Tab key={label} label={label} />)}
-                </Tabs>
+                </StyledTabs>
             </Box>
 
             {/* --- 4. Display filtered documents or a message --- */}
