@@ -955,7 +955,7 @@ const AIChatFinal = () => {
                         fontSize: '0.875rem'
                       }}
                     >
-                      Popular locations:
+                      Available locations:
                     </Typography>
                     <Box 
                       sx={{ 
