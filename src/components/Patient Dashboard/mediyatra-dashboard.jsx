@@ -440,6 +440,23 @@ export function MedyatraDashboard({ user, appointments, onLogout, error, loading
 
             {/* Right side: Notifications, Logout, Avatar */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Button
+                variant="contained"
+                color="error"
+                onClick={onLogout}
+                sx={{
+                  textTransform: 'none',
+                  bgcolor: 'error.main',
+                  px: 3,
+                  py: 1,
+                  borderRadius: 2,
+                  '&:hover': {
+                    bgcolor: 'error.dark',
+                  }
+                }}
+              >
+                Logout
+              </Button>
               <IconButton color="inherit" sx={{
                 backgroundColor: '#F0F2F5'
               }}>
