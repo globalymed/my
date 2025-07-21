@@ -34,7 +34,7 @@ import {
     Upload,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { collection, addDoc, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, addDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 
 function SignupForm() {
@@ -203,27 +203,58 @@ function SignupForm() {
                 userData.certificationUploaded = !!selectedFile;
             }
 
-            // Create the user account
-            const docRef = await addDoc(collection(db, collectionName), userData);
+            // Create document in appropriate collection
+            const collectionRef = collection(db, activeTab === 'patient' ? 'users' : 'doctors');
+            try {
+                const docRef = await addDoc(collectionRef, {
+                    ...userData,
+                    status: activeTab === 'doctor' ? 'pending' : 'active',
+                    registrationNumber: activeTab === 'doctor' ? currentForm.registrationNumber : null,
+                    hospitalName: activeTab === 'doctor' ? currentForm.hospitalName : null,
+                    specialization: activeTab === 'doctor' ? currentForm.specialization : null,
+                    certificationUploaded: activeTab === 'doctor' ? !!selectedFile : null,
+                    // Additional doctor fields
+                    ...(activeTab === 'doctor' && {
+                        bio: "",
+                        clinicIds: [],
+                        consultationFee: 0,
+                        experience: "",
+                        profileImageUrl: "",
+                        qualifications: [],
+                        userId: "",  // This will be populated after auth setup
+                    }),
+                    createdAt: new Date(),
+                    updatedAt: new Date()
+                });
 
-            // Store user data in localStorage for auto-login
-            const userSessionData = {
-                id: docRef.id,
-                email: userData.email,
-                firstName: userData.firstName,
-                lastName: userData.lastName
-            };
+                const userSessionData = {
+                    id: docRef.id,
+                    email: userData.email,
+                    firstName: userData.firstName,
+                    lastName: userData.lastName,
+                    role: activeTab === 'patient' ? 'patient' : 'doctor'
+                };
 
-            if (activeTab === 'patient') {
-                localStorage.setItem('userData', JSON.stringify(userSessionData));
-                navigate('/dashboard');
-            } else {
-                localStorage.setItem('doctorData', JSON.stringify(userSessionData));
-                navigate('/doctor-dashboard');
+                if (activeTab === 'patient') {
+                    localStorage.setItem('userData', JSON.stringify(userSessionData));
+                    navigate('/dashboard');
+                } else {
+                    alert('Your account has been created and is pending approval. You will receive an email once approved.');
+                    navigate('/doctor-login');
+                }
+            } catch (error) {
+                console.error('Registration error:', error);
+                setError('An error occurred during registration. Please try again.');
+                throw error;
             }
-
         } catch (err) {
-            console.error('Signup error:', err);
+            console.error('Signup error:', {
+                error: err,
+                code: err.code,
+                message: err.message,
+                details: err.details,
+                stack: err.stack
+            });
             setError('An error occurred during registration. Please try again.');
         } finally {
             setIsLoading(false);
