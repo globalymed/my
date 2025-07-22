@@ -80,6 +80,44 @@ const theme = createTheme({
   },
 })
 
+
+// Plan Journey Component - iframe for travel planning
+const PlanJourney = () => {
+  return (
+    <Box 
+      sx={{ 
+        display: 'flex',
+        flexDirection: 'column',
+        height: 'calc(100vh - 120px)', 
+        width: '100%'
+      }}
+    >      
+      {/* Plan Flight or Hotel iframe - takes remaining height */}
+      <Box sx={{ 
+        flex: 1, 
+        borderRadius: 2, 
+        overflow: 'hidden', 
+        boxShadow: 0,
+        minHeight: '500px'
+      }}>
+        <iframe
+          src="https://travel-9hf1.vercel.app/"
+          title="Plan Flight or Hotel"
+          style={{
+            width: '100%',
+            height: '100%',
+            border: 'none',
+            borderRadius: '8px',
+          }}
+          onError={(e) => {
+            console.error('Iframe failed to load:', e);
+          }}
+        />
+      </Box>
+    </Box>
+  );
+};
+
 // Navigation items with Material-UI icons
 const navigationItems = [
   { title: "Home / Overview", icon: <Home />, id: "home" },
@@ -218,96 +256,20 @@ function AppSidebar({ activeSection, setActiveSection, open, onClose, variant = 
   )
 }
 
-// function DocumentsSection() {
-//   const [tabIndex, setTabIndex] = React.useState(0)
-
-//   const handleTabChange = (event, newValue) => {
-//     setTabIndex(newValue)
-//   }
-
-//   return (
-//     <Box>
-//       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-//         <Box>
-//           <Typography variant="h4" gutterBottom>
-//             Documents Vault
-//           </Typography>
-//           <Typography variant="subtitle1" color="text.secondary">
-//             Secure storage for all your medical and travel documents
-//           </Typography>
-//         </Box>
-//         <Button variant="contained" startIcon={<Upload />}>
-//           Upload New
-//         </Button>
-//       </Box>
-//       <Box display="flex" gap={2} mb={3}>
-//         <TextField fullWidth label="Search documents..." variant="outlined" />
-//         <Button variant="outlined" startIcon={<FilterList />}>
-//           Filter
-//         </Button>
-//       </Box>
-//       <Tabs value={tabIndex} onChange={handleTabChange} aria-label="documents tabs">
-//         <Tab label="All Documents" />
-//         <Tab label="Medical" />
-//         <Tab label="Travel" />
-//         <Tab label="Insurance" />
-//       </Tabs>
-//       <Box mt={3}>
-//         {tabIndex === 0 && (
-//           <Grid container spacing={3}>
-//             <Grid item xs={12} md={6} lg={4}>
-//               <Card>
-//                 <CardHeader
-//                   title="Blood Test Report"
-//                   subheader="Lab Results - Dec 10, 2024"
-//                   action={<Chip label="New" color="primary" />}
-//                 />
-//                 <CardContent>
-//                   <Typography variant="body2" color="text.secondary">
-//                     Uploaded by: Dr. Kumar
-//                   </Typography>
-//                   <Typography variant="body2" color="text.secondary">
-//                     Size: 2.4 MB
-//                   </Typography>
-//                   <Box display="flex" gap={2} mt={2}>
-//                     <Button
-//                       variant="outlined"
-//                       startIcon={<Search />}
-//                       fullWidth
-//                     >
-//                       View
-//                     </Button>
-//                     <Button
-//                       variant="outlined"
-//                       startIcon={<Download />}
-//                       fullWidth
-//                     >
-//                       Download
-//                     </Button>
-//                   </Box>
-//                 </CardContent>
-//               </Card>
-//             </Grid>
-//             {/* Add more document cards here */}
-//           </Grid>
-//         )}
-//       </Box>
-//     </Box>
-//   )
-// }
-
-function MainContent({ activeSection, user, appointments }) {
+function MainContent({ activeSection, setActiveSection, user, appointments }) {
   const renderContent = () => {
     switch (activeSection) {
       case "home":
-        return <HomeOverview user={user} appointments={appointments} />
+        return <HomeOverview user={user} appointments={appointments} setActiveSection={setActiveSection} />
       case "appointments":
         return <AppointmentsSection appointments={appointments} />
       case "recovery":
         return <RecoverySection />
       case "documents":
         return <DocumentsSection />
-      case "journey":
+      case "plan-journey":
+        return <PlanJourney />
+        case "journey":
         return <JourneySection />
       case "postcare":
         return <PostCareSection />
@@ -318,7 +280,7 @@ function MainContent({ activeSection, user, appointments }) {
       case "notifications":
         return <NotificationsSection />
       default:
-        return <HomeOverview user={user} appointments={appointments} />
+        return <HomeOverview user={user} appointments={appointments} setActiveSection={setActiveSection} />
     }
   }
 
@@ -479,7 +441,12 @@ export function MedyatraDashboard({ user, appointments, onLogout, error, loading
             <CircularProgress />
           </Box>
         ) : (
-          <MainContent activeSection={activeSection} user={user} appointments={appointments} />
+          <MainContent 
+            activeSection={activeSection} 
+            setActiveSection={setActiveSection}
+            user={user} 
+            appointments={appointments} 
+          />
         )}
       </Box>
     </ThemeProvider>
