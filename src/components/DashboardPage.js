@@ -104,7 +104,7 @@ const DashboardPage = () => {
     localStorage.removeItem("userData");
     setUser(null);
     setAppointments([]);
-    navigate("/");
+    navigate("/login");
   };
 
   if (loading) {

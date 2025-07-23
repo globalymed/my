@@ -185,7 +185,7 @@ const Layout = ({ children }) => {
                 <Button
                   variant="outlined"
                   color="primary"
-                  onClick={() => navigate('/newLogin')}
+                  onClick={() => navigate('/login')}
                   startIcon={<AccountCircleIcon />}
                   sx={{
                     ml: 1,
@@ -253,7 +253,7 @@ const Layout = ({ children }) => {
                 <Button
                   variant="outlined"
                   color="primary"
-                  onClick={() => navigate('/newLogin')}
+                  onClick={() => navigate('/login')}
                   startIcon={<AccountCircleIcon />}
                   sx={{
                     borderRadius: 2,

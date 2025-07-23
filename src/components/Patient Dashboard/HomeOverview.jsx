@@ -51,7 +51,7 @@ const HomeOverview = ({ user, appointments }) => {
 
             {/* Welcome Message */}
             <Box>
-                <Typography variant="h4" fontWeight="bold">
+                <Typography variant="h4" fontWeight="bold" fontSize="2.125rem">
                     Welcome back, {user?.firstName || user?.name || 'User'}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
