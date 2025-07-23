@@ -277,20 +277,21 @@ const Sidebar = () => {
                         <>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
                                 {/* Left: Logo + Title */}
-                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                    <Avatar
+                                <a href="https://medyatra.space" style={{ textDecoration: 'none' }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                        <Avatar
                                         src="/logo.png"
                                         alt="MedYatra Logo"
                                         sx={{ width: 40, height: 40, mr: 1 }}
                                         imgProps={{
                                             style: {
-                                                objectFit: 'contain',
-                                                objectPosition: 'center',
-                                                transform: 'scale(1.5)', // zoom the image a bit
+                                            objectFit: 'contain',
+                                            objectPosition: 'center',
+                                            transform: 'scale(1.5)',
                                             },
                                         }}
-                                    />
-                                    <Box>
+                                        />
+                                        <Box>
                                         <Typography
                                             variant="h6"
                                             component="div"
@@ -305,8 +306,10 @@ const Sidebar = () => {
                                         >
                                             Making Medical Travel Effortless
                                         </Typography>
+                                        </Box>
                                     </Box>
-                                </Box>
+                                </a>
+
 
                                 {/* Center: Navigation Items */}
                                 <Box sx={{ display: 'flex', gap: 4, alignItems: 'center' }}>

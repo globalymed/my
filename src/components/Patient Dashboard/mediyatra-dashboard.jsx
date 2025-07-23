@@ -28,6 +28,8 @@ import {
   Help,
   Menu as MenuIcon,
   Logout,
+  ChevronLeft, // Added for collapse button
+  ChevronRight, // Added for collapse button
 } from "@mui/icons-material"
 import {
   AppBar,
@@ -57,7 +59,8 @@ import {
   Toolbar,
   Typography,
 } from "@mui/material"
-import { ThemeProvider, createTheme } from "@mui/material/styles"
+import { ThemeProvider, createTheme, useTheme } from "@mui/material/styles"
+import useMediaQuery from "@mui/material/useMediaQuery"
 import RecoverySection from "./RecoverySection.jsx"
 import JourneySection from "./JourneySection.jsx"
 import { ProfileSection } from "./profile-section"
@@ -93,127 +96,164 @@ const navigationItems = [
   { title: "Notifications", icon: <Notifications />, id: "notifications" },
 ]
 
-function AppSidebar({ activeSection, setActiveSection, open, onClose, variant = "temporary", sx }) {
-  const drawerContent = (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* Header */}
-      <Toolbar sx={{ backgroundColor: 'transparent' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <Avatar
-            src="/logo.png"
-            alt="MedYatra Logo"
-            sx={{ width: 40, height: 40, mr: 1 }}
-            imgProps={{
-              style: {
-                objectFit: 'contain',
-                objectPosition: 'center',
-                transform: 'scale(1.5)',
-              },
-            }}
-          />
-          <Box>
-            <Typography
-              variant="h6"
-              component="div"
-              sx={{ fontWeight: 700, color: 'black', lineHeight: 1.2 }}
-            >
-              MedYatra
-            </Typography>
-            <Typography
-              variant="caption"
-              component="div"
-              sx={{
-                fontWeight: 400,
-                color: 'black',
-                fontSize: '0.7rem',
-                mt: '-2px',
-              }}
-            >
-              Patient Dashboard
-            </Typography>
-          </Box>
-        </Box>
-      </Toolbar>
-
-      <Divider />
-
-      {/* Main Navigation */}
-      <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
-        <List>
-          {navigationItems.map(item => (
-            <ListItem key={item.id} disablePadding dense>
-              <ListItemButton
-                selected={activeSection === item.id}
-                onClick={() => {
-                  setActiveSection(item.id);
-                  if (variant === "temporary" && onClose) {
-                    onClose(); // ✅ closes temporary drawer on item click
-                  }
-                }}
-                sx={{ px: 1.5, py: 0.5, minHeight: 36 }}
-              >
-                <ListItemIcon sx={{ minWidth: 32, color: 'inherit' }}>
-                  {item.icon}
-                </ListItemIcon>
-                <ListItemText
-                  primary={item.title}
-                  primaryTypographyProps={{ fontSize: '0.8rem' }}
-                />
-              </ListItemButton>
-            </ListItem>
-          ))}
-        </List>
-      </Box>
-
-
-      <Divider />
-
-      {/* Bottom Support & Settings */}
-      <Box>
-        <List>
-          <ListItem disablePadding dense>
-            <ListItemButton sx={{ px: 1.5, py: 0.5, minHeight: 36 }}>
-              <ListItemIcon sx={{ minWidth: 32 }}>
-                <Help />
-              </ListItemIcon>
-              <ListItemText
-                primary="Help & Support"
-                primaryTypographyProps={{ fontSize: '0.8rem' }}
-              />
-            </ListItemButton>
-          </ListItem>
-          <ListItem disablePadding dense>
-            <ListItemButton sx={{ px: 1.5, py: 0.5, minHeight: 36 }}>
-              <ListItemIcon sx={{ minWidth: 32 }}>
-                <Settings />
-              </ListItemIcon>
-              <ListItemText
-                primary="Settings"
-                primaryTypographyProps={{ fontSize: '0.8rem' }}
-              />
-            </ListItemButton>
-          </ListItem>
-        </List>
-      </Box>
-
-    </Box>
-  );
-
+function AppSidebar({
+  activeSection,
+  setActiveSection,
+  sidebarOpen,
+  onSidebarToggle,
+  isMobile,
+  drawerWidth,
+  collapsedDrawerWidth,
+}) {
+  const theme = useTheme()
 
   return (
     <Drawer
-      variant={variant}
-      open={open}
-      onClose={onClose}
+      variant={isMobile ? "temporary" : "persistent"}
+      open={sidebarOpen}
+      onClose={onSidebarToggle}
       ModalProps={{
-        keepMounted: true, // Better open performance on mobile.
+        keepMounted: true,
       }}
       sx={{
-        "& .MuiDrawer-paper": { boxSizing: "border-box", width: 240 },
-        ...sx
+        width: isMobile ? drawerWidth : (sidebarOpen ? drawerWidth : collapsedDrawerWidth),
+        flexShrink: isMobile ? 0 : 1,
+        "& .MuiDrawer-paper": {
+          width: isMobile ? drawerWidth : (sidebarOpen ? drawerWidth : collapsedDrawerWidth),
+          boxSizing: "border-box",
+          transition: theme.transitions.create('width', {
+            easing: theme.transitions.easing.sharp,
+            duration: theme.transitions.duration.enteringScreen,
+          }),
+        },
       }}
     >
-      {drawerContent}
+      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <Toolbar sx={{ backgroundColor: 'transparent', justifyContent: 'space-evenly' }}>
+          {sidebarOpen && (
+        <a href="https://medyatra.space" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Avatar
+              src="/logo.png"
+              alt="MedYatra Logo"
+              sx={{ width: 40, height: 40, mr: 1 }}
+              imgProps={{
+                style: {
+                  objectFit: 'contain',
+                  objectPosition: 'center',
+                  transform: 'scale(1.5)',
+                },
+              }}
+            />
+            <Box>
+              <Typography variant="h6" component="div" sx={{ fontWeight: 700, color: 'black', lineHeight: 1.2 }}>
+                MedYatra
+              </Typography>
+              <Typography
+                variant="caption"
+                component="div"
+                sx={{ fontWeight: 400, color: 'black', fontSize: '0.7rem' }}
+              >
+                Patient Dashboard
+              </Typography>
+            </Box>
+          </Box>
+        </a>
+
+          )}
+          <IconButton onClick={onSidebarToggle}>
+            {sidebarOpen ? <ChevronLeft /> : <ChevronRight />}
+          </IconButton>
+        </Toolbar>
+
+        <Divider />
+
+        <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
+          <List>
+            {navigationItems.map(item => (
+              <ListItem key={item.id} disablePadding dense>
+                <ListItemButton
+                  selected={activeSection === item.id}
+                  onClick={() => {
+                    setActiveSection(item.id);
+                    if (isMobile) {
+                      onSidebarToggle();
+                    }
+                  }}
+                  sx={{
+                    px: 1.5,
+                    py: 0.5,
+                    minHeight: 36,
+                    justifyContent: sidebarOpen ? 'initial' : 'center',
+                  }}
+                >
+                  <ListItemIcon sx={{
+                    minWidth: 32,
+                    color: 'inherit',
+                    mr: sidebarOpen ? 1 : 'auto',
+                  }}>
+                    {item.icon}
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={item.title}
+                    primaryTypographyProps={{ fontSize: '0.8rem' }}
+                    sx={{ opacity: sidebarOpen ? 1 : 0 }}
+                  />
+                </ListItemButton>
+              </ListItem>
+            ))}
+          </List>
+        </Box>
+
+        <Divider />
+
+        <Box>
+          <List>
+            <ListItem disablePadding dense>
+              <ListItemButton
+                sx={{
+                  px: 1.5,
+                  py: 0.5,
+                  minHeight: 36,
+                  justifyContent: sidebarOpen ? 'initial' : 'center',
+                }}>
+                <ListItemIcon sx={{
+                  minWidth: 32,
+                  mr: sidebarOpen ? 1 : 'auto',
+                }}>
+                  <Help />
+                </ListItemIcon>
+                <ListItemText
+                  primary="Help & Support"
+                  primaryTypographyProps={{ fontSize: '0.8rem' }}
+                  sx={{ opacity: sidebarOpen ? 1 : 0 }}
+                />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding dense>
+              <ListItemButton
+                sx={{
+                  px: 1.5,
+                  py: 0.5,
+                  minHeight: 36,
+                  justifyContent: sidebarOpen ? 'initial' : 'center',
+                }}>
+                <ListItemIcon sx={{
+                  minWidth: 32,
+                  mr: sidebarOpen ? 1 : 'auto',
+                }}>
+                  <Settings />
+                </ListItemIcon>
+                <ListItemText
+                  primary="Settings"
+                  primaryTypographyProps={{ fontSize: '0.8rem' }}
+                  sx={{ opacity: sidebarOpen ? 1 : 0 }}
+                />
+              </ListItemButton>
+            </ListItem>
+          </List>
+        </Box>
+      </Box>
     </Drawer>
   )
 }
@@ -296,7 +336,9 @@ function AppSidebar({ activeSection, setActiveSection, open, onClose, variant = 
 //   )
 // }
 
-function MainContent({ activeSection, user, appointments }) {
+function MainContent({ activeSection, user, appointments, isSidebarOpen, isMobile, drawerWidth, collapsedDrawerWidth }) {
+  const theme = useTheme()
+
   const renderContent = () => {
     switch (activeSection) {
       case "home":
@@ -328,27 +370,33 @@ function MainContent({ activeSection, user, appointments }) {
       sx={{
         flexGrow: 1,
         p: 3,
+        ml: isMobile ? 0 : (isSidebarOpen ? `${drawerWidth}px` : `${collapsedDrawerWidth}px`),
+        transition: theme.transitions.create('margin', {
+          easing: theme.transitions.easing.sharp,
+          duration: theme.transitions.duration.enteringScreen,
+        }),
       }}
     >
-      <Toolbar /> {/* Spacer for the AppBar */}
+      <Toolbar />
       {renderContent()}
     </Box>
   )
 }
 
 export function MedyatraDashboard({ user, appointments, onLogout, error, loading }) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [activeSection, setActiveSection] = React.useState("home")
-  const [mobileOpen, setMobileOpen] = React.useState(false)
+  const [sidebarOpen, setSidebarOpen] = React.useState(!isMobile);
+  
+  const drawerWidth = 240
+  const collapsedDrawerWidth = 60
 
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen)
+  const handleSidebarToggle = () => {
+    setSidebarOpen(!sidebarOpen);
   }
 
-  const drawerWidth = 240
-
-  // console.log("User Data:", user);
-
-  return (
+ return (
     <ThemeProvider theme={theme}>
       <Box sx={{ display: "flex" }}>
         <CssBaseline />
@@ -370,7 +418,6 @@ export function MedyatraDashboard({ user, appointments, onLogout, error, loading
           </Box>
         )}
 
-        {/* Appbar */}
         <AppBar
           position="fixed"
           elevation={0}
@@ -378,21 +425,28 @@ export function MedyatraDashboard({ user, appointments, onLogout, error, loading
             backgroundColor: '#fff',
             color: '#000',
             borderBottom: '1px solid #e0e0e0',
+            width: `calc(100% - ${isMobile ? 0 : (sidebarOpen ? drawerWidth : collapsedDrawerWidth)}px)`,
+            ml: isMobile ? 0 : (sidebarOpen ? `${drawerWidth}px` : `${collapsedDrawerWidth}px`),
+            transition: theme.transitions.create(['width', 'margin'], {
+              easing: theme.transitions.easing.sharp,
+              duration: theme.transitions.duration.enteringScreen,
+            }),
           }}
         >
           <Toolbar sx={{ justifyContent: 'space-between' }}>
-            {/* Left side: Menu */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <IconButton
                 edge="start"
-                onClick={handleDrawerToggle}
+                onClick={handleSidebarToggle}
                 color="inherit"
                 aria-label="menu"
+                sx={{
+                  display: isMobile || !sidebarOpen ? 'block' : 'none', 
+                }}
               >
                 <MenuIcon />
               </IconButton>
 
-              {/* Search Box */}
               <Box sx={{ display: 'flex', alignItems: 'center', ml: 2 }}>
                 <TextField
                   variant="outlined"
@@ -438,7 +492,6 @@ export function MedyatraDashboard({ user, appointments, onLogout, error, loading
 
             </Box>
 
-            {/* Right side: Notifications, Logout, Avatar */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <Button
                 variant="contained"
@@ -471,14 +524,14 @@ export function MedyatraDashboard({ user, appointments, onLogout, error, loading
           </Toolbar>
         </AppBar>
 
-
-        {/* Sidebar */}
         <AppSidebar
           activeSection={activeSection}
           setActiveSection={setActiveSection}
-          open={mobileOpen}
-          onClose={handleDrawerToggle}
-          variant="temporary"
+          sidebarOpen={sidebarOpen}
+          onSidebarToggle={handleSidebarToggle}
+          isMobile={isMobile}
+          drawerWidth={drawerWidth}
+          collapsedDrawerWidth={collapsedDrawerWidth}
         />
 
         {loading ? (
@@ -496,7 +549,15 @@ export function MedyatraDashboard({ user, appointments, onLogout, error, loading
             <CircularProgress />
           </Box>
         ) : (
-          <MainContent activeSection={activeSection} user={user} appointments={appointments} />
+          <MainContent
+            activeSection={activeSection}
+            user={user}
+            appointments={appointments}
+            isSidebarOpen={sidebarOpen}
+            isMobile={isMobile}
+            drawerWidth={drawerWidth}
+            collapsedDrawerWidth={collapsedDrawerWidth}
+          />
         )}
       </Box>
     </ThemeProvider>

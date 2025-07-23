@@ -26,6 +26,7 @@
     "react-scripts": "^5.0.1",
     "redux": "^5.0.1",
     "resend": "^4.0.1",
+    "tailwindcss-animate": "^1.0.7",
     "uuid": "^9.0.0",
     "zustand": "^4.5.6"
   },
