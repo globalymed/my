@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { MedyatraDashboard } from "./Patient Dashboard/mediyatra-dashboard";
+import { MedyatraDashboard } from "./Patient Dashboard/PatientDashboard";
 import {
   getUserAppointments,
   deleteAppointment,
