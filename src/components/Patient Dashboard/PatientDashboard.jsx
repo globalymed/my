@@ -258,6 +258,7 @@ function AppSidebar({
   )
 }
 
+<<<<<<< HEAD
 // function DocumentsSection() {
 //   const [tabIndex, setTabIndex] = React.useState(0)
 
@@ -339,6 +340,9 @@ function AppSidebar({
 function MainContent({ activeSection, user, appointments, isSidebarOpen, isMobile, drawerWidth, collapsedDrawerWidth }) {
   const theme = useTheme()
 
+=======
+function MainContent({ activeSection, user, appointments }) {
+>>>>>>> e2bf85e (Refactor Patient Dashboard components and update user data handling in ProfileSection)
   const renderContent = () => {
     switch (activeSection) {
       case "home":
@@ -356,7 +360,7 @@ function MainContent({ activeSection, user, appointments, isSidebarOpen, isMobil
       case "messages":
         return <MessagesSection />
       case "profile":
-        return <ProfileSection />
+        return <ProfileSection user={user} />
       case "notifications":
         return <NotificationsSection />
       default:
@@ -383,9 +387,13 @@ function MainContent({ activeSection, user, appointments, isSidebarOpen, isMobil
   )
 }
 
+<<<<<<< HEAD
 export function MedyatraDashboard({ user, appointments, onLogout, error, loading }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+=======
+export function PatientDashboard({ user, appointments, onLogout, error, loading }) {
+>>>>>>> e2bf85e (Refactor Patient Dashboard components and update user data handling in ProfileSection)
   const [activeSection, setActiveSection] = React.useState("home")
   const [sidebarOpen, setSidebarOpen] = React.useState(!isMobile);
   

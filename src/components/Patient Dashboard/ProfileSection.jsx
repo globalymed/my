@@ -61,12 +61,14 @@ const StyledTabs = styled(Tabs)(({ theme }) => ({
   }
 }));
 
-export function ProfileSection() {
+export function ProfileSection({user}) {
   const [tabValue, setTabValue] = useState(0)
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue)
   }
+
+  // console.log("User Data in ProfileSection:", user);
 
   return (
     <Box sx={{ py: 3, px: 2 }}>
@@ -115,7 +117,7 @@ export function ProfileSection() {
                       <TextField
                         fullWidth
                         label="First Name"
-                        defaultValue="Sarah"
+                        defaultValue={user ? user.firstName : ""}
                         variant="outlined"
                       />
                     </Grid>
@@ -123,7 +125,7 @@ export function ProfileSection() {
                       <TextField
                         fullWidth
                         label="Last Name"
-                        defaultValue="Johnson"
+                        defaultValue={user ? user.lastName : ""}
                         variant="outlined"
                       />
                     </Grid>
@@ -133,7 +135,7 @@ export function ProfileSection() {
                     fullWidth
                     label="Email Address"
                     type="email"
-                    defaultValue="sarah.johnson@email.com"
+                    defaultValue={user ? user.email : ""}  
                     variant="outlined"
                   />
 
@@ -142,7 +144,7 @@ export function ProfileSection() {
                       <TextField
                         fullWidth
                         label="Phone Number"
-                        defaultValue="+1 (555) 123-4567"
+                        defaultValue={user ? user.phone : ""}
                         variant="outlined"
                       />
                     </Grid>
@@ -151,7 +153,7 @@ export function ProfileSection() {
                         fullWidth
                         label="Date of Birth"
                         type="date"
-                        defaultValue="1985-03-15"
+                        defaultValue={user?.dateOfBirth || new Date().toISOString().split('T')[0]}
                         variant="outlined"
                         InputLabelProps={{ shrink: true }}
                       />
@@ -161,14 +163,14 @@ export function ProfileSection() {
                   <TextField
                     fullWidth
                     label="Address"
-                    defaultValue="123 Main Street, New York, NY 10001"
+                    defaultValue={user ? user.city : ""}
                     variant="outlined"
                   />
 
                   <TextField
                     fullWidth
                     label="Emergency Contact"
-                    defaultValue="John Johnson (Husband) - +1 (555) 987-6543"
+                    defaultValue={user ? user.emergencyContact : ""}
                     variant="outlined"
                   />
 
@@ -190,7 +192,7 @@ export function ProfileSection() {
                 <CardContent>
                   <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
                     <Avatar sx={{ width: 96, height: 96, fontSize: '2rem' }}>
-                      SJ
+                      {user ? user.firstName.charAt(0) + user.lastName.charAt(0) : ""}
                     </Avatar>
                     <Button
                       fullWidth
@@ -594,9 +596,13 @@ export function ProfileSection() {
                   <Paper sx={{ p: 3, border: 1, borderColor: 'divider' }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Avatar sx={{ width: 32, height: 32, fontSize: '0.75rem', color: 'black' }}>JJ</Avatar>
+                        <Avatar sx={{ width: 32, height: 32, fontSize: '0.75rem', color: 'black' }}>
+                          {user ? user.firstName.charAt(0) + user.lastName.charAt(0) : ""}
+                        </Avatar>
                         <Box>
-                          <Typography variant="body2" sx={{ fontWeight: 'medium' }}>John Johnson</Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                            {user ? user.firstName + " " + user.lastName : ""}
+                          </Typography>
                           <Typography variant="caption" color="text.secondary">
                             Husband - Primary Contact
                           </Typography>
