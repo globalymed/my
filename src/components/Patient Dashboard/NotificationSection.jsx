@@ -24,6 +24,7 @@ import {
   Paper,
   useTheme,
   alpha,
+  styled
 } from '@mui/material';
 import {
   Notifications as NotificationsIcon,
@@ -52,9 +53,39 @@ import {
   Archive,
 } from '@mui/icons-material';
 
+const StyledTabs = styled(Tabs)(({ theme }) => ({
+  '& .MuiTabs-flexContainer': {
+    backgroundColor: '#f5f5f5',
+    borderRadius: '12px',
+    padding: '4px',
+  },
+  '& .MuiTab-root': {
+    textTransform: 'none',
+    minHeight: '48px',
+    fontSize: '16px',
+    fontWeight: 500,
+    color: '#666',
+    borderRadius: '8px',
+    margin: '0 2px',
+    '&.Mui-selected': {
+      backgroundColor: '#ffffff',
+      color: '#333',
+      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+    }
+  },
+  '& .MuiTabs-indicator': {
+    display: 'none'
+  }
+}));
+
 export function NotificationsSection() {
   const theme = useTheme();
-  const [tabValue, setTabValue] = useState(0);
+  const [tabValue, setTabValue] = useState(0)
+
+  const handleTabChange = (event, newValue) => {
+    setTabValue(newValue)
+  }
+
   const [notifications, setNotifications] = useState([
     {
       id: 1,
@@ -289,24 +320,17 @@ export function NotificationsSection() {
 
         {/* Tabs */}
         <Paper sx={{ width: '100%' }}>
-          <Tabs
+          <StyledTabs
             value={tabValue}
-            onChange={(e, newValue) => setTabValue(newValue)}
-            variant="scrollable"
-            scrollButtons="auto"
+            onChange={handleTabChange}
             sx={{
-              borderBottom: 1,
-              borderColor: 'divider',
-              '& .MuiTab-root': {
-                textTransform: 'none',
-                fontWeight: 500,
-              },
+              width: 'fit-content',
             }}
           >
             {tabLabels.map((label, index) => (
               <Tab key={label} label={label} />
             ))}
-          </Tabs>
+          </StyledTabs>
 
           {/* Tab Content */}
           <Box sx={{ p: 3 }}>
@@ -326,10 +350,10 @@ export function NotificationsSection() {
                     <React.Fragment key={notification.id}>
                       <ListItem
                         sx={{
-                          backgroundColor: !notification.read 
+                          backgroundColor: !notification.read
                             ? alpha(theme.palette.primary.main, 0.04)
                             : 'transparent',
-                          borderLeft: !notification.read 
+                          borderLeft: !notification.read
                             ? `4px solid ${theme.palette.primary.main}`
                             : 'none',
                           '&:hover': {

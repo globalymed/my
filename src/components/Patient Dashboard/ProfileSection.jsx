@@ -21,7 +21,8 @@ import {
   Select,
   MenuItem,
   FormControl,
-  InputLabel
+  InputLabel,
+  styled
 } from "@mui/material"
 import {
   Person,
@@ -35,12 +36,39 @@ import {
   Warning
 } from "@mui/icons-material"
 
-export function ProfileSection() {
+const StyledTabs = styled(Tabs)(({ theme }) => ({
+  '& .MuiTabs-flexContainer': {
+    backgroundColor: '#f5f5f5',
+    borderRadius: '12px',
+    padding: '4px',
+  },
+  '& .MuiTab-root': {
+    textTransform: 'none',
+    minHeight: '48px',
+    fontSize: '16px',
+    fontWeight: 500,
+    color: '#666',
+    borderRadius: '8px',
+    margin: '0 2px',
+    '&.Mui-selected': {
+      backgroundColor: '#ffffff',
+      color: '#333',
+      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+    }
+  },
+  '& .MuiTabs-indicator': {
+    display: 'none'
+  }
+}));
+
+export function ProfileSection({user}) {
   const [tabValue, setTabValue] = useState(0)
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue)
   }
+
+  // console.log("User Data in ProfileSection:", user);
 
   return (
     <Box sx={{ py: 3, px: 2 }}>
@@ -54,13 +82,19 @@ export function ProfileSection() {
       </Box>
 
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-        <Tabs value={tabValue} onChange={handleTabChange} aria-label="profile tabs">
+        <StyledTabs
+          value={tabValue}
+          onChange={handleTabChange}
+          sx={{
+            width: 'fit-content',
+          }}
+        >
           <Tab label="Personal Info" />
           <Tab label="Medical Info" />
           <Tab label="Travel Documents" />
           <Tab label="Preferences" />
           <Tab label="Privacy & Access" />
-        </Tabs>
+        </StyledTabs>
       </Box>
 
       {/* Personal Info Tab */}
@@ -83,7 +117,7 @@ export function ProfileSection() {
                       <TextField
                         fullWidth
                         label="First Name"
-                        defaultValue="Sarah"
+                        defaultValue={user ? user.firstName : ""}
                         variant="outlined"
                       />
                     </Grid>
@@ -91,7 +125,7 @@ export function ProfileSection() {
                       <TextField
                         fullWidth
                         label="Last Name"
-                        defaultValue="Johnson"
+                        defaultValue={user ? user.lastName : ""}
                         variant="outlined"
                       />
                     </Grid>
@@ -101,7 +135,7 @@ export function ProfileSection() {
                     fullWidth
                     label="Email Address"
                     type="email"
-                    defaultValue="sarah.johnson@email.com"
+                    defaultValue={user ? user.email : ""}  
                     variant="outlined"
                   />
 
@@ -110,7 +144,7 @@ export function ProfileSection() {
                       <TextField
                         fullWidth
                         label="Phone Number"
-                        defaultValue="+1 (555) 123-4567"
+                        defaultValue={user ? user.phone : ""}
                         variant="outlined"
                       />
                     </Grid>
@@ -119,7 +153,7 @@ export function ProfileSection() {
                         fullWidth
                         label="Date of Birth"
                         type="date"
-                        defaultValue="1985-03-15"
+                        defaultValue={user?.dateOfBirth || new Date().toISOString().split('T')[0]}
                         variant="outlined"
                         InputLabelProps={{ shrink: true }}
                       />
@@ -129,18 +163,21 @@ export function ProfileSection() {
                   <TextField
                     fullWidth
                     label="Address"
-                    defaultValue="123 Main Street, New York, NY 10001"
+                    defaultValue={user ? user.city : ""}
                     variant="outlined"
                   />
 
                   <TextField
                     fullWidth
                     label="Emergency Contact"
-                    defaultValue="John Johnson (Husband) - +1 (555) 987-6543"
+                    defaultValue={user ? user.emergencyContact : ""}
                     variant="outlined"
                   />
 
-                  <Button variant="contained" fullWidth>
+                  <Button
+                    fullWidth
+                    sx={{ backgroundColor: 'black', px: 5, py: 1, color: 'white', '&:hover': { backgroundColor: '#333' } }}
+                  >
                     Save Changes
                   </Button>
                 </Box>
@@ -155,9 +192,22 @@ export function ProfileSection() {
                 <CardContent>
                   <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
                     <Avatar sx={{ width: 96, height: 96, fontSize: '2rem' }}>
-                      SJ
+                      {user ? user.firstName.charAt(0) + user.lastName.charAt(0) : ""}
                     </Avatar>
-                    <Button variant="outlined" fullWidth startIcon={<CameraAlt />}>
+                    <Button
+                      fullWidth
+                      startIcon={<CameraAlt />}
+                      variant="outlined"
+                      sx={{
+                        backgroundColor: '#FFFFFF',
+                        color: 'black',
+                        textTransform: 'none',
+                        borderColor: '#1D4645',
+                        '&:hover': {
+                          backgroundColor: '#f0f0f0',
+                          borderColor: '#1D4645',
+                        },
+                      }}>
                       Change Photo
                     </Button>
                   </Box>
@@ -170,15 +220,15 @@ export function ProfileSection() {
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Typography variant="body2">Email Verified</Typography>
-                      <Chip label="Verified" color="success" size="small" />
+                      <Chip label="Verified" sx={{ backgroundColor: 'black', color: 'white' }} size="small" />
                     </Box>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Typography variant="body2">Phone Verified</Typography>
-                      <Chip label="Verified" color="success" size="small" />
+                      <Chip label="Verified" sx={{ backgroundColor: 'black', color: 'white' }} size="small" />
                     </Box>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Typography variant="body2">Identity Verified</Typography>
-                      <Chip label="Verified" color="success" size="small" />
+                      <Chip label="Verified" sx={{ backgroundColor: 'black', color: 'white' }} size="small" />
                     </Box>
                   </Box>
                 </CardContent>
@@ -231,7 +281,10 @@ export function ProfileSection() {
                     variant="outlined"
                   />
 
-                  <Button variant="contained" fullWidth>
+                  <Button
+                    fullWidth
+                    sx={{ backgroundColor: 'black', px: 5, py: 1, color: 'white', '&:hover': { backgroundColor: '#333' } }}
+                  >
                     Update Medical Info
                   </Button>
                 </Box>
@@ -268,7 +321,20 @@ export function ProfileSection() {
                     variant="outlined"
                   />
 
-                  <Button variant="outlined" fullWidth startIcon={<Description />}>
+                  <Button
+                    fullWidth
+                    startIcon={<Description />}
+                    variant="outlined"
+                    sx={{
+                      backgroundColor: '#FFFFFF',
+                      color: 'black',
+                      textTransform: 'none',
+                      borderColor: '#1D4645',
+                      '&:hover': {
+                        backgroundColor: '#f0f0f0',
+                        borderColor: '#1D4645',
+                      },
+                    }}>
                     Download Medical Summary
                   </Button>
                 </Box>
@@ -296,7 +362,7 @@ export function ProfileSection() {
                   <Paper sx={{ p: 3, border: 1, borderColor: 'divider' }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                       <Typography variant="h6" sx={{ fontWeight: 'semibold' }}>Passport</Typography>
-                      <Chip label="Verified" color="success" />
+                      <Chip label="Verified" sx={{ backgroundColor: 'black', color: 'white' }} size="small" />
                     </Box>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -312,7 +378,20 @@ export function ProfileSection() {
                         <Typography variant="body2">United States</Typography>
                       </Box>
                     </Box>
-                    <Button variant="outlined" size="small" fullWidth sx={{ mt: 2 }} startIcon={<Edit />}>
+                    <Button
+                      fullWidth
+                      startIcon={<Edit />}
+                      variant="outlined"
+                      sx={{
+                        backgroundColor: '#FFFFFF',
+                        color: 'black',
+                        textTransform: 'none',
+                        borderColor: '#1D4645',
+                        '&:hover': {
+                          backgroundColor: '#f0f0f0',
+                          borderColor: '#1D4645',
+                        },
+                      }}>
                       Update Passport
                     </Button>
                   </Paper>
@@ -348,12 +427,25 @@ export function ProfileSection() {
                           <Description sx={{ fontSize: 20 }} />
                           <Typography variant="body2">{doc.name}</Typography>
                         </Box>
-                        <Chip label={doc.status} color="success" size="small" />
+                        <Chip label={doc.status} sx={{ backgroundColor: 'black', color: 'white' }} size="small" />
                       </Box>
                     </Paper>
                   ))}
 
-                  <Button variant="outlined" fullWidth startIcon={<Description />}>
+                  <Button
+                    fullWidth
+                    startIcon={<Description />}
+                    variant="outlined"
+                    sx={{
+                      backgroundColor: '#FFFFFF',
+                      color: 'black',
+                      textTransform: 'none',
+                      borderColor: '#1D4645',
+                      '&:hover': {
+                        backgroundColor: '#f0f0f0',
+                        borderColor: '#1D4645',
+                      },
+                    }}>
                     Upload Additional Document
                   </Button>
                 </Box>
@@ -399,7 +491,18 @@ export function ProfileSection() {
                   </FormControl>
 
                   <FormControlLabel
-                    control={<Switch />}
+                    control={
+                      <Switch
+                        sx={{
+                          '& .MuiSwitch-switchBase.Mui-checked': {
+                            color: '#000000',
+                          },
+                          '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                            backgroundColor: '#000000',
+                          },
+                        }}
+                      />
+                    }
                     label={
                       <Box>
                         <Typography variant="body2">Dark Mode</Typography>
@@ -411,7 +514,16 @@ export function ProfileSection() {
                   />
 
                   <FormControlLabel
-                    control={<Switch />}
+                    control={<Switch
+                      sx={{
+                        '& .MuiSwitch-switchBase.Mui-checked': {
+                          color: '#000000',
+                        },
+                        '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                          backgroundColor: '#000000',
+                        },
+                      }}
+                    />}
                     label={
                       <Box>
                         <Typography variant="body2">High Contrast</Typography>
@@ -440,7 +552,14 @@ export function ProfileSection() {
                   ].map((pref, index) => (
                     <FormControlLabel
                       key={index}
-                      control={<Switch defaultChecked={pref.defaultChecked} />}
+                      control={<Switch sx={{
+                        '& .MuiSwitch-switchBase.Mui-checked': {
+                          color: '#000000',
+                        },
+                        '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                          backgroundColor: '#000000',
+                        },
+                      }} defaultChecked={pref.defaultChecked} />}
                       label={
                         <Box>
                           <Typography variant="body2">{pref.label}</Typography>
@@ -477,30 +596,47 @@ export function ProfileSection() {
                   <Paper sx={{ p: 3, border: 1, borderColor: 'divider' }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Avatar sx={{ width: 32, height: 32, fontSize: '0.75rem' }}>JJ</Avatar>
+                        <Avatar sx={{ width: 32, height: 32, fontSize: '0.75rem', color: 'black' }}>
+                          {user ? user.firstName.charAt(0) + user.lastName.charAt(0) : ""}
+                        </Avatar>
                         <Box>
-                          <Typography variant="body2" sx={{ fontWeight: 'medium' }}>John Johnson</Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                            {user ? user.firstName + " " + user.lastName : ""}
+                          </Typography>
                           <Typography variant="caption" color="text.secondary">
                             Husband - Primary Contact
                           </Typography>
                         </Box>
                       </Box>
-                      <Chip label="Full Access" color="primary" />
+                      <Chip label="Full Access" sx={{ backgroundColor: 'black', color: 'white' }} />
                     </Box>
                     <Typography variant="caption" color="text.secondary">
                       Can view appointments, medical records, and communicate with doctors
                     </Typography>
                   </Paper>
 
-                  <Button variant="outlined" fullWidth startIcon={<PersonAdd />}>
+                  <Button
+                    fullWidth
+                    startIcon={<PersonAdd />}
+                    variant="outlined"
+                    sx={{
+                      backgroundColor: '#FFFFFF',
+                      color: 'black',
+                      textTransform: 'none',
+                      borderColor: '#1D4645',
+                      '&:hover': {
+                        backgroundColor: '#f0f0f0',
+                        borderColor: '#1D4645',
+                      },
+                    }}>
                     Invite Caregiver
                   </Button>
 
                   <Paper sx={{ p: 3, bgcolor: 'primary.50', border: 1, borderColor: 'primary.200' }}>
-                    <Typography variant="h6" sx={{ color: 'primary.900', mb: 2, fontWeight: 'semibold' }}>
+                    <Typography variant="h6" sx={{ color: 'blue', mb: 2, fontWeight: 'semibold' }}>
                       Access Levels
                     </Typography>
-                    <Box sx={{ color: 'primary.800' }}>
+                    <Box sx={{ color: 'blue' }}>
                       <Typography variant="body2" sx={{ mb: 1 }}>
                         • <strong>Full Access:</strong> All medical and travel information
                       </Typography>
@@ -531,7 +667,14 @@ export function ProfileSection() {
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                     <FormControlLabel
-                      control={<Switch defaultChecked />}
+                      control={<Switch sx={{
+                        '& .MuiSwitch-switchBase.Mui-checked': {
+                          color: '#000000',
+                        },
+                        '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                          backgroundColor: '#000000',
+                        },
+                      }} defaultChecked />}
                       label={
                         <Box>
                           <Typography variant="body2">Share with Hospital System</Typography>
@@ -543,7 +686,14 @@ export function ProfileSection() {
                     />
 
                     <FormControlLabel
-                      control={<Switch />}
+                      control={<Switch sx={{
+                        '& .MuiSwitch-switchBase.Mui-checked': {
+                          color: '#000000',
+                        },
+                        '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                          backgroundColor: '#000000',
+                        },
+                      }} />}
                       label={
                         <Box>
                           <Typography variant="body2">Research Participation</Typography>
@@ -555,7 +705,14 @@ export function ProfileSection() {
                     />
 
                     <FormControlLabel
-                      control={<Switch />}
+                      control={<Switch sx={{
+                        '& .MuiSwitch-switchBase.Mui-checked': {
+                          color: '#000000',
+                        },
+                        '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                          backgroundColor: '#000000',
+                        },
+                      }} />}
                       label={
                         <Box>
                           <Typography variant="body2">Marketing Communications</Typography>
@@ -595,7 +752,20 @@ export function ProfileSection() {
                     </Box>
                   </Box>
 
-                  <Button variant="outlined" fullWidth startIcon={<Description />}>
+                  <Button
+                    fullWidth
+                    startIcon={<Description />}
+                    variant="outlined"
+                    sx={{
+                      backgroundColor: '#FFFFFF',
+                      color: 'black',
+                      textTransform: 'none',
+                      borderColor: '#1D4645',
+                      '&:hover': {
+                        backgroundColor: '#f0f0f0',
+                        borderColor: '#1D4645',
+                      },
+                    }}>
                     View Privacy Policy
                   </Button>
                 </Box>

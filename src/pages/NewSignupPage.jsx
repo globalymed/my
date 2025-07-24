@@ -667,7 +667,7 @@ function SignupForm() {
                     <Box sx={{ textAlign: 'center', mt: 3 }}>
                         <Typography variant="body2" color="text.secondary">
                             Already have an account?{' '}
-                            <Link href="/newLogin" color="primary">
+                            <Link href="/login" color="primary">
                                 Sign in
                             </Link>
                         </Typography>

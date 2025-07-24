@@ -201,7 +201,7 @@ const App = () => {
                 <Route path="/compare-cost" element={<CompareCost />} />
                 <Route path="/treatment" element={<Blog />} />
                 <Route path="/treatment/:id" element={<BlogPostPage />} />
-                <Route path="/newLogin" element={<NewLoginPage />} />
+                <Route path="/newLogin" element={<LoginPage />} />
                 <Route path="/newSignup" element={<NewSignupPage />} />
                 <Route path="/recommend" element={<ClinicRecommender />} />
                 <Route path="/book" element={
@@ -225,7 +225,7 @@ const App = () => {
                 } />
                 <Route path="/login" element={
                   <AuthRoute>
-                    <LoginPage />
+                    <NewLoginPage />
                   </AuthRoute>
                 } />
                 <Route path="/doctor-login" element={

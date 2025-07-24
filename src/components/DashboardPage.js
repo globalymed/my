@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { MedyatraDashboard } from "./Patient Dashboard/mediyatra-dashboard";
+import { PatientDashboard } from "./Patient Dashboard/PatientDashboard";
 import {
   getUserAppointments,
   deleteAppointment,
@@ -104,7 +104,7 @@ const DashboardPage = () => {
     localStorage.removeItem("userData");
     setUser(null);
     setAppointments([]);
-    navigate("/");
+    navigate("/login");
   };
 
   if (loading) {
@@ -118,7 +118,7 @@ const DashboardPage = () => {
 
   return (
     <Box sx={{ width: '100%', height: '100vh', display: 'flex', flexDirection: 'column'}}>
-      <MedyatraDashboard
+      <PatientDashboard
         user={user}
         appointments={appointments}
         onLogout={handleLogout}

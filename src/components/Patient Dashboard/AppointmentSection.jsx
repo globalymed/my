@@ -75,8 +75,8 @@ function AppointmentsSection({ appointments }) {
     )) || [];
 
 
-    console.log('Upcoming Appointments:', upcomingAppointments);
-    console.log('Past Appointments:', pastAppointments);
+    // console.log('Upcoming Appointments:', upcomingAppointments);
+    // console.log('Past Appointments:', pastAppointments);
 
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -190,84 +190,116 @@ function AppointmentsSection({ appointments }) {
                 </Box>
             )}
 
-
+            {/* Past Appointments */}
             {tab === 1 && (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    <Card elevation={0}
-                        sx={{
-                            borderRadius: 4,
-                            overflow: "hidden",
-                            position: "relative",
-                            p: 2,
-                            border: "2px solid #E4E7EC",
-                        }}>
-                        <CardHeader
-                            title={
-                                <Box display="flex" justifyContent="space-between">
-                                    <Box>
-                                        <Typography fontWeight={600}>Initial Consultation</Typography>
-                                        <Typography variant="body2" color="text.secondary">
-                                            Dr. Rajesh Kumar - Orthopedic Surgeon
-                                        </Typography>
-                                    </Box>
-                                    <Chip  sx={{
-                                        color: 'black',
-                                        backgroundColor: '#e0f7fa',
-                                        borderColor: '#006064',
-                                        borderWidth: 1,
-                                        fontWeight: 600,
-                                        borderStyle: 'solid',
-                                        '&:hover': {
-                                            backgroundColor: '#b2ebf2',
-                                            borderColor: '#004d40'
+                    {
+                        pastAppointments.length > 0 ? (
+                            pastAppointments.map((appointment, index) => (
+                                <Card elevation={0}
+                                    sx={{
+                                        borderRadius: 4,
+                                        overflow: "hidden",
+                                        position: "relative",
+                                        p: 2,
+                                        border: "2px solid #E4E7EC",
+                                    }}>
+                                    <CardHeader
+                                        title={
+                                            <Box display="flex" justifyContent="space-between">
+                                                <Box>
+                                                    <Typography sx={{
+                                                        textTransform: 'capitalize', 
+                                                    }} fontWeight={600}>
+                                                        {appointment.treatmentType || "Appointment"} - {appointment.type || "General Checkup"}
+                                                    </Typography>
+                                                    <Typography variant="body2" color="text.secondary">
+                                                        {
+                                                            appointment.doctorName || "Doctor name not available"
+                                                        }
+                                                    </Typography>
+                                                </Box>
+                                                <Chip sx={{
+                                                    color: 'black',
+                                                    backgroundColor: '#e0f7fa',
+                                                    borderColor: '#006064',
+                                                    borderWidth: 1,
+                                                    fontWeight: 600,
+                                                    borderStyle: 'solid',
+                                                    '&:hover': {
+                                                        backgroundColor: '#b2ebf2',
+                                                        borderColor: '#004d40'
+                                                    }
+                                                }} label={
+                                                    appointment.status
+                                                } variant="outlined" />
+                                            </Box>
                                         }
-                                    }} label="Completed" variant="outlined" />
-                                </Box>
-                            }
-                        />
-                        <CardContent>
-                            <Grid container spacing={2}>
-                                <Grid item xs={12} md={6}>
-                                    <Box display="flex" flexDirection="column" gap={1}>
-                                        <Box display="flex" gap={1} alignItems="center">
-                                            <Clock size={16} />
-                                            <Typography variant="body2">Dec 1, 2024 - 3:00 PM IST</Typography>
-                                        </Box>
-                                        <Box display="flex" gap={1} alignItems="center">
-                                            <CheckCircle2 size={16} color="green" />
-                                            <Typography variant="body2">Surgery approved and scheduled</Typography>
-                                        </Box>
-                                    </Box>
-                                </Grid>
-                                <Grid item xs={12} md={6} display="flex" gap={2}>
-                                    <Button
-                                        variant="outlined"
-                                        sx={{
-                                            backgroundColor: 'white',
-                                            color: 'black',
-                                            borderColor: '#333',
-                                            '&:hover': {
-                                                backgroundColor: '#f0f0f0',
-                                                borderColor: '#555'
-                                            }
-                                        }}
-                                        fullWidth>View Summary</Button>
-                                    <Button
-                                        variant="outlined"
-                                        sx={{
-                                            backgroundColor: 'white',
-                                            color: 'black',
-                                            borderColor: '#333',
-                                            '&:hover': {
-                                                backgroundColor: '#f0f0f0',
-                                                borderColor: '#555'
-                                            }
-                                        }}
-                                        fullWidth startIcon={<Download size={16} />}>Prescription</Button>
-                                </Grid>
-                            </Grid>
-                        </CardContent>
-                    </Card>
+                                    />
+                                    <CardContent>
+                                        <Grid container spacing={2}>
+                                            <Grid item xs={12} md={6}>
+                                                <Box display="flex" flexDirection="column" gap={1}>
+                                                    <Box display="flex" gap={1} alignItems="center">
+                                                        <Clock size={16} />
+                                                        <Typography variant="body2">
+                                                            {new Date(appointment.appointmentDate).toLocaleDateString()} - {appointment.appointmentTime || "TBD"}
+                                                        </Typography>
+                                                    </Box>
+                                                    <Box display="flex" gap={1} alignItems="center">
+                                                        <CheckCircle2 size={16} color="green" />
+                                                        <Typography variant="body2">Surgery approved and scheduled</Typography>
+                                                    </Box>
+                                                </Box>
+                                            </Grid>
+                                            <Grid item xs={12} md={6} display="flex" gap={2}>
+                                                <Button
+                                                    variant="outlined"
+                                                    sx={{
+                                                        backgroundColor: 'white',
+                                                        color: 'black',
+                                                        borderColor: '#333',
+                                                        '&:hover': {
+                                                            backgroundColor: '#f0f0f0',
+                                                            borderColor: '#555'
+                                                        }
+                                                    }}
+                                                    fullWidth>View Summary</Button>
+                                                <Button
+                                                    variant="outlined"
+                                                    sx={{
+                                                        backgroundColor: 'white',
+                                                        color: 'black',
+                                                        borderColor: '#333',
+                                                        '&:hover': {
+                                                            backgroundColor: '#f0f0f0',
+                                                            borderColor: '#555'
+                                                        }
+                                                    }}
+                                                    fullWidth startIcon={<Download size={16} />}>Prescription</Button>
+                                            </Grid>
+                                        </Grid>
+                                    </CardContent>
+                                </Card>
+                            ))
+                        ) :
+                            (
+                                <Card elevation={0}
+                                    sx={{
+                                        borderRadius: 4,
+                                        overflow: "hidden",
+                                        position: "relative",
+                                        p: 2,
+                                        border: "2px solid #E4E7EC",
+                                    }}>
+                                    <CardContent>
+                                        <Typography variant="body1" textAlign="center" color="text.secondary">
+                                            No past appointments
+                                        </Typography>
+                                    </CardContent>
+                                </Card>
+                            )
+                    }
                 </Box>
             )}
 
@@ -399,138 +431,3 @@ export const CalendarSection = ({ upcomingAppointments = [], pastAppointments = 
 
 
 export default AppointmentsSection;
-
-
-// function AppointmentsSection({ appointments }) {
-//   const [tabIndex, setTabIndex] = React.useState(0)
-
-//   const handleTabChange = (event, newValue) => {
-//     setTabIndex(newValue)
-//   }
-
-//   const upcomingAppointments = appointments?.filter(apt =>
-//     new Date(apt.appointmentDate) > new Date()
-//   ) || [];
-
-//   const pastAppointments = appointments?.filter(apt =>
-//     new Date(apt.appointmentDate) <= new Date()
-//   ) || [];
-
-//   return (
-//     <Box>
-//       <Typography variant="h4" gutterBottom>
-//         Appointments
-//       </Typography>
-//       <Typography variant="subtitle1" color="text.secondary" gutterBottom>
-//         Manage your medical consultations
-//       </Typography>
-//       <Tabs value={tabIndex} onChange={handleTabChange} aria-label="appointments tabs">
-//         <Tab label="Upcoming" />
-//         <Tab label="Past" />
-//         <Tab label="Calendar View" />
-//       </Tabs>
-//       <Box mt={3}>
-//         {tabIndex === 0 && (
-//           <Box>
-//             {upcomingAppointments.length > 0 ? (
-//               upcomingAppointments.map((appointment, index) => (
-//                 <Card key={index} sx={{ mb: 2 }}>
-//                   <CardHeader
-//                     title={appointment.treatmentType || "Appointment"}
-//                     subheader={appointment.doctorName || "Doctor"}
-//                     action={<Chip label="Upcoming" color="primary" />}
-//                   />
-//                   <CardContent>
-//                     <Grid container spacing={2} alignItems="center">
-//                       <Grid item xs={12} md={8}>
-//                         <Box display="flex" alignItems="center" mt={1}>
-//                           <AccessTime sx={{ mr: 1 }} />
-//                           <Typography variant="body2">
-//                             {new Date(appointment.appointmentDate).toLocaleDateString()} - {appointment.appointmentTime || "TBD"}
-//                           </Typography>
-//                         </Box>
-//                         <Box display="flex" alignItems="center" mt={1}>
-//                           <LocationOn sx={{ mr: 1 }} />
-//                           <Typography variant="body2">
-//                             {appointment.hospitalName || "Hospital"}
-//                           </Typography>
-//                         </Box>
-//                       </Grid>
-//                       <Grid item xs={12} md={4}>
-//                         <Button
-//                           variant="contained"
-//                           startIcon={<Videocam />}
-//                           fullWidth
-//                           sx={{ mb: 1 }}
-//                         >
-//                           Join Call
-//                         </Button>
-//                         <Button variant="outlined" fullWidth>
-//                           Reschedule
-//                         </Button>
-//                       </Grid>
-//                     </Grid>
-//                   </CardContent>
-//                 </Card>
-//               ))
-//             ) : (
-//               <Card>
-//                 <CardContent>
-//                   <Typography variant="body1" textAlign="center" color="text.secondary">
-//                     No upcoming appointments
-//                   </Typography>
-//                 </CardContent>
-//               </Card>
-//             )}
-//           </Box>
-//         )}
-//         {tabIndex === 1 && (
-//           <Box>
-//             {pastAppointments.length > 0 ? (
-//               pastAppointments.map((appointment, index) => (
-//                 <Card key={index} sx={{ mb: 2 }}>
-//                   <CardHeader
-//                     title={appointment.treatmentType || "Appointment"}
-//                     subheader={appointment.doctorName || "Doctor"}
-//                     action={<Chip label="Completed" color="success" />}
-//                   />
-//                   <CardContent>
-//                     <Grid container spacing={2} alignItems="center">
-//                       <Grid item xs={12} md={8}>
-//                         <Box display="flex" alignItems="center" mt={1}>
-//                           <AccessTime sx={{ mr: 1 }} />
-//                           <Typography variant="body2">
-//                             {new Date(appointment.appointmentDate).toLocaleDateString()} - {appointment.appointmentTime || "TBD"}
-//                           </Typography>
-//                         </Box>
-//                         <Box display="flex" alignItems="center" mt={1}>
-//                           <LocationOn sx={{ mr: 1 }} />
-//                           <Typography variant="body2">
-//                             {appointment.hospitalName || "Hospital"}
-//                           </Typography>
-//                         </Box>
-//                       </Grid>
-//                       <Grid item xs={12} md={4}>
-//                         <Button variant="outlined" fullWidth>
-//                           View Details
-//                         </Button>
-//                       </Grid>
-//                     </Grid>
-//                   </CardContent>
-//                 </Card>
-//               ))
-//             ) : (
-//               <Card>
-//                 <CardContent>
-//                   <Typography variant="body1" textAlign="center" color="text.secondary">
-//                     No past appointments
-//                   </Typography>
-//                 </CardContent>
-//               </Card>
-//             )}
-//           </Box>
-//         )}
-//       </Box>
-//     </Box>
-//   )
-// }
