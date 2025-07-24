@@ -76,21 +76,18 @@ const Footer = () => {
         <Box sx={{ px: { xs: 2, md: 8 }, py: 4 }}>
           <Grid container spacing={4}>
             <Grid item xs={12} md={4}>
-              <Box display="flex" alignItems="center" mb={2}>
-                {/* M Logo */}
-                <Avatar src="/logoWhite.png" alt="MedYatra Logo" sx={{ width: 80, height: 80, bgcolor: 'transparent', mx: 'auto', mb: 2 }} imgProps={{ style: { objectFit: 'contain', width: '100%', height: '100%' } }} />
-
-                {/* Text Block */}
-                <Box>
-                  <Typography variant="h3" fontWeight="bold" lineHeight={1.2}>
+              <a href="https://medyatra.space" style={{ textDecoration: 'none', color: 'inherit'}}>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <Avatar
+                    src="/logo.png"
+                    alt="MedYatra Logo"
+                    sx={{ width: 36, height: 36, mr: 1 }}
+                  />
+                  <Typography variant="h6" component="div" sx={{ fontWeight: 700}}>
                     MedYatra
                   </Typography>
-                  <Typography variant="body2">
-                    Making Medical Travel Effortless
-                  </Typography>
                 </Box>
-              </Box>
-
+              </a>
               <Typography variant="body2" color="grey.400">
                 India's leading AI-powered healthcare platform connecting patients with verified doctors. Making quality healthcare accessible, affordable, and convenient for everyone.
               </Typography>
@@ -116,7 +113,7 @@ const Footer = () => {
                     <Phone fontSize="medium" />
                   </IconButton>
                   <Typography variant="body2">
-                    +91 1800-123-4567 <br /> (24/7 Patient Support)
+                    +91 85350-79387 | +91 93680 75651 <br /> (24/7 Patient Support)
                   </Typography>
                 </Box>
                 <Box display="flex" alignItems="center">

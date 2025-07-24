@@ -101,7 +101,6 @@ const StyledTabs = styled(Tabs)(({ theme }) => ({
         '&.Mui-selected': {
             backgroundColor: '#ffffff',
             color: '#333',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
         }
     },
     '& .MuiTabs-indicator': {

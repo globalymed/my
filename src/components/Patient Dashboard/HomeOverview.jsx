@@ -33,7 +33,7 @@ import {
 } from '@mui/icons-material';
 
 
-const HomeOverview = ({ user, appointments }) => {
+const HomeOverview = ({ user, appointments, setActiveSection }) => {
     const theme = useTheme();
 
     // Find the next upcoming appointment
@@ -46,16 +46,21 @@ const HomeOverview = ({ user, appointments }) => {
         upcomingAppointment.meetingLink = "https://example.com/meeting-link";
     }
 
+    // Handler for navigating to plan journey section
+    const handlePlanJourney = () => {
+        setActiveSection('plan-journey');
+    };
+
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
 
             {/* Welcome Message */}
             <Box>
-                <Typography variant="h4" fontWeight="bold">
+                <Typography variant="h4" fontWeight="bold" fontSize="2.125rem">
                     Welcome back, {user?.firstName || user?.name || 'User'}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                    It’s a sunny day today, we hope you’re taking good care of your health 😊
+                    It's a sunny day today, we hope you're taking good care of your health 😊
                 </Typography>
             </Box>
 
@@ -196,6 +201,7 @@ const HomeOverview = ({ user, appointments }) => {
                                         tags={[{ label: "Business" }, { label: "Economy" }]}
                                         buttonText="Book Ticket"
                                         color="#E1F5FE"
+                                        onClick={handlePlanJourney} 
                                     />
                                 </Grid>
                                 <Grid item xs={12} sm={4}>
@@ -207,6 +213,7 @@ const HomeOverview = ({ user, appointments }) => {
                                         tags={[{ label: "Normal" }, { label: "Luxury" }]}
                                         buttonText="Book Room"
                                         color="#C5CAE9"
+                                        onClick={handlePlanJourney} 
                                     />
                                 </Grid>
                             </Grid>
@@ -269,7 +276,7 @@ const HomeOverview = ({ user, appointments }) => {
     );
 };
 
-const BookingCard = ({ icon, title, price, unit, tags, buttonText, color }) => {
+const BookingCard = ({ icon, title, price, unit, tags, buttonText, color, onClick }) => {
     return (
         <Box sx={{
             borderRadius: 3, border: "1px solid #E4E7EC", p: 2, textAlign: "left",
@@ -289,7 +296,7 @@ const BookingCard = ({ icon, title, price, unit, tags, buttonText, color }) => {
                 ))}
             </Box>
             <Box sx={{ flexGrow: 1 }} /> {/* Pushes button to the bottom */}
-            <Button fullWidth variant="outlined" sx={{ textTransform: "none", fontWeight: 600, mt: 2 }}>
+            <Button fullWidth variant="outlined" sx={{ textTransform: "none", fontWeight: 600, mt: 2 }} onClick={onClick}>
                 {buttonText}
             </Button>
         </Box>
