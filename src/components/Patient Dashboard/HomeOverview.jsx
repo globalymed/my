@@ -35,6 +35,7 @@ import {
 
 const HomeOverview = ({ user, appointments, setActiveSection }) => {
     const theme = useTheme();
+    // console.log("HomeOverview user:", user);
 
     // Find the next upcoming appointment
     const upcomingAppointment = appointments?.find(apt =>
