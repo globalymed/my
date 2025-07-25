@@ -11,6 +11,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import ChatLayout from '../components/ChatLayout';
 import NewLoginPage from './NewLoginPage.jsx';
 import NewSignupPage from './NewSignupPage.jsx';
+import ConfirmEmail from './ConfirmEmail.jsx';
 import DoctorLoginPage from '../components/DoctorLoginPage';
 
 const AIChat = React.lazy(() => import('../components/AIChatFinal'));
@@ -228,6 +229,7 @@ const App = () => {
                     <NewLoginPage />
                   </AuthRoute>
                 } />
+                <Route path="/confirm-email" element={<ConfirmEmail />} />
                 <Route path="/doctor-login" element={
                   <DoctorAuthRoute>
                     <DoctorLoginPage />

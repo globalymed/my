@@ -1,5 +1,6 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
+const cors = require('cors')({ origin: true });
 const { Resend } = require('resend');
 
 // Load environment variables from .env file
@@ -19,6 +20,240 @@ const userCredentials = require('./generateUserCredentials');
 exports.generateCredentialsForUser = userCredentials.generateCredentialsForUser;
 exports.generateCredentialsForAllUsers = userCredentials.generateCredentialsForAllUsers;
 exports.triggerCredentialGeneration = userCredentials.triggerCredentialGeneration;
+
+/**
+ * HTTP Cloud Function to handle password reset requests
+ * Validates email and sends reset instructions
+ */
+exports.resetPassword = functions.https.onRequest(async (req, res) => {
+  // Enable CORS for all origins
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type');
+
+  // Handle preflight OPTIONS request
+  if (req.method === 'OPTIONS') {
+    res.status(200).send();
+    return;
+  }
+
+  // Only allow POST method
+  if (req.method !== 'POST') {
+    res.status(405).json({ error: 'Method not allowed', valid: false });
+    return;
+  }
+
+  console.log('=== PASSWORD RESET FUNCTION TRIGGERED ===');
+  console.log('Function start time:', new Date().toISOString());
+  console.log('Request body:', JSON.stringify(req.body, null, 2));
+
+  try {
+    const { email } = req.body;
+
+    // Validate email parameter
+    if (!email) {
+      console.log('❌ Email parameter missing');
+      res.status(400).json({ 
+        error: 'Email parameter is required', 
+        valid: false,
+        message: 'Please provide an email address'
+      });
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      console.log('❌ Invalid email format:', email);
+      res.status(400).json({ 
+        error: 'Invalid email format', 
+        valid: false,
+        message: 'Please provide a valid email address'
+      });
+      return;
+    }
+
+    console.log('=== STEP 1: EMAIL VALIDATION ===');
+    console.log('✅ Email format valid:', email);
+
+    // Check if email exists in users collection (patients)
+    console.log('=== STEP 2: CHECKING USERS COLLECTION ===');
+    const usersRef = db.collection('users');
+    const userQuery = usersRef.where('email', '==', email);
+    const userSnapshot = await userQuery.get();
+
+    let userFound = false;
+    let userType = '';
+    let userData = null;
+    let doctorSnapshot = null; // Declare doctorSnapshot variable
+
+    if (!userSnapshot.empty) {
+      userFound = true;
+      userType = 'patient';
+      userData = userSnapshot.docs[0].data();
+      console.log('✅ User found in users collection (patient)');
+    } else {
+      console.log('⚠️ User not found in users collection, checking doctors...');
+      
+      // Check if email exists in doctors collection
+      console.log('=== STEP 3: CHECKING DOCTORS COLLECTION ===');
+      const doctorsRef = db.collection('doctors');
+      const doctorQuery = doctorsRef.where('email', '==', email);
+      doctorSnapshot = await doctorQuery.get();
+
+      if (!doctorSnapshot.empty) {
+        userFound = true;
+        userType = 'doctor';
+        userData = doctorSnapshot.docs[0].data();
+        console.log('✅ User found in doctors collection (doctor)');
+      } else {
+        console.log('❌ User not found in either collection');
+      }
+    }
+
+    if (!userFound) {
+      res.status(404).json({ 
+        error: 'Email not found', 
+        valid: false,
+        message: 'No account found with this email address'
+      });
+      return;
+    }
+
+    console.log('=== STEP 4: GENERATING NEW PASSWORD ===');
+    
+    // Generate a secure password using the same function from generateUserCredentials
+    function generateSecurePassword(length = 12) {
+      const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[]{}';
+      let password = '';
+      
+      // Ensure at least one uppercase, one lowercase, one digit, and one special character
+      password += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[Math.floor(Math.random() * 26)];
+      password += 'abcdefghijklmnopqrstuvwxyz'[Math.floor(Math.random() * 26)];
+      password += '0123456789'[Math.floor(Math.random() * 10)];
+      password += '!@#$%^&*()-_=+[]{}'[Math.floor(Math.random() * 20)];
+      
+      // Fill the remaining length with random characters
+      for (let i = 4; i < length; i++) {
+        password += charset[Math.floor(Math.random() * charset.length)];
+      }
+      
+      // Shuffle the password
+      return password.split('').sort(() => 0.5 - Math.random()).join('');
+    }
+
+    const newPassword = generateSecurePassword(12);
+    console.log('✅ New secure password generated');
+
+    console.log('=== STEP 5: UPDATING FIRESTORE DOCUMENT ===');
+    
+    // Update the user's password in Firestore
+    const collectionName = userType === 'patient' ? 'users' : 'doctors';
+    const docId = userType === 'patient' ? 
+      userSnapshot.docs[0].id : 
+      doctorSnapshot.docs[0].id;
+    
+    await db.collection(collectionName).doc(docId).update({
+      password: newPassword,
+      passwordResetAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+    
+    console.log(`✅ Password updated in ${collectionName} collection for document ID: ${docId}`);
+
+    console.log('=== STEP 6: SENDING PASSWORD RESET EMAIL ===');
+    
+    const emailData = {
+      from: 'MedYatra Support <support@medyatra.space>',
+      to: [email],
+      subject: 'Password Reset Successful - MedYatra',
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Password Reset - MedYatra</title>
+        </head>
+        <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f8f9fa;">
+          <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 40px 20px;">
+            <div style="text-align: center; margin-bottom: 40px;">
+              <h1 style="color: #333; font-size: 28px; margin: 0;">MedYatra</h1>
+              <p style="color: #666; font-size: 16px; margin: 10px 0 0 0;">Healthcare Made Simple</p>
+            </div>
+            
+            <div style="background-color: #f8f9fa; padding: 30px; border-radius: 8px; margin-bottom: 30px;">
+              <h2 style="color: #333; font-size: 24px; margin: 0 0 20px 0;">Password Reset Successful</h2>
+              
+              <p style="color: #666; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+                Hello ${userData.firstName || 'User'},
+              </p>
+              
+              <p style="color: #666; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+                Your password has been successfully reset for your ${userType} account associated with <strong>${email}</strong>.
+              </p>
+              
+              <p style="color: #666; font-size: 16px; line-height: 1.6; margin: 0 0 30px 0;">
+                Here are your new login credentials:
+              </p>
+              
+              <div style="background-color: #e8f5e8; padding: 20px; border-radius: 6px; border-left: 4px solid #4caf50;">
+                <p style="margin: 0; color: #333; font-size: 16px;"><strong>Email:</strong> ${email}</p>
+                <p style="margin: 10px 0 0 0; color: #333; font-size: 16px;"><strong>New Password:</strong> ${newPassword}</p>
+              </div>
+              
+              <p style="color: #666; font-size: 14px; line-height: 1.6; margin: 30px 0 0 0;">
+                <strong>Important:</strong> For security reasons, we recommend changing this password to something more memorable after logging in.
+              </p>
+              
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="https://medyatra.space/login" style="background-color: #4caf50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Login Now</a>
+              </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 40px;">
+              <p style="color: #999; font-size: 14px; margin: 0;">
+                If you didn't request this password reset, please contact our support team immediately.
+              </p>
+              <p style="color: #999; font-size: 14px; margin: 10px 0 0 0;">
+                This is an automated email, please do not reply.
+              </p>
+            </div>
+            
+            <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+              <p style="color: #999; font-size: 12px; margin: 0;">
+                © 2025 MedYatra. All rights reserved.
+              </p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    };
+
+    // Send email using Resend
+    const result = await resend.emails.send(emailData);
+    
+    console.log('✅ Password reset email sent successfully');
+    console.log('Email result:', JSON.stringify(result, null, 2));
+    
+    res.status(200).json({ 
+      valid: true,
+      success: true,
+      message: 'Password reset successful. Your new password has been sent to your email.',
+      userType: userType,
+      emailSent: true
+    });
+
+  } catch (error) {
+    console.error('❌ Error in resetPassword function:', error);
+    res.status(500).json({ 
+      error: 'Internal server error', 
+      valid: false,
+      message: 'An error occurred while processing your request. Please try again later.'
+    });
+  }
+});
 
 /**
  * Triggered when a new appointment is created in Firestore
