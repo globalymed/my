@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
     Box,
     Typography,
@@ -53,6 +53,72 @@ const StyledTabs = styled(Tabs)(({ theme }) => ({
     }
 }));
 
+export const AppointmentCard = ({ appointment }) => {
+    // This correctly determines if the appointment is in the future or past
+    const isUpcoming = new Date(appointment.appointmentDate) >= new Date();
+
+    return (
+        <Card elevation={0} sx={{ borderRadius: 4, p: 2, border: "1px solid #E4E7EC", mb: 2 }}>
+            <CardHeader
+                title={appointment.treatmentType || "Appointment"}
+                subheader={appointment.doctorName || "Doctor TBD"}
+                action={
+                    <Chip
+                        label={isUpcoming ? "Upcoming" : "Completed"}
+                        sx={{
+                            backgroundColor: isUpcoming ? 'black' : '#6ee7b7',
+                            color: isUpcoming ? 'white' : '#022c22'
+                        }}
+                    />
+                }
+                titleTypographyProps={{ fontSize: "1.5rem", fontWeight: 700 }}
+            />
+            <CardContent>
+                <Grid container spacing={2} alignItems="center">
+                    <Grid item xs={12} md={7}>
+                        <Box display="flex" alignItems="center" mt={1}>
+                            <AccessTime sx={{ mr: 1, color: 'text.secondary' }} />
+                            <Typography variant="body2">
+                                {new Date(appointment.appointmentDate).toDateString()} at {appointment.appointmentTime || "Time TBD"}
+                            </Typography>
+                        </Box>
+                        <Box display="flex" alignItems="center" mt={1}>
+                            <LocationOn sx={{ mr: 1, color: 'text.secondary' }} />
+                            <Typography variant="body2">
+                                {appointment.clinicName || "Clinic TBD"}
+                            </Typography>
+                        </Box>
+                    </Grid>
+
+                    {/* --- THIS IS THE UPDATED SECTION --- */}
+                    <Grid item xs={12} md={5}>
+                        {isUpcoming ? (
+                            // Buttons for UPCOMING appointments
+                            <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1, mt: { xs: 2, md: 0 }, justifyContent: 'flex-end' }}>
+                                <Button startIcon={<Videocam />} sx={{ backgroundColor: 'black', px: 3, py: 1, color: 'white', '&:hover': { backgroundColor: '#333' } }}>
+                                    Join Call
+                                </Button>
+                                <Button variant="outlined" sx={{ px: 3, py: 1, color: 'black', borderColor: 'grey.400' }}>
+                                    Reschedule
+                                </Button>
+                            </Box>
+                        ) : (
+                            // Buttons for PAST appointments
+                            <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1, mt: { xs: 2, md: 0 }, justifyContent: 'flex-end' }}>
+                                <Button variant="outlined" sx={{ px: 3, py: 1, color: 'black', borderColor: 'grey.400' }}>
+                                    View Summary
+                                </Button>
+                                <Button variant="outlined" startIcon={<Download />} sx={{ px: 3, py: 1, color: 'black', borderColor: 'grey.400' }}>
+                                    Prescription
+                                </Button>
+                            </Box>
+                        )}
+                    </Grid>
+                </Grid>
+            </CardContent>
+        </Card>
+    );
+};
 
 function AppointmentsSection({ appointments }) {
     const [tab, setTab] = useState(0);
@@ -116,60 +182,7 @@ function AppointmentsSection({ appointments }) {
                 <Box>
                     {upcomingAppointments.length > 0 ? (
                         upcomingAppointments.map((appointment, index) => (
-                            <Card elevation={0}
-                                sx={{
-                                    borderRadius: 4,
-                                    overflow: "hidden",
-                                    position: "relative",
-                                    p: 2,
-                                    border: "2px solid #E4E7EC",
-                                    mb: 2,
-                                }} key={index}>
-                                <CardHeader
-                                    sx={{ fontWeight: 600 }}
-                                    title={appointment.treatmentType || "Appointment"}
-                                    subheader={appointment.doctorName || "Doctor"}
-                                    action={<Chip label="Upcoming" sx={{ backgroundColor: 'black', color: 'white' }} />}
-                                    titleTypographyProps={{
-                                        fontSize: "2rem",  // adjust size as needed (e.g. 24px = 1.5rem)
-                                        fontWeight: 700      // bold
-                                    }}
-                                />
-
-                                <CardContent>
-                                    <Grid container spacing={2} alignItems="center">
-                                        <Grid item xs={12} md={8}>
-                                            <Box display="flex" alignItems="center" mt={1}>
-                                                <AccessTime sx={{ mr: 1 }} />
-                                                <Typography variant="body2">
-                                                    {new Date(appointment.appointmentDate).toLocaleDateString()} - {appointment.appointmentTime || "TBD"}
-                                                </Typography>
-                                            </Box>
-                                            <Box display="flex" alignItems="center" mt={1}>
-                                                <LocationOn sx={{ mr: 1 }} />
-                                                <Typography variant="body2">
-                                                    {appointment.hospitalName || "Hospital"}
-                                                </Typography>
-                                            </Box>
-                                        </Grid>
-                                        <Box sx={{
-                                            display: 'flex',
-                                            flexDirection: 'row', gap: 1, mt: { xs: 2, md: 0 },
-                                            alignItems: 'center', justifyContent: { xs: 'space-between', md: 'flex-end' }
-                                        }} item xs={12} md={4}>
-                                            <Button
-                                                startIcon={<Videocam />}
-                                                sx={{ backgroundColor: 'black', px: 5, py: 1, color: 'white', '&:hover': { backgroundColor: '#333' } }}
-                                            >
-                                                Join Call
-                                            </Button>
-                                            <Button variant="outlined" sx={{ px: 5, py: 1, color: 'black', backgroundColor: 'white' }}>
-                                                Reschedule
-                                            </Button>
-                                        </Box>
-                                    </Grid>
-                                </CardContent>
-                            </Card>
+                            <AppointmentCard key={appointment.id} appointment={appointment} />
                         ))
                     ) : (
                         <Card elevation={0}
@@ -196,91 +209,7 @@ function AppointmentsSection({ appointments }) {
                     {
                         pastAppointments.length > 0 ? (
                             pastAppointments.map((appointment, index) => (
-                                <Card elevation={0}
-                                    sx={{
-                                        borderRadius: 4,
-                                        overflow: "hidden",
-                                        position: "relative",
-                                        p: 2,
-                                        border: "2px solid #E4E7EC",
-                                    }}>
-                                    <CardHeader
-                                        title={
-                                            <Box display="flex" justifyContent="space-between">
-                                                <Box>
-                                                    <Typography sx={{
-                                                        textTransform: 'capitalize',
-                                                    }} fontWeight={600}>
-                                                        {appointment.treatmentType || "Appointment"} - {appointment.type || "General Checkup"}
-                                                    </Typography>
-                                                    <Typography variant="body2" color="text.secondary">
-                                                        {
-                                                            appointment.doctorName || "Doctor name not available"
-                                                        }
-                                                    </Typography>
-                                                </Box>
-                                                <Chip sx={{
-                                                    color: 'black',
-                                                    backgroundColor: '#e0f7fa',
-                                                    borderColor: '#006064',
-                                                    borderWidth: 1,
-                                                    fontWeight: 600,
-                                                    borderStyle: 'solid',
-                                                    '&:hover': {
-                                                        backgroundColor: '#b2ebf2',
-                                                        borderColor: '#004d40'
-                                                    }
-                                                }} label={
-                                                    appointment.status
-                                                } variant="outlined" />
-                                            </Box>
-                                        }
-                                    />
-                                    <CardContent>
-                                        <Grid container spacing={2}>
-                                            <Grid item xs={12} md={6}>
-                                                <Box display="flex" flexDirection="column" gap={1}>
-                                                    <Box display="flex" gap={1} alignItems="center">
-                                                        <Clock size={16} />
-                                                        <Typography variant="body2">
-                                                            {new Date(appointment.appointmentDate).toLocaleDateString()} - {appointment.appointmentTime || "TBD"}
-                                                        </Typography>
-                                                    </Box>
-                                                    <Box display="flex" gap={1} alignItems="center">
-                                                        <CheckCircle2 size={16} color="green" />
-                                                        <Typography variant="body2">Surgery approved and scheduled</Typography>
-                                                    </Box>
-                                                </Box>
-                                            </Grid>
-                                            <Grid item xs={12} md={6} display="flex" gap={2}>
-                                                <Button
-                                                    variant="outlined"
-                                                    sx={{
-                                                        backgroundColor: 'white',
-                                                        color: 'black',
-                                                        borderColor: '#333',
-                                                        '&:hover': {
-                                                            backgroundColor: '#f0f0f0',
-                                                            borderColor: '#555'
-                                                        }
-                                                    }}
-                                                    fullWidth>View Summary</Button>
-                                                <Button
-                                                    variant="outlined"
-                                                    sx={{
-                                                        backgroundColor: 'white',
-                                                        color: 'black',
-                                                        borderColor: '#333',
-                                                        '&:hover': {
-                                                            backgroundColor: '#f0f0f0',
-                                                            borderColor: '#555'
-                                                        }
-                                                    }}
-                                                    fullWidth startIcon={<Download size={16} />}>Prescription</Button>
-                                            </Grid>
-                                        </Grid>
-                                    </CardContent>
-                                </Card>
+                                <AppointmentCard key={appointment.id} appointment={appointment} />
                             ))
                         ) :
                             (
@@ -324,11 +253,24 @@ export const CalendarSection = ({ upcomingAppointments = [], pastAppointments = 
     const year = today.getFullYear();
     const month = today.getMonth(); // 0-indexed (e.g., 6 for July)
 
-    // --- KEY CHANGES START HERE ---
+    const [selectedDate, setSelectedDate] = useState(null);
 
     // 1. Calculate the first day of the week for the current month (0=Sun, 1=Mon, ...)
     const firstDayOfMonth = new Date(year, month, 1).getDay();
     const daysInMonth = getDaysInMonth(year, month);
+
+    const appointmentsForSelectedDate = useMemo(() => {
+        if (!selectedDate) return [];
+        const allAppointments = [...upcomingAppointments, ...pastAppointments];
+        return allAppointments.filter(apt => apt.appointmentDate === selectedDate);
+    }, [selectedDate, upcomingAppointments, pastAppointments]);
+
+    const handleDateClick = (day) => {
+        const status = getStatusForDay(day);
+        if (status) { // Only set date if there's an appointment
+            setSelectedDate(formatDate(day));
+        }
+    };
 
     // Function to format a day into "YYYY-MM-DD"
     const formatDate = (day) => {
@@ -362,82 +304,111 @@ export const CalendarSection = ({ upcomingAppointments = [], pastAppointments = 
     const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
     return (
-        <Card elevation={0} sx={{ borderRadius: 4, p: 2, border: '1px solid #E4E7EC' }}>
-            <CardHeader
-                title={
-                    <Typography variant="h6" fontWeight={600}>
-                        {today.toLocaleString('default', { month: 'long' })} {year}
-                    </Typography>
-                }
-            />
-            <CardContent>
-                <Box display="grid" gridTemplateColumns="repeat(7, 1fr)" textAlign="center" gap={1}>
-                    {/* Render weekday headers */}
-                    {weekdays.map((day) => (
-                        <Typography key={day} fontWeight={500} color="text.secondary">
-                            {day}
+        <>
+            <Card elevation={0} sx={{ borderRadius: 4, p: 2, border: '1px solid #E4E7EC' }}>
+                <CardHeader
+                    title={
+                        <Typography variant="h6" fontWeight={600}>
+                            {today.toLocaleString('default', { month: 'long' })} {year}
                         </Typography>
-                    ))}
-
-                    {/* 4. Render empty boxes for alignment */}
-                    {Array.from({ length: firstDayOfMonth }).map((_, index) => (
-                        <Box key={`empty-${index}`} />
-                    ))}
-
-                    {/* Render actual days of the month */}
-                    {Array.from({ length: daysInMonth }, (_, i) => {
-                        const day = i + 1;
-                        const status = getStatusForDay(day);
-                        const { bg, color } = getColorStyles(status);
-                        const isToday = day === today.getDate();
-
-                        return (
-                            <Box
-                                key={day}
-                                display="flex"
-                                justifyContent="center"
-                                alignItems="center"
-                                width={36}
-                                height={36}
-                                borderRadius="50%"
-                                bgcolor={status ? bg : 'transparent'}
-                                color={status ? color : 'inherit'}
-                                fontWeight={status || isToday ? 'bold' : 'normal'}
-                                // Add a border for today's date
-                                border={isToday ? '2px solid #3b82f6' : 'none'}
-                                mx="auto"
-                            >
+                    }
+                />
+                <CardContent>
+                    <Box display="grid" gridTemplateColumns="repeat(7, 1fr)" textAlign="center" gap={1}>
+                        {/* Render weekday headers */}
+                        {weekdays.map((day) => (
+                            <Typography key={day} fontWeight={500} color="text.secondary">
                                 {day}
-                            </Box>
-                        );
-                    })}
-                </Box>
+                            </Typography>
+                        ))}
 
-                {/* Legend */}
-                <Box mt={4} display="flex" flexDirection="column" gap={1}>
-                    <Box display="flex" alignItems="center" gap={1.5}>
-                        <Box width={12} height={12} borderRadius="50%" sx={{ backgroundColor: '#93c5fd' }} />
-                        <Typography variant="body2">Upcoming Appointment</Typography>
+                        {/* 4. Render empty boxes for alignment */}
+                        {Array.from({ length: firstDayOfMonth }).map((_, index) => (
+                            <Box key={`empty-${index}`} />
+                        ))}
+
+                        {/* Render actual days of the month */}
+                        {Array.from({ length: daysInMonth }, (_, i) => {
+                            const day = i + 1;
+                            const status = getStatusForDay(day);
+                            const { bg, color } = getColorStyles(status);
+                            const isToday = day === today.getDate();
+
+                            return (
+                                <Box
+                                    key={day}
+                                    onClick={() => handleDateClick(day)}
+                                    sx={{
+                                        // Display and alignment
+                                        display: 'flex',
+                                        justifyContent: 'center',
+                                        alignItems: 'center',
+
+                                        // Sizing and shape
+                                        width: 36,
+                                        height: 36,
+                                        borderRadius: '50%',
+                                        mx: 'auto',
+
+                                        // Conditional styling
+                                        bgcolor: status ? bg : 'transparent',
+                                        color: status ? color : 'inherit',
+                                        fontWeight: status || isToday ? 'bold' : 'normal',
+                                        border: isToday ? '2px solid #3b82f6' : 'none',
+
+                                        // Interactivity styles
+                                        cursor: status ? 'pointer' : 'default',
+                                        transition: 'transform 0.1s ease-in-out',
+                                        '&:hover': {
+                                            transform: status ? 'scale(1.1)' : 'none',
+                                        },
+                                    }}
+                                >
+                                    {day}
+                                </Box>
+                            );
+                        })}
                     </Box>
-                    <Box display="flex" alignItems="center" gap={1.5}>
-                        <Box width={12} height={12} borderRadius="50%" sx={{ backgroundColor: '#6ee7b7' }} />
-                        <Typography variant="body2">Past Appointment</Typography>
+
+                    {/* Legend */}
+                    <Box mt={4} display="flex" flexDirection="column" gap={1}>
+                        <Box display="flex" alignItems="center" gap={1.5}>
+                            <Box width={12} height={12} borderRadius="50%" sx={{ backgroundColor: '#93c5fd' }} />
+                            <Typography variant="body2">Upcoming Appointment</Typography>
+                        </Box>
+                        <Box display="flex" alignItems="center" gap={1.5}>
+                            <Box width={12} height={12} borderRadius="50%" sx={{ backgroundColor: '#6ee7b7' }} />
+                            <Typography variant="body2">Past Appointment</Typography>
+                        </Box>
+                        <Box display="flex" alignItems="center" gap={1.5}>
+                            <Box
+                                width={12}
+                                height={12}
+                                borderRadius="50%"
+                                sx={{
+                                    backgroundColor: 'transparent',
+                                    border: '2px solid #3b82f6',
+                                }}
+                            />
+                            <Typography variant="body2">Today</Typography>
+                        </Box>
                     </Box>
-                    <Box display="flex" alignItems="center" gap={1.5}>
-                        <Box
-                            width={12}
-                            height={12}
-                            borderRadius="50%"
-                            sx={{
-                                backgroundColor: 'transparent',
-                                border: '2px solid #3b82f6', 
-                            }}
-                        />
-                        <Typography variant="body2">Today</Typography>
+                </CardContent>
+            </Card >
+
+            <Box mt={4}>
+                {appointmentsForSelectedDate.length > 0 && (
+                    <Box>
+                        <Typography variant="h5" fontWeight={600} mb={2}>
+                            Appointments for {new Date(selectedDate).toDateString()}
+                        </Typography>
+                        {appointmentsForSelectedDate.map((apt) => (
+                            <AppointmentCard key={apt.id} appointment={apt} />
+                        ))}
                     </Box>
-                </Box>
-            </CardContent>
-        </Card>
+                )}
+            </Box>
+        </>
     );
 };
 
