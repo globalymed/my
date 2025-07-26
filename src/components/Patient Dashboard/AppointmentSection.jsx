@@ -75,8 +75,8 @@ function AppointmentsSection({ appointments }) {
     )) || [];
 
 
-    // console.log('Upcoming Appointments:', upcomingAppointments);
-    // console.log('Past Appointments:', pastAppointments);
+    console.log('Upcoming Appointments:', upcomingAppointments);
+    console.log('Past Appointments:', pastAppointments);
 
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -209,7 +209,7 @@ function AppointmentsSection({ appointments }) {
                                             <Box display="flex" justifyContent="space-between">
                                                 <Box>
                                                     <Typography sx={{
-                                                        textTransform: 'capitalize', 
+                                                        textTransform: 'capitalize',
                                                     }} fontWeight={600}>
                                                         {appointment.treatmentType || "Appointment"} - {appointment.type || "General Checkup"}
                                                     </Typography>
@@ -320,45 +320,40 @@ const getDaysInMonth = (year, month) => {
 };
 
 export const CalendarSection = ({ upcomingAppointments = [], pastAppointments = [] }) => {
-    const today = new Date();
+    const today = new Date(); // e.g., July 26, 2025
     const year = today.getFullYear();
-    const month = today.getMonth(); // 0-indexed (0 = Jan, 6 = July)
+    const month = today.getMonth(); // 0-indexed (e.g., 6 for July)
 
+    // --- KEY CHANGES START HERE ---
+
+    // 1. Calculate the first day of the week for the current month (0=Sun, 1=Mon, ...)
+    const firstDayOfMonth = new Date(year, month, 1).getDay();
     const daysInMonth = getDaysInMonth(year, month);
 
-    // Get ISO date string like "2025-07-14"
-    const formatDate = (day) =>
-        `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    // Function to format a day into "YYYY-MM-DD"
+    const formatDate = (day) => {
+        return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    };
 
+    // 2. Simplified status function
     const getStatusForDay = (day) => {
-        console.log('Checking status for day:', day);
         const dateStr = formatDate(day);
-
-        const isSurgeryDay = upcomingAppointments.some(
-            (apt) =>
-                apt.appointmentDate === dateStr &&
-                apt.title?.toLowerCase().includes('surgery')
-        );
-
-        if (isSurgeryDay) return 'surgery';
-
         const isUpcoming = upcomingAppointments.some((apt) => apt.appointmentDate === dateStr);
         if (isUpcoming) return 'upcoming';
 
         const isPast = pastAppointments.some((apt) => apt.appointmentDate === dateStr);
         if (isPast) return 'past';
 
-        return null;
+        return null; // No appointment on this day
     };
 
+    // 3. Simplified color styling
     const getColorStyles = (status) => {
         switch (status) {
             case 'past':
-                return { bg: 'green.100', color: 'green.800' };
+                return { bg: '#6ee7b7', color: '#022c22' }; // Much darker green
             case 'upcoming':
-                return { bg: 'blue.100', color: 'blue.800' };
-            case 'surgery':
-                return { bg: 'red.100', color: 'red.800' };
+                return { bg: '#93c5fd', color: '#172554' }; // Much darker blue
             default:
                 return { bg: 'transparent', color: 'inherit' };
         }
@@ -367,41 +362,49 @@ export const CalendarSection = ({ upcomingAppointments = [], pastAppointments = 
     const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
     return (
-        <Card elevation={0}
-            sx={{
-                borderRadius: 4,
-                overflow: "hidden",
-                position: "relative",
-                p: 2,
-                border: "2px solid #E4E7EC",
-            }}>
-            <CardHeader title={<Typography variant="h6">
-                {today.toLocaleString('default', { month: 'long' })} {year}
-            </Typography>} />
+        <Card elevation={0} sx={{ borderRadius: 4, p: 2, border: '1px solid #E4E7EC' }}>
+            <CardHeader
+                title={
+                    <Typography variant="h6" fontWeight={600}>
+                        {today.toLocaleString('default', { month: 'long' })} {year}
+                    </Typography>
+                }
+            />
             <CardContent>
                 <Box display="grid" gridTemplateColumns="repeat(7, 1fr)" textAlign="center" gap={1}>
+                    {/* Render weekday headers */}
                     {weekdays.map((day) => (
-                        <Typography key={day} fontWeight={600}>
+                        <Typography key={day} fontWeight={500} color="text.secondary">
                             {day}
                         </Typography>
                     ))}
 
+                    {/* 4. Render empty boxes for alignment */}
+                    {Array.from({ length: firstDayOfMonth }).map((_, index) => (
+                        <Box key={`empty-${index}`} />
+                    ))}
+
+                    {/* Render actual days of the month */}
                     {Array.from({ length: daysInMonth }, (_, i) => {
                         const day = i + 1;
                         const status = getStatusForDay(day);
                         const { bg, color } = getColorStyles(status);
+                        const isToday = day === today.getDate();
 
                         return (
                             <Box
-                                key={i}
+                                key={day}
                                 display="flex"
                                 justifyContent="center"
                                 alignItems="center"
-                                width={32}
-                                height={32}
+                                width={36}
+                                height={36}
                                 borderRadius="50%"
-                                bgcolor={bg}
-                                color={color}
+                                bgcolor={status ? bg : 'transparent'}
+                                color={status ? color : 'inherit'}
+                                fontWeight={status || isToday ? 'bold' : 'normal'}
+                                // Add a border for today's date
+                                border={isToday ? '2px solid #3b82f6' : 'none'}
                                 mx="auto"
                             >
                                 {day}
@@ -410,18 +413,27 @@ export const CalendarSection = ({ upcomingAppointments = [], pastAppointments = 
                     })}
                 </Box>
 
+                {/* Legend */}
                 <Box mt={4} display="flex" flexDirection="column" gap={1}>
-                    <Box display="flex" alignItems="center" gap={1}>
-                        <Box width={12} height={12} borderRadius="50%" bgcolor="green" />
-                        <Typography variant="body2">Completed Appointments</Typography>
+                    <Box display="flex" alignItems="center" gap={1.5}>
+                        <Box width={12} height={12} borderRadius="50%" sx={{ backgroundColor: '#93c5fd' }} />
+                        <Typography variant="body2">Upcoming Appointment</Typography>
                     </Box>
-                    <Box display="flex" alignItems="center" gap={1}>
-                        <Box width={12} height={12} borderRadius="50%" bgcolor="blue" />
-                        <Typography variant="body2">Upcoming Appointments</Typography>
+                    <Box display="flex" alignItems="center" gap={1.5}>
+                        <Box width={12} height={12} borderRadius="50%" sx={{ backgroundColor: '#6ee7b7' }} />
+                        <Typography variant="body2">Past Appointment</Typography>
                     </Box>
-                    <Box display="flex" alignItems="center" gap={1}>
-                        <Box width={12} height={12} borderRadius="50%" bgcolor="red" />
-                        <Typography variant="body2">Surgery Day</Typography>
+                    <Box display="flex" alignItems="center" gap={1.5}>
+                        <Box
+                            width={12}
+                            height={12}
+                            borderRadius="50%"
+                            sx={{
+                                backgroundColor: 'transparent',
+                                border: '2px solid #3b82f6', 
+                            }}
+                        />
+                        <Typography variant="body2">Today</Typography>
                     </Box>
                 </Box>
             </CardContent>
