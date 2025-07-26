@@ -270,7 +270,7 @@ function MainContent({ activeSection, user, appointments, isSidebarOpen, isMobil
       case "recovery":
         return <RecoverySection />
       case "documents":
-        return <DocumentsSection />
+        return <DocumentsSection user={user} />
       case "journey":
         return <JourneySection />
       case "postcare":
