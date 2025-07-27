@@ -7,6 +7,9 @@
     "@ionic/react": "^6.7.0",
     "@mui/icons-material": "^5.11.16",
     "@mui/material": "^5.13.3",
+    "@radix-ui/react-avatar": "^1.1.10",
+    "@radix-ui/react-progress": "^1.1.7",
+    "@radix-ui/react-slot": "^1.2.3",
     "@reduxjs/toolkit": "^2.5.1",
     "@types/uuid": "^9.0.2",
     "date-fns": "^4.1.0",
@@ -26,7 +29,6 @@
     "react-scripts": "^5.0.1",
     "redux": "^5.0.1",
     "resend": "^4.0.1",
-    "tailwindcss-animate": "^1.0.7",
     "uuid": "^9.0.0",
     "zustand": "^4.5.6"
   },

@@ -58,7 +58,7 @@ const Sidebar = () => {
         { name: 'Plan Journey', path: '/plan-journey'},
         { name: 'Treatment', path: '/treatment', icon: <DashboardIcon /> },
         { name: 'Contact Us', path: '/contact' },
-        { name: 'Doctor? Here!', path: '/doctor-login' }
+        { name: 'Doctor? Here!', path: '/doctor-dashboard' }
     ];
 
     // Items for the hamburger menu

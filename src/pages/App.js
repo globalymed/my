@@ -13,6 +13,7 @@ import NewLoginPage from './NewLoginPage.jsx';
 import NewSignupPage from './NewSignupPage.jsx';
 import ConfirmEmail from './ConfirmEmail.jsx';
 import DoctorLoginPage from '../components/DoctorLoginPage';
+import { DoctorDashboard as NewDoctorDashboard } from '../components/DoctorDashboard/DoctorDashboard.jsx';
 
 const AIChat = React.lazy(() => import('../components/AIChatFinal'));
 const ClinicRecommender = React.lazy(() => import('../components/ClinicRecommenderEnhanced'));
@@ -32,10 +33,9 @@ import PrivacyPolicy from './PrivacyPolicy.jsx';
 import CompareCost from './compareCost.jsx';
 import PostHogPageViewTracker from '../utils/PostHogPageViewTracker';
 
-// Create a component to render the doctor dashboard in an iframe
+// Create a component to render the doctor dashboard with logout functionality
 const DoctorDashboard = () => {
   const navigate = useNavigate();
-  const theme = useTheme();
 
   // Function to handle doctor logout
   const handleLogout = () => {
@@ -48,18 +48,9 @@ const DoctorDashboard = () => {
   };
 
   return (
-    <Box sx={{ width: '100%', height: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* Dashboard iframe - now takes full height */}
-      <iframe
-        src="https://dd-green-kappa.vercel.app/"
-        title="Doctor Dashboard"
-        style={{
-          width: '100%',
-          height: '100%',
-          border: 'none',
-          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-        }}
-      />
+    <Box sx={{ width: '100%', height: '100vh', position: 'relative' }}>
+      {/* New Doctor Dashboard JSX Component */}
+      <NewDoctorDashboard />
 
       {/* Logout button positioned absolutely in bottom left */}
       <Button
