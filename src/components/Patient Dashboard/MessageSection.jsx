@@ -38,6 +38,8 @@ import {
   Circle
 } from "@mui/icons-material"
 
+import { addSupportMessage } from '../../firebase';
+
 const StyledTabs = styled(Tabs)(({ theme }) => ({
   '& .MuiTabs-flexContainer': {
     backgroundColor: '#f5f5f5',
@@ -63,11 +65,16 @@ const StyledTabs = styled(Tabs)(({ theme }) => ({
   }
 }));
 
-const MessagesSection = () => {
+const MessagesSection = ({user}) => {
   const [newMessage, setNewMessage] = useState("")
   const [activeTab, setActiveTab] = useState(0)
   const [supportCategory, setSupportCategory] = useState("")
   const [supportMessage, setSupportMessage] = useState("")
+  const [supportQueries, setSupportQueries] = useState([]);  
+
+  
+
+  // console.log("User Data in messageSection:", user);
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue)
@@ -326,7 +333,29 @@ const MessagesSection = () => {
     </Grid>
   )
 
-  const Support = () => (
+  const Support = () => {
+  const handleSubmit = async () => {
+  if (supportMessage.trim() === "" || supportCategory === "") {
+    alert("Please enter a question and select a category.");
+    return;
+  }
+  console.log('Submitting:', { supportMessage, supportCategory });
+
+  try {
+    const supportId = await addSupportMessage(user.id, supportMessage, "pending");
+    if (supportId) {
+      console.log(`Support message created with ID: ${supportId}`);
+      alert("Your question has been submitted successfully!");
+      setSupportCategory("");
+      setSupportMessage("");
+    }
+  } catch (error) {
+    console.error("Failed to submit the query:", error);
+    alert("Failed to submit. Please try again later.");
+  }
+}
+
+  return (
     <Grid container spacing={3}>
       <Grid item xs={12} md={6}>
         <Card>
@@ -359,13 +388,14 @@ const MessagesSection = () => {
                 value={supportMessage}
                 onChange={(e) => setSupportMessage(e.target.value)}
               />
-              <Button variant="contained" fullWidth>
+              <Button variant="contained" fullWidth onClick={handleSubmit}>
                 Submit Question
               </Button>
             </Box>
           </CardContent>
         </Card>
       </Grid>
+
 
       <Grid item xs={12} md={6}>
         <Card>
@@ -444,6 +474,7 @@ const MessagesSection = () => {
       </Grid>
     </Grid>
   )
+}
 
   const Emergency = () => (
     <Card>
