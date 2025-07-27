@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./DoctorDashboard.css";
 import {
   Calendar,
@@ -18,11 +18,13 @@ import {
 } from "lucide-react";
 import { DashboardContent } from "./components/dashboard-content";
 import AppointmentsContent from "./components/AppointmentSection.jsx";
-import { PatientsContent } from "./components/patients-content";
+import PatientsContent from "./components/PatientSection.jsx";
 import { DocumentsContent } from "./components/documents-content";
 import { InvoicesContent } from "./components/invoices-content";
 import { AvailabilityContent } from "./components/availability-content";
 import { AIAssistantContent } from "./components/ai-assistant-content";
+import { addDoc } from "firebase/firestore";
+import { addDoctorIdToAllAppointments, getAppointments, updateAppointmentDoctor } from "../../firebase";
 
 const sidebarItems = [
   { icon: LayoutDashboard, label: "Dashboard" },
@@ -90,6 +92,70 @@ export function DoctorDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("Dashboard");
+  const [doctor, setDoctor] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const checkDoctorAuth = async () => {
+      setLoading(true);
+      setError("");
+      try {
+        // 1. Get doctor data string from localStorage
+        const doctorDataString = localStorage.getItem("doctorData");
+
+        if (doctorDataString) {
+          const parsedDoctor = JSON.parse(doctorDataString);
+
+          // 2. Use the ID to get the full, updated document from Firestore
+          if (parsedDoctor.id) {
+            try {
+              // Note: Assumes doctors are in a 'doctors' collection.
+              // Change to 'users' if that's where they are stored.
+              const doctorDocRef = doc(db, "doctors", parsedDoctor.id);
+              const doctorDocSnap = await getDoc(doctorDocRef);
+
+              if (doctorDocSnap.exists()) {
+                // 3. Merge localStorage data with fresh data from Firestore
+                const fullDoctorDetails = {
+                  id: parsedDoctor.id,
+                  ...doctorDocSnap.data(),
+                };
+                setDoctor(fullDoctorDetails);
+
+                // 4. (Optional) Fetch additional data related to the doctor
+                fetchDoctorSchedule(fullDoctorDetails.id);
+              } else {
+                // Fallback to localStorage data if Firestore doc not found
+                setDoctor(parsedDoctor);
+              }
+            } catch (err) {
+              console.error("Error fetching doctor from Firestore:", err);
+              setDoctor(parsedDoctor); // Use localStorage data as a fallback
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Error parsing doctor data:", err);
+        setError("Session error. Please log in again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkDoctorAuth();
+  }, [refreshKey]); // This hook will re-run when `refreshKey` changes
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!doctor) {
+    navigate("/login");
+    return null;
+  }
+
 
   return (
     <div className="doctor-dashboard">
@@ -193,8 +259,8 @@ export function DoctorDashboard() {
         {/* Header */}
         <header className="doctor-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <button 
-              className="btn btn-ghost" 
+            <button
+              className="btn btn-ghost"
               style={{ display: 'block' }}
               onClick={() => setIsMobileMenuOpen(true)}
             >
@@ -221,7 +287,7 @@ export function DoctorDashboard() {
               <span style={{ display: window.innerWidth > 640 ? 'inline' : 'none' }}>Health Assistant</span>
               <span style={{ display: window.innerWidth <= 640 ? 'inline' : 'none' }}>Assistant</span>
             </button>
-            <div style={{ 
+            <div style={{
               display: window.innerWidth > 768 ? 'flex' : 'none',
               alignItems: 'center',
               gap: '0.5rem',
@@ -260,8 +326,8 @@ export function DoctorDashboard() {
         {/* Dashboard Content */}
         <main className="doctor-content">
           {activeSection === "Dashboard" && <DashboardContent />}
-          {activeSection === "Appointments" && <AppointmentsContent />}
-          {activeSection === "Patients" && <PatientsContent />}
+          {activeSection === "Appointments" && <AppointmentsContent doctor={doctor}  />}
+          {activeSection === "Patients" && <PatientsContent doctor={doctor} />}
           {activeSection === "Documents" && <DocumentsContent />}
           {activeSection === "Invoices" && <InvoicesContent />}
           {activeSection === "Availability" && <AvailabilityContent />}

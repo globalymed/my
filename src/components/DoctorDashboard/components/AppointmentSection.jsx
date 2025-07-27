@@ -32,7 +32,7 @@ import {
   Cancel as CancelIcon,
 } from '@mui/icons-material';
 
-import { db, getAppointments, classifyAppointments } from '../../../firebase.js';
+import { db, getAppointments, classifyAppointments, getAppointmentsByDoctorId } from '../../../firebase.js';
 import { collection, getDocs } from "firebase/firestore";
 
 // Custom hook for managing dropdown menus
@@ -150,7 +150,8 @@ const AppointmentCard = ({ appointment }) => {
 
 
 // Main App Component
-const DoctorAppointmentSection = () => {
+const DoctorAppointmentSection = ({doctor}) => {
+  console.log("DoctorAppointmentSection rendered with doctor:", doctor);
   const [searchQuery, setSearchQuery] = useState("");
   const [tabValue, setTabValue] = useState(0);
   const [allAppointments, setAllAppointments] = useState([]);
@@ -166,7 +167,7 @@ const DoctorAppointmentSection = () => {
       try {
         setIsLoading(true);
         setError(null);
-        const data = await getAppointments();
+        const data = await getAppointmentsByDoctorId(doctor.id);
         // console.log(data);
         setAllAppointments(data); // Keep the full list
 
