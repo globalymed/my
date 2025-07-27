@@ -902,6 +902,74 @@ export const fixAllAppointmentUserIds = async () => {
   }
 };
 
+// Classify appointments into today, upcoming, and past
+export const classifyAppointments = (appointments) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // Normalize to the start of the current day
+
+  const todayAppointments = [];
+  const upcomingAppointments = [];
+  const pastAppointments = [];
+
+  appointments.forEach(appt => {
+    // The appointmentDate should already be a JS Date object from getAppointments.
+    // This check remains as a safeguard.
+    const appointmentDate = appt.appointmentDate instanceof Date ? appt.appointmentDate : new Date(appt.appointmentDate);
+    
+    if (isNaN(appointmentDate.getTime())) {
+      console.warn("Skipping appointment with invalid date:", appt.id);
+      return; // Skip this appointment if the date is invalid
+    }
+
+    const apptDateNormalized = new Date(appointmentDate);
+    apptDateNormalized.setHours(0, 0, 0, 0); // Normalize the appointment date for comparison
+
+    if (apptDateNormalized.getTime() === today.getTime()) {
+      todayAppointments.push(appt);
+    } else if (apptDateNormalized > today) {
+      upcomingAppointments.push(appt);
+    } else {
+      pastAppointments.push(appt);
+    }
+  });
+
+  // FIX: Sort by directly comparing the Date objects.
+  // The .toDate() method is not needed here as they are already JS Dates.
+  upcomingAppointments.sort((a, b) => a.appointmentDate - b.appointmentDate);
+  pastAppointments.sort((a, b) => b.appointmentDate - a.appointmentDate);
+
+
+  return { todayAppointments, upcomingAppointments, pastAppointments };
+};
+
+// Function to fetch all appointments from Firestore
+export const getAppointments = async () => {
+  try {
+    const appointmentsCollection = collection(db, 'appointments');
+    const appointmentsSnapshot = await getDocs(appointmentsCollection);
+    if (appointmentsSnapshot.empty) {
+      console.log('No appointments found in database.');
+      return [];
+    }
+    // Convert Firestore timestamp to JS Date if necessary
+    const appointmentsList = appointmentsSnapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        // Firestore timestamps need to be converted to JS Date objects
+        appointmentDate: data.appointmentDate?.toDate ? data.appointmentDate.toDate() : new Date(data.appointmentDate)
+      };
+    });
+    // console.log('Fetched appointments:', appointmentsList);
+    return appointmentsList;
+  } catch (error) {
+    console.error('Error fetching appointments:', error);
+    // In a real app, you'd want to show a user-facing error.
+    throw error;
+  }
+};
+
 // ====== Doctor Management Functions ======
 
 // Get all doctors

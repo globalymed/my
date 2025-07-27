@@ -17,7 +17,7 @@ import {
   Clock,
 } from "lucide-react";
 import { DashboardContent } from "./components/dashboard-content";
-import { AppointmentsContent } from "./components/appointments-content";
+import AppointmentsContent from "./components/AppointmentSection.jsx";
 import { PatientsContent } from "./components/patients-content";
 import { DocumentsContent } from "./components/documents-content";
 import { InvoicesContent } from "./components/invoices-content";
