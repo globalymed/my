@@ -21,7 +21,7 @@ import AppointmentsContent from "./components/AppointmentSection.jsx";
 import PatientsContent from "./components/PatientSection.jsx";
 import  DocumentsContent  from "./components/documents-content";
 import { InvoicesContent } from "./components/invoices-content";
-import { AvailabilityContent } from "./components/availability-content";
+import AvailabilityContent from "./components/availability-content";
 import { AIAssistantContent } from "./components/ai-assistant-content";
 import { addDoc } from "firebase/firestore";
 import { addDoctorIdToAllAppointments, getAppointments, updateAppointmentDoctor } from "../../firebase";
