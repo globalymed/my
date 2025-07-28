@@ -32,62 +32,7 @@ import {
 } from "@mui/icons-material";
 import { blue, green, grey, purple, red } from "@mui/material/colors";
 
-import { getAllPatients, getAllUsers } from "../../../firebase";
-
-const patients = [
-  {
-    id: 1,
-    name: "John Smith",
-    age: 45,
-    gender: "Male",
-    phone: "+1 234 567 8900",
-    email: "john.smith@email.com",
-    address: "123 Main St, City",
-    lastVisit: "2024-01-15",
-    condition: "Hypertension",
-    status: "active",
-    avatar: "/placeholder.svg?height=40&width=40",
-  },
-  {
-    id: 2,
-    name: "Sarah Johnson",
-    age: 32,
-    gender: "Female",
-    phone: "+1 234 567 8901",
-    email: "sarah.j@email.com",
-    address: "456 Oak Ave, City",
-    lastVisit: "2024-01-10",
-    condition: "Diabetes",
-    status: "active",
-    avatar: "/placeholder.svg?height=40&width=40",
-  },
-  {
-    id: 3,
-    name: "Mike Wilson",
-    age: 58,
-    gender: "Male",
-    phone: "+1 234 567 8902",
-    email: "mike.w@email.com",
-    address: "789 Pine St, City",
-    lastVisit: "2023-12-20",
-    condition: "Arthritis",
-    status: "inactive",
-    avatar: "/placeholder.svg?height=40&width=40",
-  },
-  {
-    id: 4,
-    name: "Emily Davis",
-    age: 28,
-    gender: "Female",
-    phone: "+1 234 567 8903",
-    email: "emily.d@email.com",
-    address: "321 Elm St, City",
-    lastVisit: "2024-01-18",
-    condition: "Asthma",
-    status: "active",
-    avatar: "/placeholder.svg?height=40&width=40",
-  },
-];
+import { getAllPatients, getAllUsers, getAppointmentsByDoctorId } from "../../../firebase";
 
 const PatientActions = () => {
   // Ensure useState is called correctly and explicitly typed.
@@ -126,46 +71,123 @@ const PatientActions = () => {
   );
 };
 
+const getStatusChipProps = (status) => {
+  switch (status) {
+    case "active":
+      return {
+        sx: { backgroundColor: green[100], color: green[800] },
+      };
+    case "inactive":
+      return {
+        sx: { backgroundColor: grey[200], color: grey[800] },
+      };
+    default:
+      return {
+        sx: { backgroundColor: grey[200], color: grey[800] },
+      };
+  }
+};
 
-const DoctorPatientSection = ({doctor}) => {
+
+const DoctorPatientSection = ({ doctor }) => {
   // console.log("DoctorPatientSection rendered with doctor:", doctor);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const getStatusChipProps = (status) => {
-    switch (status) {
-      case "active":
-        return {
-          sx: { backgroundColor: green[100], color: green[800] },
-        };
-      case "inactive":
-        return {
-          sx: { backgroundColor: grey[200], color: grey[800] },
-        };
-      default:
-        return {
-          sx: { backgroundColor: grey[200], color: grey[800] },
-        };
-    }
-  };
+
 
   // Fetch users from Firebase
   const [users, setUsers] = useState([]);
+  const [allAppointments, setAllAppointments] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const [patients, setPatients] = useState([]);
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         const fetchedUsers = await getAllUsers();
         console.log("Fetched users:", fetchedUsers);
-       setUsers(fetchedUsers);
+        setUsers(fetchedUsers);
       } catch (error) {
         console.error("Error fetching users:", error);
       }
     };
 
-    fetchUsers();
+    const fetchAppointments = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const data = await getAppointmentsByDoctorId(doctor.id);
+        console.log("Fetched appointments:", data);
+        setAllAppointments(data); // Keep the full list
+      } catch (error) {
+        console.error("Error fetching appointments:", error);
+        setError("Failed to fetch appointments");
+      }
+      setIsLoading(false);
+    }
 
-    // console.log("Users fetched:", users);
+    fetchUsers();
+    fetchAppointments();
   }, []);
+
+  useEffect(() => {
+    const buildPatientsList = () => {
+      if (!users || !allAppointments || users.length === 0 || allAppointments.length === 0) return;
+
+      const now = new Date();
+      const patientMap = new Map();
+
+      allAppointments.forEach((appointment) => {
+        const {
+          patientName,
+          patientEmail,
+          appointmentDate,
+          treatmentType,
+          status,
+        } = appointment;
+
+        if (!patientEmail || patientMap.has(patientEmail)) return;
+
+        const patient = users.find((user) => user.email === patientEmail);
+        if (!patient) return;
+
+
+        const pastAppointments = allAppointments
+          .filter(
+            (appt) =>
+              appt.patientEmail === patientEmail &&
+              new Date(appt.appointmentDate) < now &&
+              appt.status === "completed"
+          )
+          .sort((a, b) => new Date(b.appointmentDate) - new Date(a.appointmentDate));
+
+        const lastVisit = pastAppointments.length > 0 ? pastAppointments[0] : null;
+
+        const patientData = {
+          id: patient.id,
+          name: `${patient.firstName || ""} ${patient.lastName || ""}`.trim() || patientName,
+          age: patient.age || "",
+          gender: patient.gender || "",
+          phone: patient.phone || "",
+          email: patient.email || patientEmail,
+          address: `${patient.city || ""}, ${patient.country || ""}`.replace(/^,|,$/g, ""),
+          lastVisit: lastVisit?.appointmentDate || null,
+          condition: lastVisit?.treatmentType || "",
+          status: status || "",
+        };
+
+        patientMap.set(patientEmail, patientData);
+      });
+
+      const uniquePatients = Array.from(patientMap.values());
+      console.log("Unique patients built:", uniquePatients);
+      setPatients(uniquePatients);
+    };
+
+    buildPatientsList();
+  }, [users, allAppointments]);
 
   return (
     <Stack spacing={3}>
@@ -279,72 +301,7 @@ const DoctorPatientSection = ({doctor}) => {
         <CardContent>
           <Stack spacing={2}>
             {patients.map((patient) => (
-              <Paper
-                key={patient.id}
-                variant="outlined"
-                sx={{
-                  p: 2,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  transition: "background-color 0.3s",
-                  "&:hover": {
-                    bgcolor: grey[50],
-                  },
-                }}
-              >
-                <Stack direction="row" alignItems="center" spacing={2} flex={1} minWidth={0}>
-                  <Avatar
-                    src={patient.avatar || "/placeholder.svg"}
-                    sx={{ width: 48, height: 48 }}
-                  >
-                    {patient.name.split(" ").map((n) => n[0]).join("")}
-                  </Avatar>
-                  <Box minWidth={0}>
-                    <Typography fontWeight="medium">{patient.name}</Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {patient.age} years • {patient.gender}
-                    </Typography>
-                    <Stack direction="row" spacing={2} mt={0.5} color="text.secondary" flexWrap="wrap">
-                      <Stack direction="row" alignItems="center" spacing={0.5}>
-                        <Phone sx={{ fontSize: 14 }} />
-                        <Typography variant="caption">{patient.phone}</Typography>
-                      </Stack>
-                      <Stack direction="row" alignItems="center" spacing={0.5}>
-                        <Mail sx={{ fontSize: 14 }} />
-                        <Typography variant="caption">{patient.email}</Typography>
-                      </Stack>
-                    </Stack>
-                  </Box>
-                </Stack>
-
-                <Box textAlign="center" mx={2} display={{ xs: "none", md: "block" }}>
-                  <Typography variant="body2" fontWeight="medium">{patient.condition}</Typography>
-                  <Typography variant="caption" color="text.secondary">Primary Condition</Typography>
-                  <Chip
-                    label={patient.status}
-                    size="small"
-                    {...getStatusChipProps(patient.status)}
-                    sx={{ ...getStatusChipProps(patient.status).sx, mt: 0.5, textTransform: 'capitalize' }}
-                  />
-                </Box>
-
-                <Box textAlign="right" mx={2} display={{ xs: "none", lg: "block" }}>
-                  <Typography variant="body2" fontWeight="medium">Last Visit</Typography>
-                  <Typography variant="caption" color="text.secondary">{patient.lastVisit}</Typography>
-                  <Stack direction="row" alignItems="center" spacing={0.5} mt={0.5} color="text.secondary" justifyContent="flex-end">
-                    <LocationOn sx={{ fontSize: 14 }} />
-                    <Typography variant="caption" noWrap sx={{ maxWidth: 130 }}>{patient.address}</Typography>
-                  </Stack>
-                </Box>
-
-                <Stack direction="row" alignItems="center" spacing={0.5}>
-                  <IconButton size="small"><Phone /></IconButton>
-                  <IconButton size="small"><Mail /></IconButton>
-                  <IconButton size="small"><CalendarToday /></IconButton>
-                  <PatientActions />
-                </Stack>
-              </Paper>
+              <PatientCard key={patient.email} patient={patient} />
             ))}
           </Stack>
         </CardContent>
@@ -352,5 +309,109 @@ const DoctorPatientSection = ({doctor}) => {
     </Stack>
   );
 }
+
+const PatientCard = ({ patient }) => {
+  const initials = patient.name
+    ?.split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase();
+
+  return (
+    <Paper
+      variant="outlined"
+      sx={{
+        p: 2,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        transition: "background-color 0.3s",
+        "&:hover": {
+          bgcolor: grey[50],
+        },
+      }}
+    >
+      {/* Left Info */}
+      <Stack direction="row" alignItems="center" spacing={2} flex={1} minWidth={0}>
+        <Avatar src={patient.avatar || "/placeholder.svg"} sx={{ width: 48, height: 48 }}>
+          {initials}
+        </Avatar>
+        <Box minWidth={0}>
+          <Typography fontWeight="medium">{patient.name && `${patient.name}`}</Typography>
+          <Typography variant="body2" color="text.secondary">
+            {patient.age && `${patient.age} years`}
+            {patient.age && patient.gender && " • "}
+            {patient.gender && patient.gender}
+          </Typography>
+          <Stack direction="row" spacing={2} mt={0.5} color="text.secondary" flexWrap="wrap">
+            <Stack direction="row" alignItems="center" spacing={0.5}>
+              <Phone sx={{ fontSize: 14 }} />
+              <Typography variant="caption">{patient.phone}</Typography>
+            </Stack>
+            <Stack direction="row" alignItems="center" spacing={0.5}>
+              <Mail sx={{ fontSize: 14 }} />
+              <Typography variant="caption">{patient.email}</Typography>
+            </Stack>
+          </Stack>
+        </Box>
+      </Stack>
+
+      {/* Center Condition */}
+      <Box textAlign="center" mx={2} display={{ xs: "none", md: "block" }}>
+        <Typography variant="body2" fontWeight="medium">
+          {patient.condition}
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          Primary Condition
+        </Typography>
+        <Chip
+          size="small"
+          {...getStatusChipProps(patient.status)}
+          sx={{ mt: 0.5 }}
+        />
+      </Box>
+
+      {/* Right Last Visit & Location */}
+      <Box textAlign="right" mx={2} display={{ xs: "none", lg: "block" }}>
+        {patient.lastVisit && new Date(patient.lastVisit).toString() !== "Invalid Date" && (
+          <>
+            <Typography variant="body2" fontWeight="medium">Last Visit</Typography>
+            <Typography variant="caption" color="text.secondary">
+              {new Date(patient.lastVisit).toLocaleDateString()}
+            </Typography>
+          </>
+        )}
+
+        <Stack direction="row" alignItems="center" spacing={0.5} mt={0.5} color="text.secondary" justifyContent="flex-end">
+          <LocationOn sx={{ fontSize: 14 }} />
+          <Typography variant="caption" noWrap sx={{ maxWidth: 130 }}>
+            {patient.address}
+          </Typography>
+        </Stack>
+      </Box>
+
+      {/* Actions */}
+      <Stack direction="row" alignItems="center" spacing={0.5}>
+        {patient.phone && (
+          <a href={`tel:${patient.phone}`} style={{ textDecoration: "none" }}>
+            <IconButton size="small">
+              <Phone />
+            </IconButton>
+          </a>
+        )}
+
+        {patient.email && (
+          <a href={`mailto:${patient.email}`} style={{ textDecoration: "none" }}>
+            <IconButton size="small">
+              <Mail />
+            </IconButton>
+          </a>
+        )}
+        <IconButton size="small"><CalendarToday /></IconButton>
+        <PatientActions />
+      </Stack>
+    </Paper>
+  );
+};
 
 export default DoctorPatientSection;
