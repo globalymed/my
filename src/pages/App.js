@@ -51,27 +51,6 @@ const DoctorDashboard = () => {
     <Box sx={{ width: '100%', height: '100vh', position: 'relative' }}>
       {/* New Doctor Dashboard JSX Component */}
       <NewDoctorDashboard />
-
-      {/* Logout button positioned absolutely in bottom left */}
-      <Button
-        variant="contained"
-        color="error"
-        onClick={handleLogout}
-        startIcon={<LogoutIcon />}
-        sx={{
-          position: 'absolute',
-          bottom: '40px',
-          left: '70px',
-          textTransform: 'none',
-          bgcolor: 'error.main',
-          zIndex: 1000,
-          '&:hover': {
-            bgcolor: 'error.dark',
-          }
-        }}
-      >
-        Logout
-      </Button>
     </Box>
   );
 };
