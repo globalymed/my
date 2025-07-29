@@ -1244,6 +1244,41 @@ export const createWeeklyAvailability = async (doctorId, clinicId, dayOfWeek, sl
   }
 };
 
+// Function to add a support message
+export const addSupportMessage = async (userId, question, status = 'In Progress') => {
+  try {
+    const usersCollection = collection(db, 'users');
+    const q = query(usersCollection, where('__name__', '==', userId));
+    const userSnapshot = await getDocs(q);
+
+    if (userSnapshot.empty) {
+      console.error('User not found!');
+      return null;
+    }
+
+    const userData = userSnapshot.docs[0].data();
+
+    const supportData = {
+      firstName: userData.firstName,
+      lastName: userData.lastName,
+      email: userData.email,
+      phone: userData.phone,
+      question,
+      status,
+      createdAt: serverTimestamp()
+    };
+
+    const supportCollection = collection(db, 'queries/patientdashboard/supportqueries');
+    const supportRef = await addDoc(supportCollection, supportData);
+
+    console.log(`Added support message with ID: ${supportRef.id}`);
+    return supportRef.id;
+  } catch (error) {
+    console.error('Error adding support message:', error);
+    return null;
+  }
+};
+
 // ====== Doctor Appointment Functions ======
 
 // Get appointments for a doctor

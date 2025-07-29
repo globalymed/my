@@ -276,7 +276,7 @@ function MainContent({ activeSection, user, appointments, isSidebarOpen, isMobil
       case "postcare":
         return <PostCareSection />
       case "messages":
-        return <MessagesSection />
+        return <MessagesSection user={user} />
       case "profile":
         return <ProfileSection user={user} />
       case "notifications":
