@@ -372,44 +372,49 @@ const DocumentsSection = ({ user }) => {
             {/* Document Viewer Modal */}
             {viewingDocUrl && (
                 <Box
+                    // This is the semi-transparent backdrop
                     sx={{
                         position: 'fixed',
                         top: '50%',
                         left: '50%',
                         transform: 'translate(-50%, -50%)',
-                        width: '80%',
-                        height: '80%',
-                        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                        borderRadius: '8px',
+                        width: '80vw',
+                        height: '80vh',
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
                         backdropFilter: 'blur(8px)',
                         zIndex: 1300,
                         display: 'flex',
                         flexDirection: 'column',
-                        overflow: 'hidden',
-                        borderRadius: '12px', // optional, for aesthetics
+                        p: 2,
                     }}
                 >
-                    <Box
-                        sx={{
-                            display: 'flex',
-                            justifyContent: 'flex-end',
-                            padding: '8px 16px',
-                            zIndex: 1301,
-                        }}
-                    >
+                    {/* Close Button */}
+                    <Box sx={{ textAlign: 'right' }}>
                         <IconButton onClick={handleCloseViewer} sx={{ color: 'white' }}>
-                            <Close />
+                            <Close fontSize="large" />
                         </IconButton>
                     </Box>
-                    <Box sx={{ flex: 1, overflow: 'hidden' }}>
-                        <iframe
+
+                    {/* Image Container - Replaces the iframe */}
+                    <Box
+                        sx={{
+                            flex: 1,
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            overflow: 'hidden' // Prevents any potential overflow
+                        }}
+                    >
+                        <img
                             src={viewingDocUrl}
-                            title="Document Viewer"
+                            alt="Document Preview"
                             style={{
-                                width: '100%',
-                                height: '100%',
-                                border: 'none',
+                                maxWidth: '100%',
+                                maxHeight: '100%',
+                                objectFit: 'contain', // This is the magic property
+                                borderRadius: '8px' // Optional: for aesthetics
                             }}
-                            sandbox="allow-scripts allow-same-origin"
                         />
                     </Box>
                 </Box>

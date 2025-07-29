@@ -93,7 +93,7 @@ const navigationItems = [
   { title: "Post-Care Plan", icon: <LocalPharmacy />, id: "postcare" },
   { title: "Messages & Support", icon: <Message />, id: "messages" },
   { title: "My Profile", icon: <Person />, id: "profile" },
-  { title: "Notifications", icon: <Notifications />, id: "notifications" },
+  // { title: "Notifications", icon: <Notifications />, id: "notifications" },
 ]
 
 function AppSidebar({
@@ -131,34 +131,34 @@ function AppSidebar({
       <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         <Toolbar sx={{ backgroundColor: 'transparent', justifyContent: 'space-evenly' }}>
           {sidebarOpen && (
-        <a href="https://medyatra.space" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <Avatar
-              src="/logo.png"
-              alt="MedYatra Logo"
-              sx={{ width: 40, height: 40, mr: 1 }}
-              imgProps={{
-                style: {
-                  objectFit: 'contain',
-                  objectPosition: 'center',
-                  transform: 'scale(1.5)',
-                },
-              }}
-            />
-            <Box>
-              <Typography variant="h6" component="div" sx={{ fontWeight: 700, color: 'black', lineHeight: 1.2 }}>
-                MedYatra
-              </Typography>
-              <Typography
-                variant="caption"
-                component="div"
-                sx={{ fontWeight: 400, color: 'black', fontSize: '0.7rem' }}
-              >
-                Patient Dashboard
-              </Typography>
-            </Box>
-          </Box>
-        </a>
+            <a href="https://medyatra.space" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Avatar
+                  src="/logo.png"
+                  alt="MedYatra Logo"
+                  sx={{ width: 40, height: 40, mr: 1 }}
+                  imgProps={{
+                    style: {
+                      objectFit: 'contain',
+                      objectPosition: 'center',
+                      transform: 'scale(1.5)',
+                    },
+                  }}
+                />
+                <Box>
+                  <Typography variant="h6" component="div" sx={{ fontWeight: 700, color: 'black', lineHeight: 1.2 }}>
+                    MedYatra
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    component="div"
+                    sx={{ fontWeight: 400, color: 'black', fontSize: '0.7rem' }}
+                  >
+                    Patient Dashboard
+                  </Typography>
+                </Box>
+              </Box>
+            </a>
 
           )}
           <IconButton onClick={onSidebarToggle}>
@@ -310,7 +310,7 @@ export function PatientDashboard({ user, appointments, onLogout, error, loading 
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [activeSection, setActiveSection] = React.useState("home")
   const [sidebarOpen, setSidebarOpen] = React.useState(!isMobile);
-  
+
   const drawerWidth = 240
   const collapsedDrawerWidth = 60
 
@@ -318,7 +318,11 @@ export function PatientDashboard({ user, appointments, onLogout, error, loading 
     setSidebarOpen(!sidebarOpen);
   }
 
- return (
+  const handleNotificationClick = () => {
+    setActiveSection('notifications');
+  };
+
+  return (
     <ThemeProvider theme={theme}>
       <Box sx={{ display: "flex" }}>
         <CssBaseline />
@@ -363,7 +367,7 @@ export function PatientDashboard({ user, appointments, onLogout, error, loading 
                 color="inherit"
                 aria-label="menu"
                 sx={{
-                  display: isMobile || !sidebarOpen ? 'block' : 'none', 
+                  display: isMobile || !sidebarOpen ? 'block' : 'none',
                 }}
               >
                 <MenuIcon />
@@ -432,13 +436,20 @@ export function PatientDashboard({ user, appointments, onLogout, error, loading 
               >
                 Logout
               </Button>
-              <IconButton color="inherit" sx={{
-                backgroundColor: '#F0F2F5'
-              }}>
+
+              <IconButton
+                color="inherit"
+                onClick={handleNotificationClick} // Use the handler from props
+                sx={{
+                  backgroundColor: '#F0F2F5', // Or a theme color like 'grey.100'
+                  color: '#333' // Set icon color explicitly if needed
+                }}
+              >
                 <Badge badgeContent={4} color="error">
-                  <Notifications color="#F0F2F5" />
+                  <Notifications />
                 </Badge>
               </IconButton>
+
               <Avatar sx={{ bgcolor: 'secondary.main' }}>
                 {user?.firstName?.charAt(0) || user?.name?.charAt(0) || 'U'}
               </Avatar>
