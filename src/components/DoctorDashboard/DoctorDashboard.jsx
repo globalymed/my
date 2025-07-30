@@ -264,7 +264,7 @@ export function DoctorDashboard() {
         </header>
 
         {/* Search Bar */}
-        <div className="doctor-search-bar">
+        {/* <div className="doctor-search-bar">
           <div style={{ position: 'relative', maxWidth: '24rem' }}>
             <Search style={{
               position: 'absolute',
@@ -283,7 +283,7 @@ export function DoctorDashboard() {
               style={{ paddingLeft: '2.5rem' }}
             />
           </div>
-        </div>
+        </div> */}
 
         {/* Dashboard Content */}
         <main className="doctor-content">

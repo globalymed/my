@@ -16,7 +16,9 @@ import {
   Menu,
   MenuItem,
   Stack,
-  styled
+  styled,
+  ListItemIcon,
+  ListItemText
 } from '@mui/material';
 import {
   Add as Plus,
@@ -30,6 +32,7 @@ import {
   AccessTime as Clock,
   CheckCircleOutline as CheckCircleIcon,
   Cancel as CancelIcon,
+  Lens as StatusIndicatorIcon,
 } from '@mui/icons-material';
 
 import { db, getAppointments, classifyAppointments, getAppointmentsByDoctorId } from '../../../firebase.js';
@@ -47,6 +50,7 @@ const useMenu = () => {
   };
   return { anchorEl, open, handleClick, handleClose };
 };
+
 
 const StyledTabs = styled(Tabs)(({ theme }) => ({
   '& .MuiTabs-flexContainer': {
@@ -150,17 +154,30 @@ const AppointmentCard = ({ appointment }) => {
 
 
 // Main App Component
-const DoctorAppointmentSection = ({doctor}) => {
-  console.log("DoctorAppointmentSection rendered with doctor:", doctor);
+const DoctorAppointmentSection = ({ doctor }) => {
+  // console.log("DoctorAppointmentSection rendered with doctor:", doctor);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [tabValue, setTabValue] = useState(0);
   const [allAppointments, setAllAppointments] = useState([]);
   const [todayAppointments, setTodayAppointments] = useState([]);
   const [upcomingAppointments, setUpcomingAppointments] = useState([]);
   const [pastAppointments, setPastAppointments] = useState([]);
+  const [cancelledAppointments, setCancelledAppointments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const [statusFilter, setStatusFilter] = useState('all');
+  const filterMenu = useMenu();
+
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+    }, 300); // adjust as needed
+
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
 
   useEffect(() => {
     const fetchAndClassifyAppointments = async () => {
@@ -168,14 +185,15 @@ const DoctorAppointmentSection = ({doctor}) => {
         setIsLoading(true);
         setError(null);
         const data = await getAppointmentsByDoctorId(doctor.id);
-        // console.log(data);
+        console.log(data);
         setAllAppointments(data); // Keep the full list
 
         // Use the new function to categorize
         const {
           todayAppointments,
           upcomingAppointments,
-          pastAppointments
+          pastAppointments,
+          cancelledAppointments
         } = classifyAppointments(data);
         // console.log("Upcoming Appointments:", upcomingAppointments);
 
@@ -183,6 +201,7 @@ const DoctorAppointmentSection = ({doctor}) => {
         setTodayAppointments(todayAppointments);
         setUpcomingAppointments(upcomingAppointments);
         setPastAppointments(pastAppointments);
+        setCancelledAppointments(cancelledAppointments);
 
       } catch (err) {
         setError("Failed to load appointments.");
@@ -193,10 +212,6 @@ const DoctorAppointmentSection = ({doctor}) => {
     };
     fetchAndClassifyAppointments();
   }, []);
-
-  const handleTabChange = (event, newValue) => {
-    setTabValue(newValue);
-  };
 
   const getStatusChipProps = (status) => {
     switch (status) {
@@ -243,11 +258,63 @@ const DoctorAppointmentSection = ({doctor}) => {
     );
   }
 
+  const filteredAppointments = useMemo(() => {
+    const lowercasedQuery = debouncedQuery.toLowerCase();
+
+    const filterLogic = (appointment) => {
+      // Search filter logic
+      const searchMatch = !lowercasedQuery ||
+        appointment.patientName?.toLowerCase().includes(lowercasedQuery) ||
+        appointment.reason?.toLowerCase().includes(lowercasedQuery);
+
+      // Status filter logic
+      const statusMatch = statusFilter === 'all' || appointment.status === statusFilter;
+
+      return searchMatch && statusMatch;
+    };
+
+    return {
+      all: allAppointments.filter(filterLogic),
+      today: todayAppointments.filter(filterLogic),
+      upcoming: upcomingAppointments.filter(filterLogic),
+      past: pastAppointments.filter(filterLogic),
+    };
+  }, [debouncedQuery, statusFilter, allAppointments, todayAppointments, upcomingAppointments, pastAppointments]);
+
+  const handleTabChange = (event, newValue) => {
+    setTabValue(newValue);
+  };
+
+  const handleFilterChange = (status) => {
+    setStatusFilter(status);
+    filterMenu.handleClose();
+  };
+
   const statsCards = [
-    { title: "Today's Appointments", value: "8", Icon: Calendar, color: '#2563EB' },
-    { title: "Pending", value: "3", Icon: Clock, color: '#D97706' },
-    { title: "Completed", value: "12", Icon: CheckCircleIcon, color: '#059669' },
-    { title: "Cancelled", value: "2", Icon: CancelIcon, color: '#DC2626' },
+    {
+      title: "Today's Appointments",
+      value: todayAppointments.length,
+      Icon: Calendar,
+      color: '#2563EB'
+    },
+    {
+      title: "Pending",
+      value: upcomingAppointments.length,
+      Icon: Clock,
+      color: '#D97706'
+    },
+    {
+      title: "Completed",
+      value: pastAppointments.length,
+      Icon: CheckCircleIcon,
+      color: '#059669'
+    },
+    {
+      title: "Cancelled",
+      value: cancelledAppointments.length,
+      Icon: CancelIcon,
+      color: '#DC2626'
+    },
   ];
 
   const renderAppointmentList = (appointments, title) => (
@@ -264,6 +331,13 @@ const DoctorAppointmentSection = ({doctor}) => {
       </CardContent>
     </Card>
   );
+
+  const filterOptions = [
+    { value: 'all', label: 'All', color: 'action' },
+    { value: 'confirmed', label: 'Confirmed', color: '#065F46' },
+    { value: 'pending', label: 'Pending', color: '#92400E' },
+    { value: 'urgent', label: 'Urgent', color: '#991B1B' }
+  ];
 
   return (
     <Box sx={{ p: { xs: 2, sm: 3 }, bgcolor: '#F9FAFB', minHeight: '100vh', fontFamily: 'Inter, sans-serif' }}>
@@ -301,10 +375,10 @@ const DoctorAppointmentSection = ({doctor}) => {
                 <Stack direction="row" justifyContent="space-between" alignItems="center">
                   <Box>
                     <Typography sx={{
-                      fontWeight: 'semibold',
-                      fontSize: '1.2rem',
+                      fontWeight: 'medium',
+                      fontSize: '1rem',
                     }} color="text.secondary">{card.title}</Typography>
-                    <Typography variant="h3" fontWeight="bold">{card.value}</Typography>
+                    <Typography variant="h4" fontWeight="bold">{card.value}</Typography>
                   </Box>
                   <card.Icon sx={{ fontSize: 40, color: card.color }} />
                 </Stack>
@@ -318,8 +392,10 @@ const DoctorAppointmentSection = ({doctor}) => {
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} mb={4}>
         <TextField
           fullWidth
+          label="Search Appointments"
+          name="search"
           variant="outlined"
-          placeholder="Search appointments..."
+          placeholder="Search by patient name or reason..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           InputProps={{
@@ -328,53 +404,102 @@ const DoctorAppointmentSection = ({doctor}) => {
                 <SearchIcon />
               </InputAdornment>
             ),
-            sx: { borderRadius: 2 }
+            sx: { borderRadius: '12px', bgcolor: 'white' }
+          }}
+          sx={{
+            '& .MuiOutlinedInput-root': {
+              borderRadius: 2,
+              boxShadow: 'none', // remove any box-shadow
+              outline: 'none',   // remove outline
+              '&:hover fieldset': {
+                borderColor: '#28938C',
+              },
+              '&.Mui-focused fieldset': {
+                borderColor: '#1D4645',
+                borderWidth: 2,
+              },
+            },
+            '& .MuiInputBase-root': {
+              boxShadow: 'none !important',
+              outline: 'none !important',
+            },
+            '& .MuiOutlinedInput-input': {
+              boxShadow: 'none',
+              outline: 'none',
+            },
+            '& .MuiInputLabel-root.Mui-focused': {
+              color: '#1D4645',
+            },
           }}
         />
+
         <Button
-          variant="outlined"
+          variant={statusFilter !== 'all' ? 'contained' : 'outlined'}
           startIcon={<Filter />}
-          sx={{ borderColor: '#D1D5DB', color: 'text.primary', textTransform: 'none', borderRadius: 2 }}
+          onClick={filterMenu.handleClick}
+          sx={{
+            borderColor: '#D1D5DB',
+            color: statusFilter !== 'all' ? 'white' : 'text.primary',
+            bgcolor: statusFilter !== 'all' ? '#2563EB' : 'white',
+            '&:hover': {
+              bgcolor: statusFilter !== 'all' ? '#1D4ED8' : 'action.hover'
+            },
+            textTransform: 'none',
+            borderRadius: '12px',
+            flexShrink: 0
+          }}
         >
-          Filter
+          Filter {statusFilter !== 'all' && `(${statusFilter})`}
         </Button>
+        <Menu
+          anchorEl={filterMenu.anchorEl}
+          open={filterMenu.open}
+          onClose={filterMenu.handleClose}
+        >
+          {filterOptions.map((option) => (
+            <MenuItem
+              key={option.value}
+              selected={option.value === statusFilter}
+              onClick={() => handleFilterChange(option.value)}
+            >
+              <ListItemIcon>
+                <StatusIndicatorIcon fontSize="small" sx={{ color: option.color }} />
+              </ListItemIcon>
+              <ListItemText sx={{ textTransform: 'capitalize' }}>{option.label}</ListItemText>
+            </MenuItem>
+          ))}
+          </Menu>
       </Stack>
 
       {/* Appointments Tabs */}
       <Box sx={{ width: '100%' }}>
-        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+        <Box>
           <StyledTabs
             value={tabValue}
             onChange={handleTabChange}
-            sx={{
-              width: 'fit-content',
-            }}
             aria-label='appointments tabs'
           >
-            <Tab label="All" />
-            <Tab label="Today" />
-            <Tab label="Upcoming" />
-            <Tab label="Completed" />
+            <Tab label={`All (${filteredAppointments.all.length})`} />
+            <Tab label={`Today (${filteredAppointments.today.length})`} />
+            <Tab label={`Upcoming (${filteredAppointments.upcoming.length})`} />
+            <Tab label={`Completed (${filteredAppointments.past.length})`} />
           </StyledTabs>
         </Box>
         <TabPanel value={tabValue} index={0}>
-          {/* The "All" tab uses the original, complete list */}
-          {renderAppointmentList(allAppointments, "All Appointments")}
+          {renderAppointmentList(filteredAppointments.all, "All Appointments")}
         </TabPanel>
         <TabPanel value={tabValue} index={1}>
-          {/* The "Today" tab uses the todayAppointments state */}
-          {renderAppointmentList(todayAppointments, "Today's Appointments")}
+          {renderAppointmentList(filteredAppointments.today, "Today's Appointments")}
         </TabPanel>
         <TabPanel value={tabValue} index={2}>
-          {/* The "Upcoming" tab uses the upcomingAppointments state */}
-          {renderAppointmentList(upcomingAppointments, "Upcoming Appointments")}
+          {renderAppointmentList(filteredAppointments.upcoming, "Upcoming Appointments")}
         </TabPanel>
         <TabPanel value={tabValue} index={3}>
-          {/* The "Completed" tab uses the pastAppointments state */}
-          {renderAppointmentList(pastAppointments, "Completed Appointments")}
+          {renderAppointmentList(filteredAppointments.past, "Completed Appointments")}
         </TabPanel>
       </Box>
     </Box>
+
   );
 }
 
