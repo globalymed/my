@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
     Box,
     Typography,
@@ -38,6 +39,7 @@ import { ref, listAll, getDownloadURL, getMetadata, uploadBytes } from 'firebase
 
 const HomeOverview = ({ user, appointments, setActiveSection }) => {
     const theme = useTheme();
+    const navigate = useNavigate();
     const [recentDocuments, setRecentDocuments] = useState([]);
     const [loadingDocuments, setLoadingDocuments] = useState(true);
     const [uploading, setUploading] = useState(false);
@@ -154,9 +156,9 @@ const HomeOverview = ({ user, appointments, setActiveSection }) => {
         upcomingAppointment.meetingLink = "https://example.com/meeting-link";
     }
 
-    // Handler for navigating to plan journey section
+    // Handler for navigating to plan journey route
     const handlePlanJourney = () => {
-        setActiveSection('plan-journey');
+        navigate('/plan-journey');
     };
 
     // Fetch recent documents from Firebase storage
@@ -326,7 +328,7 @@ const HomeOverview = ({ user, appointments, setActiveSection }) => {
                                         tags={[{ label: "Business" }, { label: "Economy" }]}
                                         buttonText="Book Ticket"
                                         color="#E1F5FE"
-                                        onClick={handlePlanJourney} 
+                                        onCardClick={handlePlanJourney}
                                     />
                                 </Grid>
                                 <Grid item xs={12} sm={4}>
@@ -338,7 +340,7 @@ const HomeOverview = ({ user, appointments, setActiveSection }) => {
                                         tags={[{ label: "Normal" }, { label: "Luxury" }]}
                                         buttonText="Book Room"
                                         color="#C5CAE9"
-                                        onClick={handlePlanJourney} 
+                                        onCardClick={handlePlanJourney}
                                     />
                                 </Grid>
                             </Grid>
@@ -499,7 +501,13 @@ const HomeOverview = ({ user, appointments, setActiveSection }) => {
     );
 };
 
-const BookingCard = ({ icon, title, price, unit, tags, buttonText, color, onClick }) => {
+const BookingCard = ({ icon, title, price, unit, tags, buttonText, color, onCardClick }) => {
+    const handleButtonClick = () => {
+        if (onCardClick && typeof onCardClick === 'function') {
+            onCardClick();
+        }
+    };
+
     return (
         <Box sx={{
             borderRadius: 3, border: "1px solid #E4E7EC", p: 2, textAlign: "left",
@@ -519,7 +527,12 @@ const BookingCard = ({ icon, title, price, unit, tags, buttonText, color, onClic
                 ))}
             </Box>
             <Box sx={{ flexGrow: 1 }} /> {/* Pushes button to the bottom */}
-            <Button fullWidth variant="outlined" sx={{ textTransform: "none", fontWeight: 600, mt: 2 }} onClick={onClick}>
+            <Button 
+                fullWidth 
+                variant="outlined" 
+                sx={{ textTransform: "none", fontWeight: 600, mt: 2 }} 
+                onClick={handleButtonClick}
+            >
                 {buttonText}
             </Button>
         </Box>
