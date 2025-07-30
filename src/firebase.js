@@ -16,7 +16,7 @@ import {
   limit,
   deleteDoc
 } from "firebase/firestore";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { getStorage, ref, uploadBytes, getDownloadURL, listAll } from "firebase/storage";
 
 // Import the Brevo service for email notifications
 // Email handling is done automatically by Firebase Cloud Functions
@@ -990,6 +990,37 @@ export const getAppointments = async () => {
     console.error('Error fetching appointments:', error);
     // In a real app, you'd want to show a user-facing error.
     throw error;
+  }
+};
+
+// Function to count total documents in Firebase Storage
+export const getTotalDocumentsCount = async () => {
+  try {
+    const storageRef = ref(storage);
+    
+    // Function to recursively count files in all folders
+    const countFilesRecursively = async (folderRef) => {
+      try {
+        const result = await listAll(folderRef);
+        let count = result.items.length; // Count files in current folder
+        
+        // Recursively count files in subfolders
+        for (const subfolder of result.prefixes) {
+          count += await countFilesRecursively(subfolder);
+        }
+        
+        return count;
+      } catch (error) {
+        console.error('Error counting files in folder:', folderRef.fullPath, error);
+        return 0;
+      }
+    };
+    
+    const totalCount = await countFilesRecursively(storageRef);
+    return totalCount;
+  } catch (error) {
+    console.error('Error fetching total documents count:', error);
+    return 0;
   }
 };
 
