@@ -1,4 +1,4 @@
-import React, { use, useEffect, useState } from "react";
+import React, { useMemo, useEffect, useState } from "react";
 import {
   Box,
   Button,
@@ -16,6 +16,8 @@ import {
   Menu,
   MenuItem,
   Paper,
+  ListItemIcon,
+  ListItemText
 } from "@mui/material";
 import {
   Group,
@@ -29,10 +31,25 @@ import {
   CalendarToday,
   Check,
   PriorityHigh,
+  Lens as StatusIndicatorIcon,
+  FilterList as Filter,
 } from "@mui/icons-material";
 import { blue, green, grey, purple, red } from "@mui/material/colors";
 
 import { getAllPatients, getAllUsers, getAppointmentsByDoctorId } from "../../../firebase";
+
+// Custom hook for managing dropdown menus
+const useMenu = () => {
+  const [anchorEl, setAnchorEl] = useState(null);
+  const open = Boolean(anchorEl);
+  const handleClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+  return { anchorEl, open, handleClick, handleClose };
+};
 
 const PatientActions = () => {
   // Ensure useState is called correctly and explicitly typed.
@@ -93,101 +110,156 @@ const DoctorPatientSection = ({ doctor }) => {
   // console.log("DoctorPatientSection rendered with doctor:", doctor);
   const [searchQuery, setSearchQuery] = useState("");
 
-
-
   // Fetch users from Firebase
   const [users, setUsers] = useState([]);
   const [allAppointments, setAllAppointments] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-
   const [patients, setPatients] = useState([]);
 
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [filterAnchorEl, setFilterAnchorEl] = useState(null);
+  const isFilterMenuOpen = Boolean(filterAnchorEl);
+
+  const filterMenu = useMenu();
+
+
+
   useEffect(() => {
-    const fetchUsers = async () => {
+    const fetchData = async () => {
+      if (!doctor || !doctor.id) {
+        setError("Doctor not specified.");
+        setIsLoading(false);
+        return;
+      }
       try {
-        const fetchedUsers = await getAllUsers();
-        console.log("Fetched users:", fetchedUsers);
+        setIsLoading(true);
+        const [fetchedUsers, fetchedAppointments] = await Promise.all([
+          getAllUsers(),
+          getAppointmentsByDoctorId(doctor.id)
+        ]);
         setUsers(fetchedUsers);
-      } catch (error) {
-        console.error("Error fetching users:", error);
+        setAllAppointments(fetchedAppointments);
+      } catch (err) {
+        console.error("Error fetching data:", err);
+        setError("Failed to fetch patient data.");
       }
     };
 
-    const fetchAppointments = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const data = await getAppointmentsByDoctorId(doctor.id);
-        console.log("Fetched appointments:", data);
-        setAllAppointments(data); // Keep the full list
-      } catch (error) {
-        console.error("Error fetching appointments:", error);
-        setError("Failed to fetch appointments");
-      }
-      setIsLoading(false);
-    }
-
-    fetchUsers();
-    fetchAppointments();
-  }, []);
+    fetchData();
+  }, [doctor]);
 
   useEffect(() => {
+    if (!users.length || !allAppointments.length) {
+      setIsLoading(false);
+      return;
+    }
+
     const buildPatientsList = () => {
-      if (!users || !allAppointments || users.length === 0 || allAppointments.length === 0) return;
-
-      const now = new Date();
       const patientMap = new Map();
+      const now = new Date();
 
+      // Prioritize users who have appointments
       allAppointments.forEach((appointment) => {
-        const {
-          patientName,
-          patientEmail,
-          appointmentDate,
-          treatmentType,
-          status,
-        } = appointment;
-
+        const { patientEmail } = appointment;
         if (!patientEmail || patientMap.has(patientEmail)) return;
 
-        const patient = users.find((user) => user.email === patientEmail);
-        if (!patient) return;
+        const patientUser = users.find((user) => user.email === patientEmail);
+        if (!patientUser) return; // Only add patients who are also users
 
+        const patientAppointments = allAppointments.filter(appt => appt.patientEmail === patientEmail);
+        const lastAppointment = patientAppointments.sort((a, b) => new Date(b.appointmentDate) - new Date(a.appointmentDate))[0];
 
-        const pastAppointments = allAppointments
-          .filter(
-            (appt) =>
-              appt.patientEmail === patientEmail &&
-              new Date(appt.appointmentDate) < now &&
-              appt.status === "completed"
-          )
-          .sort((a, b) => new Date(b.appointmentDate) - new Date(a.appointmentDate));
-
-        const lastVisit = pastAppointments.length > 0 ? pastAppointments[0] : null;
+        const lastVisit = patientAppointments.filter(appt => new Date(appt.appointmentDate) < now && appt.status === 'completed')
+          .sort((a, b) => new Date(b.appointmentDate) - new Date(a.appointmentDate))[0];
 
         const patientData = {
-          id: patient.id,
-          name: `${patient.firstName || ""} ${patient.lastName || ""}`.trim() || patientName,
-          age: patient.age || "",
-          gender: patient.gender || "",
-          phone: patient.phone || "",
-          email: patient.email || patientEmail,
-          address: `${patient.city || ""}, ${patient.country || ""}`.replace(/^,|,$/g, ""),
+          id: patientUser.id,
+          name: `${patientUser.firstName || ""} ${patientUser.lastName || ""}`.trim(),
+          age: patientUser.age || "",
+          gender: patientUser.gender || "",
+          phone: patientUser.phone || "",
+          email: patientUser.email,
+          address: [patientUser.city, patientUser.country].filter(Boolean).join(", "),
           lastVisit: lastVisit?.appointmentDate || null,
-          condition: lastVisit?.treatmentType || "",
-          status: status || "",
+          condition: lastVisit?.reason || "General Checkup",
+          // Determine status based on last appointment
+          status: lastAppointment?.status === 'cancelled' || lastAppointment?.status === 'completed' ? 'inactive' : 'active'
         };
-
         patientMap.set(patientEmail, patientData);
       });
 
       const uniquePatients = Array.from(patientMap.values());
-      console.log("Unique patients built:", uniquePatients);
       setPatients(uniquePatients);
+      setIsLoading(false);
     };
 
     buildPatientsList();
   }, [users, allAppointments]);
+
+  const filteredPatients = useMemo(() => {
+    return patients.filter((patient) => {
+      const searchLower = searchQuery.toLowerCase();
+
+      // Search logic (name, email, phone)
+      const searchMatch = !searchQuery ||
+        patient.name?.toLowerCase().includes(searchLower) ||
+        patient.email?.toLowerCase().includes(searchLower) ||
+        patient.phone?.includes(searchQuery);
+
+      // Filter logic (status)
+      const filterMatch = statusFilter === 'all' || patient.status === statusFilter;
+
+      return searchMatch && filterMatch;
+    });
+  }, [patients, searchQuery, statusFilter]);
+
+  // --- NEW: Handlers for the filter menu ---
+  const handleFilterMenuOpen = (event) => setFilterAnchorEl(event.currentTarget);
+  const handleFilterMenuClose = () => setFilterAnchorEl(null);
+
+  const handleFilterChange = (status) => {
+    setStatusFilter(status);
+    filterMenu.handleClose();
+  };
+
+  const filterOptions = [
+    { value: 'all', label: 'All', color: 'action' },
+    { value: 'active', label: 'Active', color: '#065F46' },
+    { value: 'inactive', label: 'Inactive', color: '#92400E' },
+  ];
+
+
+  const statsCards = [
+    {
+      title: "Total Patients",
+      value: patients.length,
+      Icon: Group,
+      color: '#3182CE',
+    },
+    {
+      title: "Active Patients",
+      value: patients.filter(p => p.status !== "inactive").length,
+      Icon: Check,
+      color: '#38A169',
+    },
+    {
+      title: "New This Month",
+      value: patients.filter(p => {
+        const lastVisitDate = new Date(p.lastVisit);
+        const currentDate = new Date();
+        return lastVisitDate.getMonth() === currentDate.getMonth() && lastVisitDate.getFullYear() === currentDate.getFullYear();
+      }).length,
+      Icon: Add,
+      color: '#9F7AEA',
+    },
+    {
+      title: "Critical Cases",
+      value: patients.filter(p => p.condition.toLowerCase().includes("critical")).length,
+      Icon: PriorityHigh,
+      color: '#E53E3E',
+    }
+  ];
 
   return (
     <Stack spacing={3}>
@@ -217,92 +289,116 @@ const DoctorPatientSection = ({ doctor }) => {
 
       {/* Stats Cards */}
       <Grid container spacing={2}>
-        <Grid item xs={12} sm={6}>
-          <Card>
-            <CardContent>
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Box>
-                  <Typography color="text.secondary">Total Patients</Typography>
-                  <Typography variant="h5" fontWeight="bold">156</Typography>
-                </Box>
-                <Group sx={{ fontSize: 40, color: blue[600] }} />
-              </Stack>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6}>
-          <Card>
-            <CardContent>
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Box>
-                  <Typography color="text.secondary">Active Patients</Typography>
-                  <Typography variant="h5" fontWeight="bold">142</Typography>
-                </Box>
-                <Avatar sx={{ bgcolor: green[600], width: 40, height: 40 }}>
-                  <Check />
-                </Avatar>
-              </Stack>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6}>
-          <Card>
-            <CardContent>
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Box>
-                  <Typography color="text.secondary">New This Month</Typography>
-                  <Typography variant="h5" fontWeight="bold">23</Typography>
-                </Box>
-                <Add sx={{ fontSize: 40, color: purple[600] }} />
-              </Stack>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6}>
-          <Card>
-            <CardContent>
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Box>
-                  <Typography color="text.secondary">Critical Cases</Typography>
-                  <Typography variant="h5" fontWeight="bold">5</Typography>
-                </Box>
-                <Avatar sx={{ bgcolor: red[600], width: 40, height: 40 }}>
-                  <PriorityHigh fontSize="small" />
-                </Avatar>
-              </Stack>
-            </CardContent>
-          </Card>
-        </Grid>
+        {statsCards.map((card, index) => (
+          <Grid item xs={12} sm={6} key={index}>
+            <Card sx={{ borderRadius: 2 }}>
+              <CardContent>
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                  <Box>
+                    <Typography sx={{
+                      fontWeight: 'medium',
+                      fontSize: '1rem',
+                    }} color="text.secondary">{card.title}</Typography>
+                    <Typography variant="h4" fontWeight="bold">{card.value}</Typography>
+                  </Box>
+                  <card.Icon sx={{ fontSize: 40, color: card.color }} />
+                </Stack>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
       </Grid>
 
       {/* Search and Filter */}
       <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
         <TextField
           fullWidth
-          placeholder="Search patients..."
+          placeholder="Search by name, email, or phone..."
+          label="Search Patients"
+          name="search"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search />
-              </InputAdornment>
-            ),
+          InputProps={{ startAdornment: (<InputAdornment position="start"><Search /></InputAdornment>) }}
+          sx={{
+            '& .MuiOutlinedInput-root': {
+              borderRadius: 2,
+              boxShadow: 'none', // remove any box-shadow
+              outline: 'none',   // remove outline
+              '&:hover fieldset': {
+                borderColor: '#28938C',
+              },
+              '&.Mui-focused fieldset': {
+                borderColor: '#1D4645',
+                borderWidth: 2,
+              },
+            },
+            '& .MuiInputBase-root': {
+              boxShadow: 'none !important',
+              outline: 'none !important',
+            },
+            '& .MuiOutlinedInput-input': {
+              boxShadow: 'none',
+              outline: 'none',
+            },
+            '& .MuiInputLabel-root.Mui-focused': {
+              color: '#1D4645',
+            },
           }}
         />
-        <Button variant="outlined" startIcon={<FilterList />}>
-          Filter
+        <Button
+          variant={statusFilter !== 'all' ? 'contained' : 'outlined'}
+          startIcon={<Filter />}
+          onClick={filterMenu.handleClick}
+          sx={{
+            borderColor: '#D1D5DB',
+            color: statusFilter !== 'all' ? 'white' : 'text.primary',
+            bgcolor: statusFilter !== 'all' ? '#2563EB' : 'white',
+            '&:hover': {
+              bgcolor: statusFilter !== 'all' ? '#1D4ED8' : 'action.hover'
+            },
+            textTransform: 'none',
+            borderRadius: '12px',
+            flexShrink: 0
+          }}
+        >
+          Filter {statusFilter !== 'all' && `(${statusFilter})`}
         </Button>
+        <Menu
+          anchorEl={filterMenu.anchorEl}
+          open={filterMenu.open}
+          onClose={filterMenu.handleClose}
+        >
+          {filterOptions.map((option) => (
+            <MenuItem
+              key={option.value}
+              selected={option.value === statusFilter}
+              onClick={() => handleFilterChange(option.value)}
+            >
+              <ListItemIcon>
+                <StatusIndicatorIcon fontSize="small" sx={{ color: option.color }} />
+              </ListItemIcon>
+              <ListItemText sx={{ textTransform: 'capitalize' }}>{option.label}</ListItemText>
+            </MenuItem>
+          ))}
+        </Menu>
       </Stack>
 
       {/* Patients List */}
-      <Card>
-        <CardHeader title="Patient Records" />
+      <Card sx={{ borderRadius: 2 }}>
+        <CardHeader title={`Patient Records (${filteredPatients.length})`} />
         <CardContent>
           <Stack spacing={2}>
-            {patients.map((patient) => (
-              <PatientCard key={patient.email} patient={patient} />
-            ))}
+            {isLoading ? (<Typography>Loading patients...</Typography>) :
+              error ? (<Typography color="error">{error}</Typography>) :
+                filteredPatients.length > 0 ? (
+                  filteredPatients.map((patient) => (
+                    <PatientCard key={patient.email} patient={patient} />
+                  ))
+                ) : (
+                  <Typography color="text.secondary" textAlign="center" p={3}>
+                    No patients match your criteria.
+                  </Typography>
+                )}
           </Stack>
         </CardContent>
       </Card>

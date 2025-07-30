@@ -468,7 +468,7 @@ const DoctorAppointmentSection = ({ doctor }) => {
               <ListItemText sx={{ textTransform: 'capitalize' }}>{option.label}</ListItemText>
             </MenuItem>
           ))}
-          </Menu>
+        </Menu>
       </Stack>
 
       {/* Appointments Tabs */}
