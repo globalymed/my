@@ -145,7 +145,7 @@ function AppointmentsSection({ appointments }) {
     console.log('Past Appointments:', pastAppointments);
 
     return (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4, pl: 0 }}>
             <Box>
                 <Typography variant="h4" fontWeight="bold">
                     Appointments

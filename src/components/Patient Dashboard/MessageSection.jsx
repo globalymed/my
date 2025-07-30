@@ -67,7 +67,7 @@ const StyledTabs = styled(Tabs)(({ theme }) => ({
 
 const MessagesSection = ({user}) => {
   const [newMessage, setNewMessage] = useState("")
-  const [activeTab, setActiveTab] = useState(0)
+  const [activeTab, setActiveTab] = useState(0) 
   const [supportCategory, setSupportCategory] = useState("")
   const [supportMessage, setSupportMessage] = useState("")
   const [supportQueries, setSupportQueries] = useState([]);  
@@ -134,7 +134,7 @@ const MessagesSection = ({user}) => {
   const MessageList = ({ children, isAI = false }) => (
     <Box
       sx={{
-        height: 384,
+        height: "40vh",
         overflow: "auto",
         pr: 2,
         bgcolor: isAI ? "transparent" : "transparent"
@@ -401,7 +401,7 @@ const MessagesSection = ({user}) => {
         <Card>
           <CardHeader title="Support History" />
           <CardContent>
-            <Box sx={{ height: 256, overflow: "auto" }}>
+            <Box sx={{ height: "60vh", overflow: "auto" }}>
               <List>
                 <ListItem
                   sx={{
@@ -573,159 +573,200 @@ const MessagesSection = ({user}) => {
     </Card>
   )
 
-  const AIChat = () => (
-    <Card>
-      <CardHeader
-        avatar={<SmartToy sx={{ color: "primary.main" }} />}
-        title="AI Medical Assistant"
-        subheader="Get instant answers to your medical and recovery questions"
-      />
-      <CardContent>
-        <MessageList isAI>
-          <ChatMessage
-            isAI
-            message="Hello Sarah! I'm your AI medical assistant. I can help answer questions about your recovery, medications, exercises, and more. What would you like to know?"
-            time="AI Assistant"
-          />
-          <ChatMessage
-            isUser
-            avatar="SK"
-            message="Is it normal to feel some stiffness in my knee after surgery?"
-            time="You"
-          />
-          <Box
-            display="flex"
-            alignItems="flex-start"
-            gap={1.5}
-            mb={2}
-          >
-            <Box
-              sx={{
-                width: 32,
-                height: 32,
-                bgcolor: "primary.light",
-                borderRadius: "50%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center"
-              }}
-            >
-              <SmartToy sx={{ fontSize: 16, color: "primary.main" }} />
-            </Box>
-            <Paper
-              elevation={0}
-              sx={{
-                p: 1.5,
-                maxWidth: "80%",
-                bgcolor: "primary.light",
-                borderRadius: 2
-              }}
-            >
-              <Typography variant="body2" sx={{ mb: 1 }}>
-                Yes, some stiffness and limited range of motion is completely normal after knee replacement
-                surgery. This typically improves with gentle exercises and physical therapy. Here are some tips:
-              </Typography>
-              <Box component="ul" sx={{ pl: 2, my: 1 }}>
-                <Typography component="li" variant="body2">
-                  Gentle ankle pumps every hour
-                </Typography>
-                <Typography component="li" variant="body2">
-                  Ice application for 15-20 minutes
-                </Typography>
-                <Typography component="li" variant="body2">
-                  Follow your prescribed exercise routine
-                </Typography>
-                <Typography component="li" variant="body2">
-                  Take pain medication as directed
-                </Typography>
-              </Box>
-              <Typography variant="body2" sx={{ mb: 0.5 }}>
-                If you experience severe pain or concerning symptoms, please contact Dr. Kumar immediately.
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                AI Assistant
-              </Typography>
-            </Paper>
-          </Box>
-          <ChatMessage
-            isUser
-            avatar="SK"
-            message="Thank you! When should I be concerned about the swelling?"
-            time="You"
-          />
-          <Box
-            display="flex"
-            alignItems="flex-start"
-            gap={1.5}
-            mb={2}
-          >
-            <Box
-              sx={{
-                width: 32,
-                height: 32,
-                bgcolor: "primary.light",
-                borderRadius: "50%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center"
-              }}
-            >
-              <SmartToy sx={{ fontSize: 16, color: "primary.main" }} />
-            </Box>
-            <Paper
-              elevation={0}
-              sx={{
-                p: 1.5,
-                maxWidth: "80%",
-                bgcolor: "primary.light",
-                borderRadius: 2
-              }}
-            >
-              <Typography variant="body2" sx={{ mb: 1 }}>
-                Some swelling is expected for the first few weeks. Contact your doctor if you notice:
-              </Typography>
-              <Box component="ul" sx={{ pl: 2, my: 1 }}>
-                <Typography component="li" variant="body2">
-                  Sudden increase in swelling
-                </Typography>
-                <Typography component="li" variant="body2">
-                  Redness or warmth around the incision
-                </Typography>
-                <Typography component="li" variant="body2">
-                  Fever above 101°F (38.3°C)
-                </Typography>
-                <Typography component="li" variant="body2">
-                  Unusual pain or tenderness
-                </Typography>
-              </Box>
-              <Typography variant="body2" sx={{ mb: 0.5 }}>
-                Elevating your leg and using ice can help manage normal swelling.
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                AI Assistant
-              </Typography>
-            </Paper>
-          </Box>
-        </MessageList>
+  const AIChat = () => {
+    const [aiMessages, setAiMessages] = useState([
+      {
+        sender: 'ai',
+        text: "Hello! I'm your AI medical assistant. I can help answer questions about your recovery, medications, exercises, and more. What would you like to know?",
+        timestamp: new Date(),
+      },
+    ]);
+    const [aiInput, setAiInput] = useState('');
+    const [isAiLoading, setIsAiLoading] = useState(false);
 
-        <Divider sx={{ my: 2 }} />
+    const generateGeminiResponse = async (userInput) => {
+      try {
+        const response = await fetch(
+          'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=AIzaSyArjTDiaJOVP2wYoyKELb5nIuBVtXBWVoM',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              contents: [
+                {
+                  parts: [
+                    {
+                      text: `You are a medical AI assistant helping a patient with their recovery. Please provide helpful, accurate, and supportive information for the following medical-related question. Format your response with clear headings using **Header** format, bullet points using * format, and proper paragraph breaks for better readability: ${userInput}`,
+                    },
+                  ],
+                },
+              ],
+            }),
+          }
+        );
 
-        <Box display="flex" gap={1}>
-          <TextField
-            fullWidth
-            placeholder="Ask me anything about your recovery..."
-            size="small"
-          />
-          <IconButton>
-            <Mic />
-          </IconButton>
-          <IconButton color="primary">
-            <Send />
-          </IconButton>
-        </Box>
-      </CardContent>
-    </Card>
-  )
+        const data = await response.json();
+        return data.candidates[0].content.parts[0].text;
+      } catch (error) {
+        console.error('Error calling Gemini API:', error);
+        return 'I apologize, but I encountered an error while processing your request. Please try again.';
+      }
+    };
+
+    const sendAiMessage = async () => {
+      if (!aiInput.trim()) return;
+      setIsAiLoading(true);
+      const userMessage = {
+        sender: 'user',
+        text: aiInput,
+        timestamp: new Date(),
+      };
+      setAiMessages((prev) => [...prev, userMessage]);
+      setAiInput('');
+      try {
+        const aiText = await generateGeminiResponse(aiInput);
+        setAiMessages((prev) => [
+          ...prev,
+          {
+            sender: 'ai',
+            text: aiText,
+            timestamp: new Date(),
+          },
+        ]);
+      } catch (e) {
+        setAiMessages((prev) => [
+          ...prev,
+          {
+            sender: 'ai',
+            text: 'Sorry, there was an error processing your request.',
+            timestamp: new Date(),
+          },
+        ]);
+      }
+      setIsAiLoading(false);
+    };
+
+    return (
+      <Card>
+        <CardHeader
+          avatar={<SmartToy sx={{ color: "primary.main" }} />}
+          title="AI Medical Assistant"
+          subheader="Get instant answers to your medical and recovery questions"
+        />
+        <CardContent>
+          <MessageList isAI>
+            {aiMessages.map((msg, idx) => (
+              <ChatMessage
+                key={idx}
+                isAI={msg.sender === 'ai'}
+                avatar={msg.sender === 'user' ? 'U' : undefined}
+                message={msg.text}
+                time={msg.sender === 'user' ? 'You' : 'AI Assistant'}
+              />
+            ))}
+            {isAiLoading && (
+              <Box display="flex" alignItems="flex-start" gap={1.5} mb={2}>
+                <Box
+                  sx={{
+                    width: 32,
+                    height: 32,
+                    bgcolor: "primary.light",
+                    borderRadius: "50%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center"
+                  }}
+                >
+                  <SmartToy sx={{ fontSize: 16, color: "primary.main" }} />
+                </Box>
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: 1.5,
+                    maxWidth: "80%",
+                    bgcolor: "primary.light",
+                    borderRadius: 2
+                  }}
+                >
+                  <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box sx={{ display: 'flex', gap: '2px' }}>
+                      <Box sx={{ 
+                        width: '6px', 
+                        height: '6px', 
+                        bgcolor: 'primary.main', 
+                        borderRadius: '50%', 
+                        '@keyframes bounce': {
+                          '0%, 80%, 100%': { transform: 'scale(0)' },
+                          '40%': { transform: 'scale(1)' }
+                        },
+                        animation: 'bounce 1.4s infinite ease-in-out'
+                      }} />
+                      <Box sx={{ 
+                        width: '6px', 
+                        height: '6px', 
+                        bgcolor: 'primary.main', 
+                        borderRadius: '50%', 
+                        '@keyframes bounce': {
+                          '0%, 80%, 100%': { transform: 'scale(0)' },
+                          '40%': { transform: 'scale(1)' }
+                        },
+                        animation: 'bounce 1.4s infinite ease-in-out',
+                        animationDelay: '0.16s'
+                      }} />
+                      <Box sx={{ 
+                        width: '6px', 
+                        height: '6px', 
+                        bgcolor: 'primary.main', 
+                        borderRadius: '50%', 
+                        '@keyframes bounce': {
+                          '0%, 80%, 100%': { transform: 'scale(0)' },
+                          '40%': { transform: 'scale(1)' }
+                        },
+                        animation: 'bounce 1.4s infinite ease-in-out',
+                        animationDelay: '0.32s'
+                      }} />
+                    </Box>
+                    AI is thinking...
+                  </Typography>
+                </Paper>
+              </Box>
+            )}
+          </MessageList>
+
+          <Divider sx={{ my: 2 }} />
+
+          <Box display="flex" gap={1}>
+            <TextField
+              fullWidth
+              placeholder="Ask me anything about your recovery..."
+              size="small"
+              value={aiInput}
+              onChange={(e) => setAiInput(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter' && !isAiLoading && aiInput.trim()) {
+                  e.preventDefault();
+                  sendAiMessage();
+                }
+              }}
+              disabled={isAiLoading}
+            />
+            <IconButton>
+              <Mic />
+            </IconButton>
+            <IconButton 
+              color="primary" 
+              onClick={sendAiMessage}
+              disabled={isAiLoading || !aiInput.trim()}
+            >
+              <Send />
+            </IconButton>
+          </Box>
+        </CardContent>
+      </Card>
+    );
+  };
 
   return (
     <Box sx={{ p: 3 }}>
@@ -746,16 +787,16 @@ const MessagesSection = ({user}) => {
                 width: 'fit-content',
               }}
             >
+          <Tab label="AI Assistant" />
           <Tab label="Doctor Chat" />
           <Tab label="Support" />
           <Tab label="Emergency" />
-          <Tab label="AI Assistant" />
         </StyledTabs>
 
-        {activeTab === 0 && <DoctorChat />}
-        {activeTab === 1 && <Support />}
-        {activeTab === 2 && <Emergency />}
-        {activeTab === 3 && <AIChat />}
+        {activeTab === 0 && <AIChat />}
+        {activeTab === 1 && <DoctorChat />}
+        {activeTab === 2 && <Support />}
+        {activeTab === 3 && <Emergency />}
       </Box>
     </Box>
   )
