@@ -273,7 +273,7 @@ const DocumentsSection = ({ user }) => {
     }
 
     return (
-        <Box p={3}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 , pl: 0}}>
             {/* Header Section */}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
                 {/* This is the title on the left */}
@@ -350,7 +350,7 @@ const DocumentsSection = ({ user }) => {
             {/* --- 4. Display filtered documents or a message --- */}
             <Box mt={3}>
                 {filteredDocuments.length > 0 ? (
-                    <Grid container spacing={3}>
+                    <Grid container spacing={2}>
                         {filteredDocuments.map((doc) => (
                             <Grid item key={doc.title} xs={12} sm={6} md={4}>
                                 <DocumentCard document={doc} onView={handleViewDocument} />
