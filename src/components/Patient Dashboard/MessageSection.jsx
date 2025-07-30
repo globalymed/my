@@ -68,9 +68,6 @@ const StyledTabs = styled(Tabs)(({ theme }) => ({
 const MessagesSection = ({user}) => {
   const [newMessage, setNewMessage] = useState("")
   const [activeTab, setActiveTab] = useState(0)
-  const [supportCategory, setSupportCategory] = useState("")
-  const [supportMessage, setSupportMessage] = useState("")
-  const [supportQueries, setSupportQueries] = useState([]);  
 
   
 
@@ -334,6 +331,9 @@ const MessagesSection = ({user}) => {
   )
 
   const Support = () => {
+    const [supportCategory, setSupportCategory] = useState("")
+  const [supportMessage, setSupportMessage] = useState("")
+    // console.log("Support rendered")
   const handleSubmit = async () => {
   if (supportMessage.trim() === "" || supportCategory === "") {
     alert("Please enter a question and select a category.");
