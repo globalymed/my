@@ -23,15 +23,18 @@ import {
   Alert,
   Stack,
   Divider,
-  Avatar
+  Avatar,
+  Grid,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText
 } from '@mui/material';
 import {
   Search,
-  Filter,
   Upload,
   Eye,
   Download,
-  MoreHorizontal,
   FileText,
   Image,
   FileSpreadsheet,
@@ -42,64 +45,234 @@ import {
   Camera,
   ClipboardList,
   User,
-  Calendar,
   HardDrive
 } from 'lucide-react';
 
-// Firebase imports - replace with your actual Firebase config
-import { collection, getDocs, getFirestore } from 'firebase/firestore';
+import {
+  Add as Plus,
+  Search as SearchIcon,
+  FilterList as Filter,
+  MoreHoriz as MoreHorizontal,
+  Phone as PhoneIcon,
+  Videocam as VideoIcon,
+  Message as MessageSquare,
+  CalendarToday as Calendar,
+  AccessTime as Clock,
+  CheckCircleOutline as CheckCircleIcon,
+  Cancel as CancelIcon,
+  Lens as StatusIndicatorIcon,
+} from '@mui/icons-material';
 
-const DocumentsContent = () => {
+
+// Firebase imports - replace with your actual Firebase config
+import { ref, listAll, getDownloadURL, getMetadata, uploadBytes } from 'firebase/storage';
+import { getAllUsers, getAppointmentsByDoctorId, storage } from '../../../firebase';
+import { PriorityHigh, UploadFile } from '@mui/icons-material';
+
+// Custom hook for managing dropdown menus
+const useMenu = () => {
+  const [anchorEl, setAnchorEl] = useState(null);
+  const open = Boolean(anchorEl);
+  const handleClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+  return { anchorEl, open, handleClick, handleClose };
+};
+
+
+const DoctorDocumentSection = ({ doctor }) => {
+  // console.log("Doctor Document Section Rendered for:", doctor);
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const [selectedDocument, setSelectedDocument] = useState(null);
+  const [selectedDocument, setSelectedDocument] = useState([]);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [aiAssistantOpen, setAiAssistantOpen] = useState(false);
+  const [size, setSize] = useState(0);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const filterMenu = useMenu();
+
+  const filterOptions = [
+    { value: 'all', label: 'All', color: 'action' },
+    { value: 'reviewed', label: 'Reviewed', color: '#065F46' },
+    { value: 'pending', label: 'Pending', color: '#92400E' },
+  ];
+
+  const handleFilterChange = (status) => {
+    setStatusFilter(status);
+    filterMenu.handleClose();
+  };
+
+
+  // Fetch users from Firebase
+  const [users, setUsers] = useState([]);
+  const [allAppointments, setAllAppointments] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [patients, setPatients] = useState([]);
+
+  // Fetch users and appointments when doctor prop changes
+  useEffect(() => {
+    // console.log("Fetching data for doctor:", doctor);
+    const fetchData = async () => {
+      if (!doctor || !doctor.id) {
+        setError("Doctor not specified.");
+        setIsLoading(false);
+        return;
+      }
+      try {
+        setIsLoading(true);
+        const [fetchedUsers, fetchedAppointments] = await Promise.all([
+          getAllUsers(),
+          getAppointmentsByDoctorId(doctor.id)
+        ]);
+        setUsers(fetchedUsers);
+        setAllAppointments(fetchedAppointments);
+        // console.log("Fetched Users:", fetchedUsers);
+        // console.log("Fetched Appointments:", fetchedAppointments);
+      } catch (err) {
+        console.error("Error fetching data:", err);
+        setError("Failed to fetch patient data.");
+      }
+    };
+
+    fetchData();
+  }, [doctor]);
+
+  // Build patients list from users and appointments
+  useEffect(() => {
+    if (!users.length || !allAppointments.length) {
+      setIsLoading(false);
+      return;
+    }
+
+    const buildPatientsList = () => {
+      const patientMap = new Map();
+      const now = new Date();
+
+
+      allAppointments.forEach((appointment) => {
+        const { patientEmail } = appointment;
+        if (!patientEmail || patientMap.has(patientEmail)) return;
+
+        const patientUser = users.find((user) => user.email === patientEmail);
+        if (!patientUser) return;
+        const patientAppointments = allAppointments.filter(appt => appt.patientEmail === patientEmail);
+        const lastAppointment = patientAppointments.sort((a, b) => new Date(b.appointmentDate) - new Date(a.appointmentDate))[0];
+
+        const lastVisit = patientAppointments.filter(appt => new Date(appt.appointmentDate) < now && appt.status === 'completed')
+          .sort((a, b) => new Date(b.appointmentDate) - new Date(a.appointmentDate))[0];
+
+        const patientData = {
+          id: patientUser.id,
+          name: `${patientUser.firstName || ""} ${patientUser.lastName || ""}`.trim(),
+          age: patientUser.age || "",
+          gender: patientUser.gender || "",
+          phone: patientUser.phone || "",
+          email: patientUser.email,
+          address: [patientUser.city, patientUser.country].filter(Boolean).join(", "),
+          lastVisit: lastVisit?.appointmentDate || null,
+          condition: lastVisit?.reason || "General Checkup",
+          status: lastAppointment?.status === 'cancelled' || lastAppointment?.status === 'completed' ? 'inactive' : 'active'
+        };
+        patientMap.set(patientEmail, patientData);
+      });
+
+      const uniquePatients = Array.from(patientMap.values());
+      setPatients(uniquePatients);
+      // console.log("Patients List Built:", uniquePatients);
+      setIsLoading(false);
+    };
+
+    buildPatientsList();
+  }, [users, allAppointments]);
 
   const categories = ["All", "Reports", "Lab Results", "Imaging", "Prescriptions"];
-  
+
   const categoryMap = {
     "All": "all",
-    "Reports": "reports", 
+    "Reports": "reports",
     "Lab Results": "results",
     "Imaging": "imaging",
     "Prescriptions": "prescriptions"
   };
 
-  // Fetch documents from Firestore
   useEffect(() => {
-    const fetchDocuments = async () => {
+    if (patients.length === 0) {
+      setLoading(false);
+      return;
+    }
+
+    const fetchAllDocuments = async () => {
+      setLoading(true);
+      setError(null);
+      setDocuments([]);
+
       try {
-        setLoading(true);
-        setError(null);
-        
-        // Initialize Firestore
-        const db = getFirestore();
-        const documentsRef = collection(db, 'documents');
-        const snapshot = await getDocs(documentsRef);
-        
-        const docs = [];
-        snapshot.forEach((doc) => {
-          docs.push({
-            id: doc.id,
-            ...doc.data()
+        const allDocsPromises = patients.map(async (patient) => {
+          const folderRef = ref(storage, `medical-records/${patient.id}`);
+          const response = await listAll(folderRef);
+
+          const filePromises = response.items.map(async (itemRef) => {
+            const [url, metadata] = await Promise.all([
+              getDownloadURL(itemRef),
+              getMetadata(itemRef),
+            ]);
+
+            return {
+              id: itemRef.fullPath,
+              title: metadata.name,
+              size: (metadata.size / 1024).toFixed(1) + ' KB',
+              rawSize: metadata.size,
+              contentType: metadata.contentType,
+              created: metadata.timeCreated,
+              updated: metadata.updated,
+              downloadURL: url,
+              previewUrl: url,
+              category: metadata?.customMetadata?.category || 'Medical',
+              status: "Reviewed",
+              patient: patient.name,
+              patientId: patient.id,
+              type: metadata.name.split('.').pop(),
+              aiSummary: { overview: "AI Summary placeholder" }
+            };
           });
+
+          // console.log(`Fetching documents for patient: ${patient.name} (${patient.id})`);
+          // console.log(`Found ${response.items.length} documents in folder: ${folderRef.fullPath}`);
+          return Promise.all(filePromises);
         });
-        
-        setDocuments(docs);
+
+        const nestedDocsArray = await Promise.all(allDocsPromises);
+        const allDocs = nestedDocsArray.flat();
+
+        // console.log(allDocs);
+
+        // Calculate the total size by summing the rawSize of each document
+        const totalSizeInBytes = allDocs.reduce((acc, doc) => acc + (doc.rawSize || 0), 0);
+        setSize(totalSizeInBytes);
+
+        setDocuments(allDocs);
+        // console.log(`Fetched a total of ${allDocs.length} documents.`);
+        // console.log(`Total storage used: ${(totalSizeInBytes / (1024 * 1024)).toFixed(2)} MB`);
+
+
       } catch (err) {
-        console.error('Error fetching documents:', err);
-        setError('Failed to load documents from Firestore');
+        console.error("Error fetching documents:", err);
+        setError("Failed to fetch some or all patient documents.");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchDocuments();
-  }, []);
+    fetchAllDocuments();
+  }, [patients]);
+
+
 
   const getDocumentIcon = (type) => {
     switch (type?.toLowerCase()) {
@@ -147,40 +320,73 @@ const DocumentsContent = () => {
 
   const filteredDocuments = documents.filter(doc => {
     const matchesSearch = doc.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         doc.patient?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === "All" || 
-                           doc.category === categoryMap[selectedCategory];
-    return matchesSearch && matchesCategory;
+      doc.patient?.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesCategory = selectedCategory === "All" ||
+      doc.category === categoryMap[selectedCategory];
+
+    const matchesStatus = statusFilter === 'all' || doc.status?.toLowerCase() === statusFilter;
+
+    return matchesSearch && matchesCategory && matchesStatus;
   });
 
   const getDocumentStats = () => {
     const total = documents.length;
-    const pending = documents.filter(doc => doc.status === 'pending').length;
+    const pending = documents.filter(doc => doc.status?.toLowerCase() === 'pending').length;
     const thisMonth = documents.filter(doc => {
       if (!doc.updatedAt) return false;
       const docDate = new Date(doc.updatedAt);
       const currentDate = new Date();
-      return docDate.getMonth() === currentDate.getMonth() && 
-             docDate.getFullYear() === currentDate.getFullYear();
+      return docDate.getMonth() === currentDate.getMonth() &&
+        docDate.getFullYear() === currentDate.getFullYear();
     }).length;
-    
+
     const totalSize = documents.reduce((acc, doc) => {
       if (!doc.size) return acc;
       const sizeNum = parseFloat(doc.size);
-      const unit = doc.size.includes('GB') ? 1024 : 
-                   doc.size.includes('MB') ? 1 : 0.001; // KB to MB
+      const unit = doc.size.includes('GB') ? 1024 :
+        doc.size.includes('MB') ? 1 : 0.001; // KB to MB
       return acc + (sizeNum * unit);
     }, 0);
 
-    return { 
-      total, 
-      pending, 
-      thisMonth, 
+    return {
+      total,
+      pending,
+      thisMonth,
       totalSize: totalSize > 1024 ? `${(totalSize / 1024).toFixed(1)} GB` : `${totalSize.toFixed(0)} MB`
     };
   };
 
   const stats = getDocumentStats();
+
+  const statsCards = [
+    {
+      title: 'Total Documents',
+      value: stats.total,
+      Icon: FileText,
+      color: '#3182CE'
+    },
+    {
+      title: 'Pending Review',
+      value: stats.pending,
+      Icon: PriorityHigh,
+      color: '#E53E3E'
+    },
+    {
+      title: 'This Month',
+      value: stats.thisMonth,
+      Icon: UploadFile,
+      color: '#38A169'
+    },
+    {
+      title: 'Storage Used',
+      value: stats.totalSize,
+      Icon: HardDrive,
+      color: '#D69E2E'
+    }
+  ];
+
+
 
   const handleViewDocument = (doc) => {
     setSelectedDocument(doc);
@@ -195,10 +401,10 @@ const DocumentsContent = () => {
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: '2-digit', 
-      day: '2-digit' 
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
     });
   };
 
@@ -234,8 +440,8 @@ const DocumentsContent = () => {
         <Button
           variant="contained"
           startIcon={<Upload size={20} />}
-          sx={{ 
-            bgcolor: '#2196f3', 
+          sx={{
+            bgcolor: '#2196f3',
             '&:hover': { bgcolor: '#1976d2' },
             textTransform: 'none',
             px: 3,
@@ -247,130 +453,111 @@ const DocumentsContent = () => {
       </Box>
 
       {/* Stats Cards */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 2, mb: 3 }}>
-        <Card sx={{ borderRadius: 2 }}>
-          <CardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 3 }}>
-            <Box>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                Total Documents
-              </Typography>
-              <Typography variant="h4" fontWeight="bold">
-                {stats.total.toLocaleString()}
-              </Typography>
-            </Box>
-            <Box sx={{ 
-              bgcolor: '#e3f2fd', 
-              borderRadius: '50%', 
-              width: 48, 
-              height: 48, 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center' 
-            }}>
-              <FileText size={24} style={{ color: '#2196f3' }} />
-            </Box>
-          </CardContent>
-        </Card>
-
-        <Card sx={{ borderRadius: 2 }}>
-          <CardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 3 }}>
-            <Box>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                Pending Review
-              </Typography>
-              <Typography variant="h4" fontWeight="bold">
-                {stats.pending}
-              </Typography>
-            </Box>
-            <Box sx={{ 
-              bgcolor: '#fff3e0', 
-              borderRadius: '50%', 
-              width: 48, 
-              height: 48, 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center' 
-            }}>
-              <Typography variant="h6" sx={{ color: '#ff9800', fontWeight: 'bold' }}>
-                !
-              </Typography>
-            </Box>
-          </CardContent>
-        </Card>
-
-        <Card sx={{ borderRadius: 2 }}>
-          <CardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 3 }}>
-            <Box>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                This Month
-              </Typography>
-              <Typography variant="h4" fontWeight="bold">
-                {stats.thisMonth}
-              </Typography>
-            </Box>
-            <Box sx={{ 
-              bgcolor: '#e8f5e8', 
-              borderRadius: '50%', 
-              width: 48, 
-              height: 48, 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center' 
-            }}>
-              <Typography variant="h6" sx={{ color: '#4caf50', fontWeight: 'bold' }}>
-                ↑
-              </Typography>
-            </Box>
-          </CardContent>
-        </Card>
-
-        <Card sx={{ borderRadius: 2 }}>
-          <CardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 3 }}>
-            <Box>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                Storage Used
-              </Typography>
-              <Typography variant="h4" fontWeight="bold">
-                {stats.totalSize}
-              </Typography>
-            </Box>
-            <Box sx={{ 
-              bgcolor: '#f3e5f5', 
-              borderRadius: '50%', 
-              width: 48, 
-              height: 48, 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center' 
-            }}>
-              <HardDrive size={24} style={{ color: '#9c27b0' }} />
-            </Box>
-          </CardContent>
-        </Card>
-      </Box>
+      <Grid container spacing={2} sx={{
+        mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'stretch'
+      }}>
+        {statsCards.map((card, index) => (
+          <Grid item xs={12} sm={6} key={index}>
+            <Card sx={{ borderRadius: 2 }}>
+              <CardContent>
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                  <Box>
+                    <Typography sx={{
+                      fontWeight: 'medium',
+                      fontSize: '1rem',
+                    }} color="text.secondary">{card.title}</Typography>
+                    <Typography variant="h4" fontWeight="bold">{card.value}</Typography>
+                  </Box>
+                  <card.Icon sx={{ fontSize: 40, color: card.color }} />
+                </Stack>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
 
       {/* Search and Filter */}
       <Box sx={{ display: 'flex', gap: 2, mb: 3, alignItems: 'center' }}>
+
         <TextField
-          placeholder="Search documents..."
+          fullWidth
+          label="Search Document"
+          name="search"
+          variant="outlined"
+          placeholder="Search Document."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          sx={{ flex: 1, maxWidth: 400 }}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
-                <Search size={20} />
+                <Search />
               </InputAdornment>
             ),
+            sx: { borderRadius: '12px', bgcolor: 'white' }
+          }}
+          sx={{
+            '& .MuiOutlinedInput-root': {
+              borderRadius: 2,
+              boxShadow: 'none',
+              outline: 'none',
+              '&:hover fieldset': {
+                borderColor: '#28938C',
+              },
+              '&.Mui-focused fieldset': {
+                borderColor: '#1D4645',
+                borderWidth: 2,
+              },
+            },
+            '& .MuiInputBase-root': {
+              boxShadow: 'none !important',
+              outline: 'none !important',
+            },
+            '& .MuiOutlinedInput-input': {
+              boxShadow: 'none',
+              outline: 'none',
+            },
+            '& .MuiInputLabel-root.Mui-focused': {
+              color: '#1D4645',
+            },
           }}
         />
+
         <Button
-          variant="outlined"
-          startIcon={<Filter size={20} />}
-          sx={{ minWidth: 100, textTransform: 'none' }}
+          variant={statusFilter !== 'all' ? 'contained' : 'outlined'}
+          startIcon={<Filter />}
+          onClick={filterMenu.handleClick}
+          sx={{
+            borderColor: '#D1D5DB',
+            color: statusFilter !== 'all' ? 'white' : 'text.primary',
+            bgcolor: statusFilter !== 'all' ? '#2563EB' : 'white',
+            '&:hover': {
+              bgcolor: statusFilter !== 'all' ? '#1D4ED8' : 'action.hover'
+            },
+            textTransform: 'none',
+            borderRadius: '12px',
+            flexShrink: 0
+          }}
         >
-          Filter
+          Filter {statusFilter !== 'all' && `(${statusFilter})`}
         </Button>
+        <Menu
+          anchorEl={filterMenu.anchorEl}
+          open={filterMenu.open}
+          onClose={filterMenu.handleClose}
+        >
+          {filterOptions.map((option) => (
+            <MenuItem
+              key={option.value}
+              selected={option.value === statusFilter}
+              onClick={() => handleFilterChange(option.value)}
+            >
+              <ListItemIcon>
+                <StatusIndicatorIcon fontSize="small" sx={{ color: option.color }} />
+              </ListItemIcon>
+              <ListItemText sx={{ textTransform: 'capitalize' }}>{option.label}</ListItemText>
+            </MenuItem>
+          ))}
+        </Menu>
       </Box>
 
       {/* Category Tabs */}
@@ -413,8 +600,8 @@ const DocumentsContent = () => {
                       No documents found
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      {documents.length === 0 
-                        ? "No documents available in the collection" 
+                      {documents.length === 0
+                        ? "No documents available in the collection"
                         : "Try adjusting your search or filter criteria"}
                     </Typography>
                   </TableCell>
@@ -424,37 +611,41 @@ const DocumentsContent = () => {
                   <TableRow key={doc.id} hover>
                     <TableCell sx={{ py: 2 }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Box sx={{ 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          justifyContent: 'center', 
-                          width: 48, 
-                          height: 48, 
-                          bgcolor: 'grey.100', 
-                          borderRadius: 1 
+                        <Box sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: 48,
+                          height: 48,
+                          bgcolor: 'grey.100',
+                          borderRadius: 1
                         }}>
                           {getDocumentIcon(doc.type)}
                         </Box>
                         <Box sx={{ flex: 1 }}>
                           <Typography variant="body1" fontWeight="medium" sx={{ mb: 0.5 }}>
-                            {doc.title || 'Untitled Document'}
+                            {
+                              doc.title && doc.title.startsWith(doc.patientId + "_")
+                                ? doc.title.slice(doc.patientId.length + 1)
+                                : doc.title
+                            }
                           </Typography>
                           <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                             Patient: {doc.patient || 'Unknown'}
                           </Typography>
                           <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                             {doc.category && (
-                              <Chip 
-                                label={doc.category} 
-                                size="small" 
+                              <Chip
+                                label={doc.category}
+                                size="small"
                                 variant="outlined"
                                 color="primary"
                               />
                             )}
                             {doc.status && (
-                              <Chip 
-                                label={doc.status} 
-                                size="small" 
+                              <Chip
+                                label={doc.status}
+                                size="small"
                                 color={getStatusColor(doc.status)}
                               />
                             )}
@@ -468,19 +659,19 @@ const DocumentsContent = () => {
                           {doc.size || 'Unknown size'}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          {formatDate(doc.updatedAt)}
+                          {formatDate(doc.updated)}
                         </Typography>
                       </Box>
                     </TableCell>
                     <TableCell align="right" sx={{ py: 2 }}>
                       <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
                         {doc.previewUrl && (
-                          <IconButton 
-                            size="small" 
+                          <IconButton
+                            size="small"
                             onClick={() => handleViewDocument(doc)}
-                            sx={{ 
-                              bgcolor: 'primary.main', 
-                              color: 'white', 
+                            sx={{
+                              bgcolor: 'primary.main',
+                              color: 'white',
                               '&:hover': { bgcolor: 'primary.dark' },
                               width: 32,
                               height: 32
@@ -490,12 +681,12 @@ const DocumentsContent = () => {
                           </IconButton>
                         )}
                         {doc.url && (
-                          <IconButton 
+                          <IconButton
                             size="small"
                             onClick={() => window.open(doc.url, '_blank')}
-                            sx={{ 
-                              bgcolor: 'success.main', 
-                              color: 'white', 
+                            sx={{
+                              bgcolor: 'success.main',
+                              color: 'white',
                               '&:hover': { bgcolor: 'success.dark' },
                               width: 32,
                               height: 32
@@ -505,12 +696,12 @@ const DocumentsContent = () => {
                           </IconButton>
                         )}
                         {doc.aiSummary && (
-                          <IconButton 
+                          <IconButton
                             size="small"
                             onClick={() => handleAiAssistant(doc)}
-                            sx={{ 
-                              bgcolor: 'warning.main', 
-                              color: 'white', 
+                            sx={{
+                              bgcolor: 'warning.main',
+                              color: 'white',
                               '&:hover': { bgcolor: 'warning.dark' },
                               width: 32,
                               height: 32
@@ -519,7 +710,7 @@ const DocumentsContent = () => {
                             <Bot size={16} />
                           </IconButton>
                         )}
-                        <IconButton 
+                        <IconButton
                           size="small"
                           sx={{ width: 32, height: 32 }}
                         >
@@ -536,21 +727,21 @@ const DocumentsContent = () => {
       </Paper>
 
       {/* Document Viewer Dialog */}
-      <Dialog 
-        open={viewerOpen} 
-        onClose={() => setViewerOpen(false)} 
-        maxWidth="lg" 
+      <Dialog
+        open={viewerOpen}
+        onClose={() => setViewerOpen(false)}
+        maxWidth="lg"
         fullWidth
         PaperProps={{ sx: { borderRadius: 2 } }}
       >
-        <DialogTitle sx={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
+        <DialogTitle sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
           alignItems: 'center',
           pb: 2
         }}>
           <Typography variant="h6">Document Preview</Typography>
-          <IconButton 
+          <IconButton
             onClick={() => setViewerOpen(false)}
             sx={{ bgcolor: 'grey.100', '&:hover': { bgcolor: 'grey.200' } }}
           >
@@ -568,19 +759,19 @@ const DocumentsContent = () => {
                 style={{ border: 0 }}
               />
             ) : (
-              <Box sx={{ 
-                display: 'flex', 
-                justifyContent: 'center', 
-                alignItems: 'center', 
+              <Box sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
                 height: '100%',
                 p: 2
               }}>
                 <img
                   src={selectedDocument.previewUrl}
                   alt={selectedDocument.title}
-                  style={{ 
-                    maxWidth: "100%", 
-                    maxHeight: "100%", 
+                  style={{
+                    maxWidth: "100%",
+                    maxHeight: "100%",
                     objectFit: 'contain',
                     borderRadius: 8
                   }}
@@ -592,16 +783,16 @@ const DocumentsContent = () => {
       </Dialog>
 
       {/* AI Assistant Dialog */}
-      <Dialog 
-        open={aiAssistantOpen} 
-        onClose={() => setAiAssistantOpen(false)} 
-        maxWidth="md" 
+      <Dialog
+        open={aiAssistantOpen}
+        onClose={() => setAiAssistantOpen(false)}
+        maxWidth="md"
         fullWidth
         PaperProps={{ sx: { borderRadius: 2 } }}
       >
-        <DialogTitle sx={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
+        <DialogTitle sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
           alignItems: 'center',
           pb: 2
         }}>
@@ -609,7 +800,7 @@ const DocumentsContent = () => {
             <Bot size={24} style={{ color: '#ff9800' }} />
             <Typography variant="h6">AI Assistant</Typography>
           </Box>
-          <IconButton 
+          <IconButton
             onClick={() => setAiAssistantOpen(false)}
             sx={{ bgcolor: 'grey.100', '&:hover': { bgcolor: 'grey.200' } }}
           >
@@ -620,19 +811,19 @@ const DocumentsContent = () => {
           {selectedDocument?.aiSummary && (
             <Stack spacing={3}>
               {selectedDocument.aiSummary.overview && (
-                <Box sx={{ 
-                  p: 2, 
-                  bgcolor: 'info.50', 
-                  borderRadius: 2, 
-                  border: 1, 
-                  borderColor: 'info.200' 
+                <Box sx={{
+                  p: 2,
+                  bgcolor: 'info.50',
+                  borderRadius: 2,
+                  border: 1,
+                  borderColor: 'info.200'
                 }}>
                   <Typography variant="body1">
                     {selectedDocument.aiSummary.overview}
                   </Typography>
                 </Box>
               )}
-              
+
               {selectedDocument.aiSummary.vitals?.length > 0 && (
                 <Box>
                   <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -647,12 +838,12 @@ const DocumentsContent = () => {
                           p: 2,
                           borderRadius: 2,
                           bgcolor: vital.status?.toLowerCase() === "high" ? "#ffebee" :
-                                   vital.status?.toLowerCase() === "low" ? "#e3f2fd" :
-                                   vital.status?.toLowerCase() === "normal" ? "#e8f5e8" : "grey.50",
+                            vital.status?.toLowerCase() === "low" ? "#e3f2fd" :
+                              vital.status?.toLowerCase() === "normal" ? "#e8f5e8" : "grey.50",
                           border: 1,
                           borderColor: vital.status?.toLowerCase() === "high" ? "error.light" :
-                                      vital.status?.toLowerCase() === "low" ? "info.light" :
-                                      vital.status?.toLowerCase() === "normal" ? "success.light" : "grey.300"
+                            vital.status?.toLowerCase() === "low" ? "info.light" :
+                              vital.status?.toLowerCase() === "normal" ? "success.light" : "grey.300"
                         }}
                       >
                         <Typography variant="body1" fontWeight="medium">
@@ -666,7 +857,7 @@ const DocumentsContent = () => {
                   </Stack>
                 </Box>
               )}
-              
+
               {selectedDocument.aiSummary.analysis?.length > 0 && (
                 <Box>
                   <Typography variant="h6" sx={{ mb: 2 }}>Analysis</Typography>
@@ -679,7 +870,7 @@ const DocumentsContent = () => {
                   </Stack>
                 </Box>
               )}
-              
+
               {selectedDocument.aiSummary.recommendations?.length > 0 && (
                 <Box>
                   <Typography variant="h6" sx={{ mb: 2 }}>Recommendations</Typography>
@@ -700,4 +891,4 @@ const DocumentsContent = () => {
   );
 };
 
-export default DocumentsContent;
+export default DoctorDocumentSection;

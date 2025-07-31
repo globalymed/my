@@ -20,7 +20,7 @@ import {
 import { DashboardContent } from "./components/dashboard-content";
 import AppointmentsContent from "./components/AppointmentSection.jsx";
 import PatientsContent from "./components/PatientSection.jsx";
-import  DocumentsContent  from "./components/documents-content";
+import  DocumentsContent  from "./components/DocumentSection";
 import { InvoicesContent } from "./components/invoices-content";
 import AvailabilityContent from "./components/availability-content";
 import AIAssistantContent  from "./components/ai-assistant-content";
@@ -290,7 +290,7 @@ export function DoctorDashboard() {
           {activeSection === "Dashboard" && <DashboardContent />}
           {activeSection === "Appointments" && <AppointmentsContent doctor={doctor}  />}
           {activeSection === "Patients" && <PatientsContent doctor={doctor} />}
-          {activeSection === "Documents" && <DocumentsContent />}
+          {activeSection === "Documents" && <DocumentsContent doctor={doctor} />}
           {activeSection === "Invoices" && <InvoicesContent />}
           {activeSection === "Availability" && <AvailabilityContent />}
           {activeSection === "AI Assistant" && <AIAssistantContent />}
