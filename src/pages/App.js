@@ -30,6 +30,10 @@ import TermsOfService from './TermsOfService.jsx';
 import PrivacyPolicy from './PrivacyPolicy.jsx';
 import CompareCost from './compareCost.jsx';
 import PostHogPageViewTracker from '../utils/PostHogPageViewTracker';
+import DentalTreatment from '../components/Treatment/DentalTreatment';
+import IVFTreatment from '../components/Treatment/IVFTreatment';
+import HairTreatment from '../components/Treatment/HairTreatment';
+import CosmeticsTreatment from '../components/Treatment/CosmeticsTreatment';
 
 // Create a component to render the doctor dashboard in an iframe
 const DoctorDashboard = () => {
@@ -199,7 +203,11 @@ const App = () => {
                 <Route path="/free-consultation" element={<FreeConsultation />} />
                 <Route path="/contact" element={<ContactUs />} />
                 <Route path="/compare-cost" element={<CompareCost />} />
-                <Route path="/treatment" element={<Blog />} />
+                <Route path="/treatment/dental" element={<DentalTreatment />} />
+                <Route path="/treatment/ivf" element={<IVFTreatment />} />
+                <Route path="/treatment/hair" element={<HairTreatment />} />
+                <Route path="/treatment/cosmetics" element={<CosmeticsTreatment />} />
+                <Route path="/treatment/blog" element={<Blog />} />
                 <Route path="/treatment/:id" element={<BlogPostPage />} />
                 <Route path="/newLogin" element={<LoginPage />} />
                 <Route path="/newSignup" element={<NewSignupPage />} />
