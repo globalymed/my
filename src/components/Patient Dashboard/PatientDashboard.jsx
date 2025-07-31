@@ -116,11 +116,10 @@ function AppSidebar({
         keepMounted: true,
       }}
       sx={{
-        width: isMobile ? drawerWidth : (sidebarOpen ? drawerWidth : collapsedDrawerWidth),
-        flexShrink: isMobile ? 0 : 1,
-        "& .MuiDrawer-paper": {
-          width: isMobile ? drawerWidth : (sidebarOpen ? drawerWidth : collapsedDrawerWidth),
-          boxSizing: "border-box",
+        display: { xs: 'block', sm: 'block' },
+        '& .MuiDrawer-paper': {
+          boxSizing: 'border-box',
+          width: sidebarOpen ? drawerWidth : collapsedDrawerWidth,
           transition: theme.transitions.create('width', {
             easing: theme.transitions.easing.sharp,
             duration: theme.transitions.duration.enteringScreen,
@@ -292,8 +291,9 @@ function MainContent({ activeSection, user, appointments, isSidebarOpen, isMobil
       sx={{
         flexGrow: 1,
         p: 3,
-        ml: isMobile ? 0 : (isSidebarOpen ? `${drawerWidth}px` : `${collapsedDrawerWidth}px`),
-        transition: theme.transitions.create('margin', {
+        width: { sm: `calc(100% - ${isSidebarOpen ? drawerWidth : collapsedDrawerWidth}px)` },
+        ml: { sm: isSidebarOpen ? `${drawerWidth}px` : `${collapsedDrawerWidth}px` },
+        transition: theme.transitions.create(['margin', 'width'], {
           easing: theme.transitions.easing.sharp,
           duration: theme.transitions.duration.enteringScreen,
         }),
@@ -351,12 +351,13 @@ export function PatientDashboard({ user, appointments, onLogout, error, loading 
             backgroundColor: '#fff',
             color: '#000',
             borderBottom: '1px solid #e0e0e0',
-            width: `calc(100% - ${isMobile ? 0 : (sidebarOpen ? drawerWidth : collapsedDrawerWidth)}px)`,
-            ml: isMobile ? 0 : (sidebarOpen ? `${drawerWidth}px` : `${collapsedDrawerWidth}px`),
+            width: { sm: `calc(100% - ${sidebarOpen ? drawerWidth : collapsedDrawerWidth}px)` },
+            ml: { sm: sidebarOpen ? `${drawerWidth}px` : `${collapsedDrawerWidth}px` },
             transition: theme.transitions.create(['width', 'margin'], {
               easing: theme.transitions.easing.sharp,
               duration: theme.transitions.duration.enteringScreen,
             }),
+            zIndex: (theme) => theme.zIndex.drawer + 1,
           }}
         >
           <Toolbar sx={{ justifyContent: 'space-between' }}>
