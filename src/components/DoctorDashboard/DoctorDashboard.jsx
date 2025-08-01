@@ -287,7 +287,7 @@ export function DoctorDashboard() {
 
         {/* Dashboard Content */}
         <main className="doctor-content">
-          {activeSection === "Dashboard" && <DashboardContent />}
+          {activeSection === "Dashboard" && <DashboardContent doctor={doctor} />}
           {activeSection === "Appointments" && <AppointmentsContent doctor={doctor}  />}
           {activeSection === "Patients" && <PatientsContent doctor={doctor} />}
           {activeSection === "Documents" && <DocumentsContent />}

@@ -32,7 +32,7 @@ import {
 } from "@mui/icons-material";
 import { blue, green, grey, purple, red } from "@mui/material/colors";
 
-import { getAllPatients, getAllUsers, getAppointmentsByDoctorId } from "../../../firebase";
+import { getAllPatients, getAllUsers, getAppointmentsByDoctorId, getAppointmentsByClinicIds } from "../../../firebase";
 
 const PatientActions = () => {
   // Ensure useState is called correctly and explicitly typed.
@@ -93,8 +93,6 @@ const DoctorPatientSection = ({ doctor }) => {
   // console.log("DoctorPatientSection rendered with doctor:", doctor);
   const [searchQuery, setSearchQuery] = useState("");
 
-
-
   // Fetch users from Firebase
   const [users, setUsers] = useState([]);
   const [allAppointments, setAllAppointments] = useState([]);
@@ -102,6 +100,14 @@ const DoctorPatientSection = ({ doctor }) => {
   const [error, setError] = useState(null);
 
   const [patients, setPatients] = useState([]);
+  
+  // Stats state variables
+  const [statsData, setStatsData] = useState({
+    totalPatients: 0,
+    activePatients: 0,
+    newThisMonth: 0,
+    criticalCases: 0
+  });
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -118,7 +124,18 @@ const DoctorPatientSection = ({ doctor }) => {
       try {
         setIsLoading(true);
         setError(null);
-        const data = await getAppointmentsByDoctorId(doctor.id);
+        
+        let data = [];
+        
+        // Fetch appointments based on doctor's clinic IDs
+        if (doctor && doctor.clinicIds && doctor.clinicIds.length > 0) {
+          console.log('Fetching appointments for clinic IDs:', doctor.clinicIds);
+          data = await getAppointmentsByClinicIds(doctor.clinicIds);
+        } else {
+          console.log('No clinic IDs found, using doctorId fallback');
+          data = await getAppointmentsByDoctorId(doctor.id);
+        }
+        
         console.log("Fetched appointments:", data);
         setAllAppointments(data); // Keep the full list
       } catch (error) {
@@ -129,8 +146,10 @@ const DoctorPatientSection = ({ doctor }) => {
     }
 
     fetchUsers();
-    fetchAppointments();
-  }, []);
+    if (doctor && doctor.id) {
+      fetchAppointments();
+    }
+  }, [doctor]);
 
   useEffect(() => {
     const buildPatientsList = () => {
@@ -184,6 +203,26 @@ const DoctorPatientSection = ({ doctor }) => {
       const uniquePatients = Array.from(patientMap.values());
       console.log("Unique patients built:", uniquePatients);
       setPatients(uniquePatients);
+
+      // Calculate stats
+      const totalPatients = uniquePatients.length;
+      const activePatients = totalPatients; // As requested, same as total
+      const newThisMonth = totalPatients; // As requested, same as total
+      const criticalCases = 0; // As requested, set to zero
+
+      setStatsData({
+        totalPatients,
+        activePatients,
+        newThisMonth,
+        criticalCases
+      });
+
+      console.log('Patient stats calculated:', {
+        totalPatients,
+        activePatients,
+        newThisMonth,
+        criticalCases
+      });
     };
 
     buildPatientsList();
@@ -223,7 +262,9 @@ const DoctorPatientSection = ({ doctor }) => {
               <Stack direction="row" justifyContent="space-between" alignItems="center">
                 <Box>
                   <Typography color="text.secondary">Total Patients</Typography>
-                  <Typography variant="h5" fontWeight="bold">156</Typography>
+                  <Typography variant="h5" fontWeight="bold">
+                    {isLoading ? "..." : error ? "0" : statsData.totalPatients}
+                  </Typography>
                 </Box>
                 <Group sx={{ fontSize: 40, color: blue[600] }} />
               </Stack>
@@ -236,7 +277,9 @@ const DoctorPatientSection = ({ doctor }) => {
               <Stack direction="row" justifyContent="space-between" alignItems="center">
                 <Box>
                   <Typography color="text.secondary">Active Patients</Typography>
-                  <Typography variant="h5" fontWeight="bold">142</Typography>
+                  <Typography variant="h5" fontWeight="bold">
+                    {isLoading ? "..." : error ? "0" : statsData.activePatients}
+                  </Typography>
                 </Box>
                 <Avatar sx={{ bgcolor: green[600], width: 40, height: 40 }}>
                   <Check />
@@ -251,7 +294,9 @@ const DoctorPatientSection = ({ doctor }) => {
               <Stack direction="row" justifyContent="space-between" alignItems="center">
                 <Box>
                   <Typography color="text.secondary">New This Month</Typography>
-                  <Typography variant="h5" fontWeight="bold">23</Typography>
+                  <Typography variant="h5" fontWeight="bold">
+                    {isLoading ? "..." : error ? "0" : statsData.newThisMonth}
+                  </Typography>
                 </Box>
                 <Add sx={{ fontSize: 40, color: purple[600] }} />
               </Stack>
@@ -264,7 +309,9 @@ const DoctorPatientSection = ({ doctor }) => {
               <Stack direction="row" justifyContent="space-between" alignItems="center">
                 <Box>
                   <Typography color="text.secondary">Critical Cases</Typography>
-                  <Typography variant="h5" fontWeight="bold">5</Typography>
+                  <Typography variant="h5" fontWeight="bold">
+                    {isLoading ? "..." : error ? "0" : statsData.criticalCases}
+                  </Typography>
                 </Box>
                 <Avatar sx={{ bgcolor: red[600], width: 40, height: 40 }}>
                   <PriorityHigh fontSize="small" />

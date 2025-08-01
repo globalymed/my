@@ -32,7 +32,7 @@ import {
   Cancel as CancelIcon,
 } from '@mui/icons-material';
 
-import { db, getAppointments, classifyAppointments, getAppointmentsByDoctorId } from '../../../firebase.js';
+import { db, getAppointments, classifyAppointments, getAppointmentsByDoctorId, getAppointmentsByClinicIds } from '../../../firebase.js';
 import { collection, getDocs } from "firebase/firestore";
 
 // Custom hook for managing dropdown menus
@@ -161,15 +161,39 @@ const DoctorAppointmentSection = ({doctor}) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Stats state variables
+  const [statsData, setStatsData] = useState({
+    todaysCount: 0,
+    pendingCount: 0,
+    completedCount: 0,
+    cancelledCount: 0
+  });
+
 
   useEffect(() => {
     const fetchAndClassifyAppointments = async () => {
       try {
         setIsLoading(true);
         setError(null);
-        const data = await getAppointmentsByDoctorId(doctor.id);
-        // console.log(data);
-        setAllAppointments(data); // Keep the full list
+        
+        let data = [];
+        
+        // Fetch appointments based on doctor's clinic IDs
+        if (doctor && doctor.clinicIds && doctor.clinicIds.length > 0) {
+          console.log('Fetching appointments for clinic IDs:', doctor.clinicIds);
+          data = await getAppointmentsByClinicIds(doctor.clinicIds);
+        } else {
+          console.log('No clinic IDs found, using doctorId fallback');
+          data = await getAppointmentsByDoctorId(doctor.id);
+        }
+        
+        // Calculate stats
+        const now = new Date();
+        
+        console.log('Fetched appointments:', data);
+        console.log('Current date and time:', now);
+        console.log('Sample appointment for debugging:', data[0]);
+        setAllAppointments(data);
 
         // Use the new function to categorize
         const {
@@ -177,12 +201,101 @@ const DoctorAppointmentSection = ({doctor}) => {
           upcomingAppointments,
           pastAppointments
         } = classifyAppointments(data);
-        // console.log("Upcoming Appointments:", upcomingAppointments);
 
         // Set the state for each category
         setTodayAppointments(todayAppointments);
         setUpcomingAppointments(upcomingAppointments);
         setPastAppointments(pastAppointments);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayEnd = new Date(today);
+        todayEnd.setHours(23, 59, 59, 999);
+
+        console.log('Current time for comparison:', now);
+        console.log('Today start:', today);
+        console.log('Today end:', todayEnd);
+
+        const todaysCount = data.filter(appointment => {
+          if (!appointment.appointmentDate) return false;
+          const appointmentDate = new Date(appointment.appointmentDate);
+          // For today's count, we only care about the date, not the time
+          appointmentDate.setHours(0, 0, 0, 0);
+          return appointmentDate.getTime() === today.getTime();
+        }).length;
+
+        const pendingCount = data.filter(appointment => {
+          if (!appointment.appointmentDate) return false;
+          
+          const appointmentDate = new Date(appointment.appointmentDate);
+          
+          // For pending appointments, we consider any appointment that's in the future
+          // If no time is specified, we assume end of day to be safe
+          if (!appointment.appointmentTime) {
+            appointmentDate.setHours(23, 59, 59, 999);
+          } else {
+            try {
+              const timeStr = appointment.appointmentTime.toString().trim();
+              if (timeStr.includes(':')) {
+                const [hours, minutes] = timeStr.split(':').map(Number);
+                if (!isNaN(hours) && !isNaN(minutes)) {
+                  appointmentDate.setHours(hours, minutes, 0, 0);
+                }
+              }
+            } catch (error) {
+              console.warn('Error parsing appointment time:', appointment.appointmentTime, error);
+              appointmentDate.setHours(23, 59, 59, 999);
+            }
+          }
+          
+          const isPending = appointmentDate > now;
+          console.log('Appointment:', appointment.patientName, 'Date:', appointmentDate, 'Is Pending:', isPending);
+          return isPending;
+        }).length;
+
+        const completedCount = data.filter(appointment => {
+          if (!appointment.appointmentDate) return false;
+          
+          const appointmentDate = new Date(appointment.appointmentDate);
+          
+          // For completed appointments, we consider any appointment that's in the past
+          // If no time is specified, we assume start of day
+          if (!appointment.appointmentTime) {
+            appointmentDate.setHours(0, 0, 0, 0);
+          } else {
+            try {
+              const timeStr = appointment.appointmentTime.toString().trim();
+              if (timeStr.includes(':')) {
+                const [hours, minutes] = timeStr.split(':').map(Number);
+                if (!isNaN(hours) && !isNaN(minutes)) {
+                  appointmentDate.setHours(hours, minutes, 0, 0);
+                }
+              }
+            } catch (error) {
+              console.warn('Error parsing appointment time:', appointment.appointmentTime, error);
+              appointmentDate.setHours(0, 0, 0, 0);
+            }
+          }
+          
+          return appointmentDate < now;
+        }).length;
+
+        // Set cancelled count to 0 as requested
+        const cancelledCount = 0;
+
+        setStatsData({
+          todaysCount,
+          pendingCount,
+          completedCount,
+          cancelledCount
+        });
+
+        console.log('Stats calculated:', {
+          todaysCount,
+          pendingCount,
+          completedCount,
+          cancelledCount,
+          totalAppointments: data.length
+        });
 
       } catch (err) {
         setError("Failed to load appointments.");
@@ -191,8 +304,11 @@ const DoctorAppointmentSection = ({doctor}) => {
         setIsLoading(false);
       }
     };
-    fetchAndClassifyAppointments();
-  }, []);
+    
+    if (doctor && doctor.id) {
+      fetchAndClassifyAppointments();
+    }
+  }, [doctor]);
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
@@ -244,10 +360,10 @@ const DoctorAppointmentSection = ({doctor}) => {
   }
 
   const statsCards = [
-    { title: "Today's Appointments", value: "8", Icon: Calendar, color: '#2563EB' },
-    { title: "Pending", value: "3", Icon: Clock, color: '#D97706' },
-    { title: "Completed", value: "12", Icon: CheckCircleIcon, color: '#059669' },
-    { title: "Cancelled", value: "2", Icon: CancelIcon, color: '#DC2626' },
+    { title: "Today's Appointments", value: statsData.todaysCount.toString(), Icon: Calendar, color: '#2563EB' },
+    { title: "Pending", value: statsData.pendingCount.toString(), Icon: Clock, color: '#D97706' },
+    { title: "Completed", value: statsData.completedCount.toString(), Icon: CheckCircleIcon, color: '#059669' },
+    { title: "Cancelled", value: statsData.cancelledCount.toString(), Icon: CancelIcon, color: '#DC2626' },
   ];
 
   const renderAppointmentList = (appointments, title) => (
@@ -304,7 +420,9 @@ const DoctorAppointmentSection = ({doctor}) => {
                       fontWeight: 'semibold',
                       fontSize: '1.2rem',
                     }} color="text.secondary">{card.title}</Typography>
-                    <Typography variant="h3" fontWeight="bold">{card.value}</Typography>
+                    <Typography variant="h3" fontWeight="bold">
+                      {isLoading ? "..." : error ? "0" : card.value}
+                    </Typography>
                   </Box>
                   <card.Icon sx={{ fontSize: 40, color: card.color }} />
                 </Stack>

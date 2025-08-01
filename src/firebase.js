@@ -1057,6 +1057,50 @@ export const getAppointmentsByDoctorId = async (doctorId) => {
   }
 };
 
+// Get appointments filtered by clinic IDs (for doctor dashboard)
+export const getAppointmentsByClinicIds = async (clinicIds) => {
+  try {
+    if (!clinicIds || clinicIds.length === 0) {
+      console.log('No clinic IDs provided');
+      return [];
+    }
+
+    const appointmentsCollection = collection(db, 'appointments');
+    let allAppointments = [];
+
+    // Firestore 'in' operator supports max 10 values, so we need to chunk the clinicIds
+    const chunkSize = 10;
+    for (let i = 0; i < clinicIds.length; i += chunkSize) {
+      const chunk = clinicIds.slice(i, i + chunkSize);
+      const q = query(
+        appointmentsCollection,
+        where('clinicId', 'in', chunk)
+      );
+
+      const appointmentsSnapshot = await getDocs(q);
+      if (!appointmentsSnapshot.empty) {
+        const appointmentsList = appointmentsSnapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            appointmentDate: data.appointmentDate?.toDate
+              ? data.appointmentDate.toDate()
+              : new Date(data.appointmentDate)
+          };
+        });
+        allAppointments = allAppointments.concat(appointmentsList);
+      }
+    }
+
+    console.log(`Found ${allAppointments.length} appointments for clinic IDs: ${clinicIds.join(', ')}`);
+    return allAppointments;
+  } catch (error) {
+    console.error('Error fetching appointments by clinic IDs:', error);
+    return [];
+  }
+};
+
 // ====== Doctor Management Functions ======
 
 // Get all doctors

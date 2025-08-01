@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Calendar, DollarSign, FileText, User } from "lucide-react";
-import { getAppointments, getTotalDocumentsCount } from "../../../firebase";
+import { getAppointments, getAppointmentsByClinicIds, getTotalDocumentsCount } from "../../../firebase";
 
-export function DashboardContent() {
+export function DashboardContent({ doctor }) {
   const [totalPatients, setTotalPatients] = useState(0);
   const [todaysAppointments, setTodaysAppointments] = useState(0);
   const [totalDocuments, setTotalDocuments] = useState(0);
@@ -10,7 +10,22 @@ export function DashboardContent() {
   // Function to count unique patient emails from appointments
   const fetchTotalPatients = async () => {
     try {
-      const appointments = await getAppointments();
+      let appointments;
+      
+      console.log('Doctor data in dashboard:', doctor);
+      console.log('Doctor clinic IDs:', doctor?.clinicIds);
+      
+      // If doctor has clinic IDs, filter appointments by those clinics
+      if (doctor && doctor.clinicIds && doctor.clinicIds.length > 0) {
+        console.log('Fetching appointments for clinic IDs:', doctor.clinicIds);
+        appointments = await getAppointmentsByClinicIds(doctor.clinicIds);
+        console.log('Filtered appointments:', appointments);
+      } else {
+        console.log('No clinic IDs found, fetching all appointments');
+        // Fallback to all appointments if no clinic IDs available
+        appointments = await getAppointments();
+        console.log('All appointments:', appointments);
+      }
       
       // Extract unique patient emails
       const uniqueEmails = new Set();
@@ -20,6 +35,8 @@ export function DashboardContent() {
         }
       });
       
+      console.log('Unique patient emails:', Array.from(uniqueEmails));
+      console.log('Total unique patients:', uniqueEmails.size);
       setTotalPatients(uniqueEmails.size);
     } catch (error) {
       console.error('Error fetching total patients:', error);
@@ -30,7 +47,16 @@ export function DashboardContent() {
   // Function to count today's appointments
   const fetchTodaysAppointments = async () => {
     try {
-      const appointments = await getAppointments();
+      let appointments;
+      
+      // If doctor has clinic IDs, filter appointments by those clinics
+      if (doctor && doctor.clinicIds && doctor.clinicIds.length > 0) {
+        appointments = await getAppointmentsByClinicIds(doctor.clinicIds);
+      } else {
+        // Fallback to all appointments if no clinic IDs available
+        appointments = await getAppointments();
+      }
+      
       const today = new Date();
       today.setHours(0, 0, 0, 0); // Set to start of today
       
@@ -44,6 +70,7 @@ export function DashboardContent() {
         return appointmentDate >= today && appointmentDate <= todayEnd;
       }).length;
       
+      console.log('Today\'s appointments count:', todaysCount);
       setTodaysAppointments(todaysCount);
     } catch (error) {
       console.error('Error fetching today\'s appointments:', error);
@@ -62,12 +89,12 @@ export function DashboardContent() {
     }
   };
 
-  // Fetch all data on component mount
+  // Fetch all data on component mount and when doctor changes
   useEffect(() => {
     fetchTotalPatients();
     fetchTodaysAppointments();
     fetchTotalDocuments();
-  }, []);
+  }, [doctor]); // Re-fetch when doctor data changes
   return (
     <div className="space-y-6">
       {/* Stats Cards */}
