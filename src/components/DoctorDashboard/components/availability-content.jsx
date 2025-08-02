@@ -874,7 +874,14 @@ const AvailabilityContent = ({ loggedInDoctorId }) => {
   }
 
   return (
-    <Box p={{ xs: 1, md: 3 }}>
+    <Box sx={{ 
+      width: '100%', 
+      minHeight: 'auto', 
+      overflow: 'visible',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 3
+    }}>
       {/* Header */}
       <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'center' }} gap={2} mb={2}>
         <div>
@@ -1067,7 +1074,7 @@ const AvailabilityContent = ({ loggedInDoctorId }) => {
       {/* Stats Cards */}
       <Grid container spacing={2} mb={3}>
         <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ height: '100%' }}>
+          <Card sx={{ minHeight: 'auto' }}>
             <CardContent sx={{ p: 2 }}>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <div>
@@ -1082,7 +1089,7 @@ const AvailabilityContent = ({ loggedInDoctorId }) => {
           </Card>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ height: '100%' }}>
+          <Card sx={{ minHeight: 'auto' }}>
             <CardContent sx={{ p: 2 }}>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <div>
@@ -1097,7 +1104,7 @@ const AvailabilityContent = ({ loggedInDoctorId }) => {
           </Card>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ height: '100%' }}>
+          <Card sx={{ minHeight: 'auto' }}>
             <CardContent sx={{ p: 2 }}>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <div>
@@ -1114,7 +1121,7 @@ const AvailabilityContent = ({ loggedInDoctorId }) => {
           </Card>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ height: '100%' }}>
+          <Card sx={{ minHeight: 'auto' }}>
             <CardContent sx={{ p: 2 }}>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <div>
@@ -1170,7 +1177,7 @@ const AvailabilityContent = ({ loggedInDoctorId }) => {
             )}
           </Box>
           
-          <Grid container spacing={3}>
+          <Grid container spacing={3} sx={{ flex: 1 }}>
             {/* Calendar View */}
             <Grid item xs={12} md={5}>
               <Card elevation={0} sx={{ 
@@ -1327,20 +1334,8 @@ const AvailabilityContent = ({ loggedInDoctorId }) => {
                   <Box sx={{ 
                     display: 'flex', 
                     gap: 2, 
-                    overflowX: 'auto',
-                    pb: 2,
-                    scrollbarWidth: 'thin',
-                    '&::-webkit-scrollbar': {
-                      height: 6,
-                    },
-                    '&::-webkit-scrollbar-track': {
-                      background: 'rgba(0,0,0,0.02)',
-                      borderRadius: 2,
-                    },
-                    '&::-webkit-scrollbar-thumb': {
-                      background: 'rgba(0,0,0,0.1)',
-                      borderRadius: 2,
-                    }
+                    flexWrap: 'wrap',
+                    pb: 2
                   }}>
                     {weekDays.map((day) => {
                       const dayKey = format(day, 'yyyy-MM-dd');
@@ -1355,13 +1350,12 @@ const AvailabilityContent = ({ loggedInDoctorId }) => {
                           onClick={() => setSelectedDate(day)}
                           elevation={0}
                           sx={{
-                            minWidth: 160,
+                            width: { xs: '100%', sm: 160, md: 180 },
                             borderRadius: 3,
                             border: '1px solid',
                             borderColor: isSelected ? '#2563eb' : 'rgba(0, 0, 0, 0.08)',
                             backgroundColor: isSelected ? 'rgba(37, 99, 235, 0.05)' : 'white',
                             boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
-                            flexShrink: 0,
                             cursor: 'pointer',
                             transition: 'all 0.3s ease',
                             '&:hover': {

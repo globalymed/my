@@ -165,6 +165,12 @@ const App = () => {
             </ProtectedRoute>
           } />
 
+          {/* Doctor dashboard route without Layout (no footer) */}
+          <Route path="/doctor-dashboard" element={
+            <DoctorProtectedRoute>
+              <DoctorDashboard />
+            </DoctorProtectedRoute>
+          } />
 
           {/* All other routes with default Layout */}
           <Route path="/*" element={
@@ -197,11 +203,6 @@ const App = () => {
                 } />
                 <Route path="/book-now" element={<AppointmentBookingPage />} />
                 <Route path="/plan-journey" element={<PlanJourney />} />
-                <Route path="/doctor-dashboard" element={
-                  <DoctorProtectedRoute>
-                    <DoctorDashboard />
-                  </DoctorProtectedRoute>
-                } />
                 <Route path="/login" element={
                   <AuthRoute>
                     <NewLoginPage />
