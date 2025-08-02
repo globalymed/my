@@ -141,7 +141,7 @@ const AdvanceTreatmentSection = () => {
                             <Card
                                 sx={{
                                     height: "100%",
-                                    borderRadius: 3,
+                                    borderRadius: 1,
                                     transition: "all 0.3s",
                                     display: "flex",
                                     flexDirection: "column",

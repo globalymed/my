@@ -107,10 +107,10 @@ const FAQTreatmentSection = () => {
                                     boxShadow: 10,
                                 },
                                 '&:before': {
-                                    display: 'none', 
+                                    display: 'none',
                                 },
                                 '&.Mui-expanded': {
-                                    margin: '0 !important', 
+                                    margin: '0 !important',
                                 }
                             }}
                         >
@@ -127,7 +127,7 @@ const FAQTreatmentSection = () => {
                                         transition: 'color 0.3s',
                                     },
                                     '&:hover .MuiAccordionSummary-content .MuiTypography-root': {
-                                        color: 'primary.main', 
+                                        color: 'primary.main',
                                     }
                                 }}
                             >

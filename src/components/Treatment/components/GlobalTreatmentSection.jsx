@@ -154,11 +154,11 @@ const GlobalTreatmentSection = () => {
                                 position: 'absolute',
                                 inset: 0,
                                 background: 'linear-gradient(to bottom right, rgba(96, 165, 250, 0.2), rgba(168, 85, 247, 0.2))',
-                                borderRadius: 4,
+                                borderRadius: 1,
                                 filter: 'blur(40px)',
                                 transform: 'rotate(-6deg)',
                             }} />
-                            <Paper elevation={8} sx={{ position: 'relative', borderRadius: 4, p: { xs: 2, md: 4 }, border: '1px solid #e5e7eb' }}>
+                            <Paper elevation={8} sx={{ position: 'relative', borderRadius: 2, p: { xs: 2, md: 4 }, border: '1px solid #e5e7eb' }}>
                                 <Box sx={{ textAlign: 'center', mb: 3 }}>
                                     <Typography variant="h4" component="h3" fontWeight="bold">
                                         <Typography component="span" variant="inherit" sx={{

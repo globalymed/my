@@ -33,6 +33,13 @@ import AdvanceTreatmentSection from './components/AdvanceTreatmentSection';
 import GlobalTreatmentSection from './components/GlobalTreatmentSection';
 import FAQTreatmentSection from './components/FAQTreatmentSection';
 import FinalCTATreatmentSecion from './components/FinalCTATreatmentSection';
+import WorkingTreatmentSection from './components/WorkingTreatmentSection';
+import TopClinicsTreatmentSection from './components/TopClinicsTreatmentSection';
+import TransformationTreatmentSection from './components/TransformationTreatmentSection';
+import SuccessStoriesTreatmentSection from './components/SuccessStoriesTreatmentSection';
+import ReviewsTreatmentSecion from './components/ReviewsTreatmentSection';
+import TravelSupportTreatmentSection from './components/TravelSupportTreatmentSection';
+import LatestBlogTreatmentSection from './components/LatestBlogTreatmentSection';
 
 
 export default function DentalTreatmentPageMUI() {
@@ -115,6 +122,27 @@ export default function DentalTreatmentPageMUI() {
 
             {/* Why India Section */}
             <GlobalTreatmentSection />
+
+            {/* Medyatra Working Section */}
+            <WorkingTreatmentSection />
+
+            {/* Top Clinic Section */}
+            <TopClinicsTreatmentSection />
+
+            {/* Transformation */}
+            <TransformationTreatmentSection />
+
+            {/* Success Stories */}
+            <SuccessStoriesTreatmentSection />
+
+            {/* Reviews and Testinomials */}
+            <ReviewsTreatmentSecion />
+
+            {/* Travel & Accommodation Support */}
+            <TravelSupportTreatmentSection />
+
+            {/* Latest Blog Section */}
+            <LatestBlogTreatmentSection />
 
             {/* FAQs Section */}
             <FAQTreatmentSection />
