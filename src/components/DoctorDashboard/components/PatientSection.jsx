@@ -1,4 +1,4 @@
-import React, { use, useEffect, useState } from "react";
+import React, { useMemo, useEffect, useState } from "react";
 import {
   Box,
   Button,
@@ -16,6 +16,8 @@ import {
   Menu,
   MenuItem,
   Paper,
+  ListItemIcon,
+  ListItemText
 } from "@mui/material";
 import {
   Group,
@@ -29,10 +31,25 @@ import {
   CalendarToday,
   Check,
   PriorityHigh,
+  Lens as StatusIndicatorIcon,
+  FilterList as Filter,
 } from "@mui/icons-material";
 import { blue, green, grey, purple, red } from "@mui/material/colors";
 
 import { getAllPatients, getAllUsers, getAppointmentsByDoctorId, getAppointmentsByClinicIds } from "../../../firebase";
+
+// Custom hook for managing dropdown menus
+const useMenu = () => {
+  const [anchorEl, setAnchorEl] = useState(null);
+  const open = Boolean(anchorEl);
+  const handleClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+  return { anchorEl, open, handleClick, handleClose };
+};
 
 const PatientActions = () => {
   // Ensure useState is called correctly and explicitly typed.
@@ -92,13 +109,16 @@ const getStatusChipProps = (status) => {
 const DoctorPatientSection = ({ doctor }) => {
   // console.log("DoctorPatientSection rendered with doctor:", doctor);
   const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState('all');
+  
+  // Menu hook for filter dropdown
+  const filterMenu = useMenu();
 
   // Fetch users from Firebase
   const [users, setUsers] = useState([]);
   const [allAppointments, setAllAppointments] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-
   const [patients, setPatients] = useState([]);
   
   // Stats state variables
@@ -110,98 +130,86 @@ const DoctorPatientSection = ({ doctor }) => {
   });
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const fetchedUsers = await getAllUsers();
-        console.log("Fetched users:", fetchedUsers);
-        setUsers(fetchedUsers);
-      } catch (error) {
-        console.error("Error fetching users:", error);
+    const fetchData = async () => {
+      if (!doctor || !doctor.id) {
+        setError("Doctor not specified.");
+        setIsLoading(false);
+        return;
       }
-    };
-
-    const fetchAppointments = async () => {
+      
       try {
         setIsLoading(true);
         setError(null);
         
-        let data = [];
+        let appointmentsData = [];
         
         // Fetch appointments based on doctor's clinic IDs
-        if (doctor && doctor.clinicIds && doctor.clinicIds.length > 0) {
+        if (doctor.clinicIds && doctor.clinicIds.length > 0) {
           console.log('Fetching appointments for clinic IDs:', doctor.clinicIds);
-          data = await getAppointmentsByClinicIds(doctor.clinicIds);
+          appointmentsData = await getAppointmentsByClinicIds(doctor.clinicIds);
         } else {
           console.log('No clinic IDs found, using doctorId fallback');
-          data = await getAppointmentsByDoctorId(doctor.id);
+          appointmentsData = await getAppointmentsByDoctorId(doctor.id);
         }
         
-        console.log("Fetched appointments:", data);
-        setAllAppointments(data); // Keep the full list
+        // Fetch users data
+        const usersData = await getAllUsers();
+        
+        console.log("Fetched appointments:", appointmentsData);
+        console.log("Fetched users:", usersData);
+        
+        setAllAppointments(appointmentsData);
+        setUsers(usersData);
+        
       } catch (error) {
-        console.error("Error fetching appointments:", error);
-        setError("Failed to fetch appointments");
+        console.error("Error fetching data:", error);
+        setError("Failed to fetch data");
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
-    }
+    };
 
-    fetchUsers();
     if (doctor && doctor.id) {
-      fetchAppointments();
+      fetchData();
     }
   }, [doctor]);
 
   useEffect(() => {
     const buildPatientsList = () => {
-      if (!users || !allAppointments || users.length === 0 || allAppointments.length === 0) return;
-
-      const now = new Date();
       const patientMap = new Map();
+      const now = new Date();
 
+      // Prioritize users who have appointments
       allAppointments.forEach((appointment) => {
-        const {
-          patientName,
-          patientEmail,
-          appointmentDate,
-          treatmentType,
-          status,
-        } = appointment;
-
+        const { patientEmail } = appointment;
         if (!patientEmail || patientMap.has(patientEmail)) return;
 
-        const patient = users.find((user) => user.email === patientEmail);
-        if (!patient) return;
+        const patientUser = users.find((user) => user.email === patientEmail);
+        if (!patientUser) return; // Only add patients who are also users
 
+        const patientAppointments = allAppointments.filter(appt => appt.patientEmail === patientEmail);
+        const lastAppointment = patientAppointments.sort((a, b) => new Date(b.appointmentDate) - new Date(a.appointmentDate))[0];
 
-        const pastAppointments = allAppointments
-          .filter(
-            (appt) =>
-              appt.patientEmail === patientEmail &&
-              new Date(appt.appointmentDate) < now &&
-              appt.status === "completed"
-          )
-          .sort((a, b) => new Date(b.appointmentDate) - new Date(a.appointmentDate));
-
-        const lastVisit = pastAppointments.length > 0 ? pastAppointments[0] : null;
+        const lastVisit = patientAppointments.filter(appt => new Date(appt.appointmentDate) < now && appt.status === 'completed')
+          .sort((a, b) => new Date(b.appointmentDate) - new Date(a.appointmentDate))[0];
 
         const patientData = {
-          id: patient.id,
-          name: `${patient.firstName || ""} ${patient.lastName || ""}`.trim() || patientName,
-          age: patient.age || "",
-          gender: patient.gender || "",
-          phone: patient.phone || "",
-          email: patient.email || patientEmail,
-          address: `${patient.city || ""}, ${patient.country || ""}`.replace(/^,|,$/g, ""),
+          id: patientUser.id,
+          name: `${patientUser.firstName || ""} ${patientUser.lastName || ""}`.trim(),
+          age: patientUser.age || "",
+          gender: patientUser.gender || "",
+          phone: patientUser.phone || "",
+          email: patientUser.email,
+          address: [patientUser.city, patientUser.country].filter(Boolean).join(", "),
           lastVisit: lastVisit?.appointmentDate || null,
-          condition: lastVisit?.treatmentType || "",
-          status: status || "",
+          condition: lastVisit?.reason || "General Checkup",
+          // Determine status based on last appointment
+          status: lastAppointment?.status === 'cancelled' || lastAppointment?.status === 'completed' ? 'inactive' : 'active'
         };
-
         patientMap.set(patientEmail, patientData);
       });
 
       const uniquePatients = Array.from(patientMap.values());
-      console.log("Unique patients built:", uniquePatients);
       setPatients(uniquePatients);
 
       // Calculate stats
@@ -227,6 +235,62 @@ const DoctorPatientSection = ({ doctor }) => {
 
     buildPatientsList();
   }, [users, allAppointments]);
+
+  const filteredPatients = useMemo(() => {
+    return patients.filter((patient) => {
+      const searchLower = searchQuery.toLowerCase();
+
+      // Search logic (name, email, phone)
+      const searchMatch = !searchQuery ||
+        patient.name?.toLowerCase().includes(searchLower) ||
+        patient.email?.toLowerCase().includes(searchLower) ||
+        patient.phone?.includes(searchQuery);
+
+      // Filter logic (status)
+      const filterMatch = statusFilter === 'all' || patient.status === statusFilter;
+
+      return searchMatch && filterMatch;
+    });
+  }, [patients, searchQuery, statusFilter]);
+
+  const handleFilterChange = (status) => {
+    setStatusFilter(status);
+    filterMenu.handleClose();
+  };
+
+  const filterOptions = [
+    { value: 'all', label: 'All', color: 'action' },
+    { value: 'active', label: 'Active', color: '#065F46' },
+    { value: 'inactive', label: 'Inactive', color: '#92400E' },
+  ];
+
+
+  const statsCards = [
+    {
+      title: "Total Patients",
+      value: isLoading ? "..." : error ? "0" : statsData.totalPatients,
+      Icon: Group,
+      color: '#3182CE',
+    },
+    {
+      title: "Active Patients",
+      value: isLoading ? "..." : error ? "0" : statsData.activePatients,
+      Icon: Check,
+      color: '#38A169',
+    },
+    {
+      title: "New This Month",
+      value: isLoading ? "..." : error ? "0" : statsData.newThisMonth,
+      Icon: Add,
+      color: '#9F7AEA',
+    },
+    {
+      title: "Critical Cases",
+      value: isLoading ? "..." : error ? "0" : statsData.criticalCases,
+      Icon: PriorityHigh,
+      color: '#E53E3E',
+    }
+  ];
 
   return (
     <Stack spacing={3}>
@@ -326,30 +390,92 @@ const DoctorPatientSection = ({ doctor }) => {
       <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
         <TextField
           fullWidth
-          placeholder="Search patients..."
+          placeholder="Search by name, email, or phone..."
+          label="Search Patients"
+          name="search"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search />
-              </InputAdornment>
-            ),
+          InputProps={{ startAdornment: (<InputAdornment position="start"><Search /></InputAdornment>) }}
+          sx={{
+            '& .MuiOutlinedInput-root': {
+              borderRadius: 2,
+              boxShadow: 'none', // remove any box-shadow
+              outline: 'none',   // remove outline
+              '&:hover fieldset': {
+                borderColor: '#28938C',
+              },
+              '&.Mui-focused fieldset': {
+                borderColor: '#1D4645',
+                borderWidth: 2,
+              },
+            },
+            '& .MuiInputBase-root': {
+              boxShadow: 'none !important',
+              outline: 'none !important',
+            },
+            '& .MuiOutlinedInput-input': {
+              boxShadow: 'none',
+              outline: 'none',
+            },
+            '& .MuiInputLabel-root.Mui-focused': {
+              color: '#1D4645',
+            },
           }}
         />
-        <Button variant="outlined" startIcon={<FilterList />}>
-          Filter
+        <Button
+          variant={statusFilter !== 'all' ? 'contained' : 'outlined'}
+          startIcon={<Filter />}
+          onClick={filterMenu.handleClick}
+          sx={{
+            borderColor: '#D1D5DB',
+            color: statusFilter !== 'all' ? 'white' : 'text.primary',
+            bgcolor: statusFilter !== 'all' ? '#2563EB' : 'white',
+            '&:hover': {
+              bgcolor: statusFilter !== 'all' ? '#1D4ED8' : 'action.hover'
+            },
+            textTransform: 'none',
+            borderRadius: '12px',
+            flexShrink: 0
+          }}
+        >
+          Filter {statusFilter !== 'all' && `(${statusFilter})`}
         </Button>
+        <Menu
+          anchorEl={filterMenu.anchorEl}
+          open={filterMenu.open}
+          onClose={filterMenu.handleClose}
+        >
+          {filterOptions.map((option) => (
+            <MenuItem
+              key={option.value}
+              selected={option.value === statusFilter}
+              onClick={() => handleFilterChange(option.value)}
+            >
+              <ListItemIcon>
+                <StatusIndicatorIcon fontSize="small" sx={{ color: option.color }} />
+              </ListItemIcon>
+              <ListItemText sx={{ textTransform: 'capitalize' }}>{option.label}</ListItemText>
+            </MenuItem>
+          ))}
+        </Menu>
       </Stack>
 
       {/* Patients List */}
-      <Card>
-        <CardHeader title="Patient Records" />
+      <Card sx={{ borderRadius: 2 }}>
+        <CardHeader title={`Patient Records (${filteredPatients.length})`} />
         <CardContent>
           <Stack spacing={2}>
-            {patients.map((patient) => (
-              <PatientCard key={patient.email} patient={patient} />
-            ))}
+            {isLoading ? (<Typography>Loading patients...</Typography>) :
+              error ? (<Typography color="error">{error}</Typography>) :
+                filteredPatients.length > 0 ? (
+                  filteredPatients.map((patient) => (
+                    <PatientCard key={patient.email} patient={patient} />
+                  ))
+                ) : (
+                  <Typography color="text.secondary" textAlign="center" p={3}>
+                    No patients match your criteria.
+                  </Typography>
+                )}
           </Stack>
         </CardContent>
       </Card>

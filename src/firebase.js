@@ -933,6 +933,7 @@ export const classifyAppointments = (appointments) => {
   const todayAppointments = [];
   const upcomingAppointments = [];
   const pastAppointments = [];
+  const cancelledAppointments = [];
 
   appointments.forEach(appt => {
     // The appointmentDate should already be a JS Date object from getAppointments.
@@ -942,6 +943,10 @@ export const classifyAppointments = (appointments) => {
     if (isNaN(appointmentDate.getTime())) {
       console.warn("Skipping appointment with invalid date:", appt.id);
       return; // Skip this appointment if the date is invalid
+    }
+
+    if (appt.status === 'cancelled') {
+      cancelledAppointments.push(appt);
     }
 
     const apptDateNormalized = new Date(appointmentDate);
@@ -962,7 +967,7 @@ export const classifyAppointments = (appointments) => {
   pastAppointments.sort((a, b) => b.appointmentDate - a.appointmentDate);
 
 
-  return { todayAppointments, upcomingAppointments, pastAppointments };
+  return { todayAppointments, upcomingAppointments, pastAppointments, cancelledAppointments };
 };
 
 // Function to fetch all appointments from Firestore
@@ -997,25 +1002,25 @@ export const getAppointments = async () => {
 export const getTotalDocumentsCount = async () => {
   try {
     const storageRef = ref(storage);
-    
+
     // Function to recursively count files in all folders
     const countFilesRecursively = async (folderRef) => {
       try {
         const result = await listAll(folderRef);
         let count = result.items.length; // Count files in current folder
-        
+
         // Recursively count files in subfolders
         for (const subfolder of result.prefixes) {
           count += await countFilesRecursively(subfolder);
         }
-        
+
         return count;
       } catch (error) {
         console.error('Error counting files in folder:', folderRef.fullPath, error);
         return 0;
       }
     };
-    
+
     const totalCount = await countFilesRecursively(storageRef);
     return totalCount;
   } catch (error) {
