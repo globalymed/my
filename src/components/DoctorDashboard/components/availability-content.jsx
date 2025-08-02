@@ -1329,9 +1329,12 @@ const AvailabilityContent = ({ loggedInDoctorId }) => {
                     gap: 2, 
                     overflowX: 'auto',
                     pb: 2,
+                    maxHeight: '100%',
+                    overflowY: 'auto',
                     scrollbarWidth: 'thin',
                     '&::-webkit-scrollbar': {
                       height: 6,
+                      width: 6,
                     },
                     '&::-webkit-scrollbar-track': {
                       background: 'rgba(0,0,0,0.02)',
