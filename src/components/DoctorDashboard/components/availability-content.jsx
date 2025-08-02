@@ -874,7 +874,14 @@ const AvailabilityContent = ({ loggedInDoctorId }) => {
   }
 
   return (
-    <Box p={{ xs: 1, md: 3 }}>
+    <Box sx={{ 
+      width: '100%', 
+      minHeight: 'auto', 
+      overflow: 'visible',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 3
+    }}>
       {/* Header */}
       <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'center' }} gap={2} mb={2}>
         <div>
@@ -1067,7 +1074,7 @@ const AvailabilityContent = ({ loggedInDoctorId }) => {
       {/* Stats Cards */}
       <Grid container spacing={2} mb={3}>
         <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ height: '100%' }}>
+          <Card sx={{ minHeight: 'auto' }}>
             <CardContent sx={{ p: 2 }}>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <div>
@@ -1082,7 +1089,7 @@ const AvailabilityContent = ({ loggedInDoctorId }) => {
           </Card>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ height: '100%' }}>
+          <Card sx={{ minHeight: 'auto' }}>
             <CardContent sx={{ p: 2 }}>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <div>
@@ -1097,7 +1104,7 @@ const AvailabilityContent = ({ loggedInDoctorId }) => {
           </Card>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ height: '100%' }}>
+          <Card sx={{ minHeight: 'auto' }}>
             <CardContent sx={{ p: 2 }}>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <div>
@@ -1114,7 +1121,7 @@ const AvailabilityContent = ({ loggedInDoctorId }) => {
           </Card>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ height: '100%' }}>
+          <Card sx={{ minHeight: 'auto' }}>
             <CardContent sx={{ p: 2 }}>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <div>
@@ -1170,7 +1177,7 @@ const AvailabilityContent = ({ loggedInDoctorId }) => {
             )}
           </Box>
           
-          <Grid container spacing={3}>
+          <Grid container spacing={3} sx={{ flex: 1 }}>
             {/* Calendar View */}
             <Grid item xs={12} md={5}>
               <Card elevation={0} sx={{ 
