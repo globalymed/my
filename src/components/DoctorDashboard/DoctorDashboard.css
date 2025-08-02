@@ -40,7 +40,7 @@
 
 @media (min-width: 1024px) {
   .doctor-main-content {
-    margin-left: 16rem;
+    margin-left: 0;
   }
 }
 
