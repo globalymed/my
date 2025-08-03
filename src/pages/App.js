@@ -80,7 +80,7 @@ const PlanJourney = () => {
 
 const LoadingFallback = () => (
   <Box display="flex" justifyContent="center" alignItems="center" height="100vh" bgcolor="#fff">
-    <img src="/logoWhite.png" alt="MedYatra Logo" style={{ width: 120, height: 120, objectFit: 'contain' }} />
+    <img src="/logoWhite.webp" alt="MedYatra Logo" style={{ width: 120, height: 120, objectFit: 'contain' }} />
   </Box>
 );
 

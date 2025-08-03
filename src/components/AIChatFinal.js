@@ -701,7 +701,7 @@ const AIChatFinal = () => {
             padding: 4,
           }}
         >
-          {/* Logo Circle with logoWhite.png */}
+          {/* Logo Circle with logoWhite.webp */}
           <Avatar
             sx={{
               bgcolor: '#ccc',
@@ -717,7 +717,7 @@ const AIChatFinal = () => {
               justifyContent: 'center',
               p: 0,
             }}
-            src={'/logoDark.jpg'}
+            src={'/logoDark.webp'}
             alt="MedYatra Logo"
             imgProps={{
               style: {

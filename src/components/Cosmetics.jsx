@@ -16,7 +16,7 @@ const Cosmetic = () => (
 
     <Box
       component="img"
-      src="/cosmetics/cosmetics.jpg" // <-- Update with your actual image path
+      src="/cosmetics/cosmetics.webp" // <-- Update with your actual image path
       alt="Dental Treatment"
       sx={{
         width: "100%",
@@ -119,7 +119,7 @@ const Cosmetic = () => (
           {/* Image Section */}
           <Box
             component="img"
-            src="cosmetics/surgical.jpg"
+            src="cosmetics/surgical.webp"
             alt="Surgical Cosmetics"
             sx={{
               width: "100%",
@@ -212,7 +212,7 @@ const Cosmetic = () => (
           {/* Image Section */}
           <Box
             component="img"
-            src="/cosmetics/cosmetics2.jpg"
+            src="/cosmetics/cosmetics2.webp"
             alt="Non-Surgical Cosmetics"
             sx={{
               width: "100%",
@@ -237,7 +237,7 @@ const Cosmetic = () => (
       </AccordionSummary>
       <Box
         component="img"
-        src="/cosmetics/dermal fillers.jpg"
+        src="/cosmetics/dermal fillers.webp"
         alt="Dermal Fillers"
         sx={{
           width: "100%",
@@ -376,7 +376,7 @@ const Cosmetic = () => (
       </AccordionSummary>
       <Box
         component="img"
-        src="/cosmetics/liposuction.jpg" // <-- Update with your actual image path
+        src="/cosmetics/liposuction.webp" // <-- Update with your actual image path
         alt="Dental Treatment"
         sx={{
           width: "100%",
@@ -486,7 +486,7 @@ const Cosmetic = () => (
           {/* Image Section */}
           <Box
             component="img"
-            src="/cosmetics/laser skin resurfacing.jpg"
+            src="/cosmetics/laser skin resurfacing.webp"
             alt="Laser Skin Resurfacing"
             sx={{
               width: "100%",
@@ -582,7 +582,7 @@ const Cosmetic = () => (
           {/* Image Section */}
           <Box
             component="img"
-            src="/cosmetics/coolsculpting.jpg"
+            src="/cosmetics/coolsculpting.webp"
             alt="CoolSculpting"
             sx={{
               width: "100%",

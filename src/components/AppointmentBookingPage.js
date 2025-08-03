@@ -477,7 +477,7 @@ const AppointmentBookingPage = () => {
               type="file" 
               multiple 
               onChange={handleFileUpload}
-              accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx"
+              accept=".webp,.jpeg,.webp,.gif,.pdf,.doc,.docx"
             />
           </Button>
           {window.location.hostname.includes('localhost') && (
