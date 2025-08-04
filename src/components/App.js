@@ -10,6 +10,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import theme from '../theme';
 import LogoutIcon from '@mui/icons-material/Logout';
 import PostHogPageViewTracker from '../utils/PostHogPageViewTracker';
+import AboutPage from '../pages/Aboutus';
 
 const AIChat = React.lazy(() => import('./AIChatFinal'));
 const ClinicRecommender = React.lazy(() => import('./ClinicRecommenderEnhanced'));
@@ -21,6 +22,7 @@ const LoginPage = React.lazy(() => import('./LoginPage'));
 const DoctorLoginPage = React.lazy(() => import('./DoctorLoginPage'));
 const HomePage = React.lazy(() => import('./HomePage'));
 const DashboardPage = React.lazy(() => import('./DashboardPage'));
+
 
 // Create a component to render the doctor dashboard in an iframe
 const DoctorDashboard = () => {

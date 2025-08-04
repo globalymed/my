@@ -30,6 +30,7 @@ import TermsOfService from './TermsOfService.jsx';
 import PrivacyPolicy from './PrivacyPolicy.jsx';
 import CompareCost from './compareCost.jsx';
 import PostHogPageViewTracker from '../utils/PostHogPageViewTracker';
+import AboutPage from './Aboutus.jsx';
 
 // Create a component to render the doctor dashboard in an iframe
 const DoctorDashboard = () => {
@@ -240,6 +241,7 @@ const App = () => {
                 } />
                 <Route path="/terms" element={<TermsOfService />} />
                 <Route path="/privacy" element={<PrivacyPolicy />} />
+                <Route path="/about" element={<AboutPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Layout>
