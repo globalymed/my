@@ -4,7 +4,6 @@ import {
     Toolbar,
     Typography,
     Box,
-    Container,
     Button,
     IconButton,
     Drawer,
@@ -16,60 +15,69 @@ import {
     Avatar,
     Tooltip,
     Badge,
-    ListItemButton
+    ListItemButton,
+    Menu,
+    MenuItem,
+    Collapse
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     Phone,
-    Add,
     LocalHospital,
     SupportAgent,
     AttachMoney,
     Dashboard,
-    Logout
+    Logout,
+    ArrowDropDown,
+    ExpandLess,
+    ExpandMore,
+    Article,
+    MedicalServices,
+    ColorLens
 } from '@mui/icons-material';
 import MenuIcon from '@mui/icons-material/Menu';
 import ChatIcon from '@mui/icons-material/Chat';
-import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
-import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import CloseIcon from '@mui/icons-material/Close';
 import HomeIcon from '@mui/icons-material/Home';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import DashboardIcon from '@mui/icons-material/Dashboard';
-import TreatmentsInfo from './TreatmentsInfo';
-import Footer from './Footer';
+import { TbDental } from 'react-icons/tb';
+import { GiHairStrands } from 'react-icons/gi';
 
 const Sidebar = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const [drawerOpen, setDrawerOpen] = useState(false);
-    const [showTreatmentsInfo, setShowTreatmentsInfo] = useState(false);
     const location = useLocation();
     const navigate = useNavigate();
 
-    // Modified navItems - Doctor Dashboard removed from main navigation
+    const [anchorEl, setAnchorEl] = useState(null);
+    const [subMenuOpen, setSubMenuOpen] = useState(false);
+
+    const treatmentSubMenu = [
+        { name: 'Blog', path: '/treatment/blog', icon: <Article /> },
+        { name: 'Dental', path: '/treatment/dental', icon: <TbDental size={24} /> },
+        { name: 'IVF', path: '/treatment/ivf', icon: <MedicalServices /> },
+        { name: 'Hair', path: '/treatment/hair', icon: <GiHairStrands /> },
+        { name: 'Cosmetics', path: '/treatment/cosmetics', icon: <ColorLens /> }
+    ];
+
     const mainNavItems = [
-        { name: 'Home', path: '/', icon: <HomeIcon /> },
-        { name: 'Free Consultation', path: '/free-consultation', icon: <ChatIcon /> },
-        { name: 'Compare Cost', path: '/compare-cost', icon: <InfoOutlinedIcon /> },
-        { name: 'Plan Journey', path: '/plan-journey'},
-        { name: 'Treatment', path: '/treatment', icon: <DashboardIcon /> },
+        { name: 'Home', path: '/' },
+        { name: 'Free Consultation', path: '/free-consultation' },
+        { name: 'Compare Cost', path: '/compare-cost' },
+        { name: 'Plan Journey', path: '/plan-journey' },
+        { name: 'Treatment', path: '/treatment', submenu: treatmentSubMenu },
         { name: 'Contact Us', path: '/contact' },
-        { name: 'Doctor? Here!', path: '/doctor-login' }
+        { name: 'Doctor? Here!', path: '/doctor-dashboard' }
     ];
 
     // Items for the hamburger menu
     const menuItems = [
         { text: 'Home', icon: <HomeIcon />, path: '/' },
-        {
-            text: 'Treatments', icon: <LocalHospital />, path: '/treatment', action: () => {
-                console.log("clicked");
-                setShowTreatmentsInfo(true);
-            }
-        },
+        { text: 'Treatments', icon: <LocalHospital />, submenu: treatmentSubMenu },
         { text: 'Free Consultation', icon: <SupportAgent />, path: '/free-consultation' },
         { text: 'AI Chat', icon: <ChatIcon />, path: '/chat' },
         { text: 'Compare Cost', icon: <AttachMoney />, path: '/compare-cost' },
@@ -78,7 +86,12 @@ const Sidebar = () => {
         { text: 'Logout', icon: <Logout />, path: '/logout' },
     ];
 
+    const treatmentPaths = ['/treatment', '/treatment/blog', '/treatment/dental', '/treatment/ivf', '/treatment/hair', '/treatment/cosmetics'];
+
     const isActive = (path) => {
+        if (path === '/treatment') {
+            return treatmentPaths.some(p => location.pathname.startsWith(p));
+        }
         if (path === '/' && location.pathname === '/') return true;
         if (path !== '/' && location.pathname.startsWith(path)) return true;
         return false;
@@ -88,16 +101,14 @@ const Sidebar = () => {
         setDrawerOpen(!drawerOpen);
     };
 
-    const handleNavigation = (path, action) => {
-        if (path) {
-            navigate(path);
-        } else if (action) {
-            action();
-        }
+    const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
+    const handleMenuClose = () => setAnchorEl(null);
+    const toggleSubMenu = () => setSubMenuOpen(!subMenuOpen);
 
-        if (isMobile) {
-            setDrawerOpen(false);
-        }
+    const handleNavigation = (path) => {
+        if (path) navigate(path);
+        handleMenuClose();
+        if (isMobile) setDrawerOpen(false);
     };
 
     const drawerContent = (
@@ -131,59 +142,33 @@ const Sidebar = () => {
                 </IconButton>
             </Box>
             <List sx={{ px: 2, py: 1 }}>
-                {menuItems.map((item, index) => (
-                    <ListItem key={index} disablePadding sx={{ mb: 0.5 }}>
-                        {item.isButton ? (
-                            <Button
-                                fullWidth
-                                variant="outlined"
-                                onClick={item.action}
-                                startIcon={item.icon}
-                                sx={{
-                                    bgcolor: 'transparent',
-                                    color: 'white',
-                                    '&:hover': {
-                                        bgcolor: 'rgba(255,255,255,0.1)',
-                                        borderColor: '#FFF',
-                                    },
-                                    borderColor: '#FFF',
-                                    borderRadius: 2,
-                                    py: 1,
-                                    justifyContent: 'flex-start',
-                                    textTransform: 'none'
-                                }}
-                            >
-                                {drawerOpen && item.text}
-                            </Button>
-                        ) : (
-                            <ListItemButton
-                                onClick={() => {
-                                    if (item.path) {
-                                        handleNavigation(item.path);
-                                    } else if (item.action) {
-                                        item.action();
-                                    }
-                                }}
-                                sx={{
-                                    borderRadius: 2,
-                                    color: 'white',
-                                    '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' },
-                                    ...(location.pathname === item.path && { bgcolor: 'rgba(255,255,255,0.2)' }),
-                                }}
-                            >
-                                <Box sx={{ mr: drawerOpen ? 2 : 0 }}>{item.icon}</Box>
-                                {drawerOpen && (
-                                    <ListItemText
-                                        primary={item.text}
-                                        primaryTypographyProps={{
-                                            fontSize: '0.95rem',
-                                            fontWeight: location.pathname === item.path ? 600 : 400
-                                        }}
-                                    />
-                                )}
+                {menuItems.map((item) => (
+                    item.submenu ? (
+                        <React.Fragment key={item.text}>
+                            <ListItemButton onClick={toggleSubMenu} sx={{ borderRadius: 2, mb: 0.5 }}>
+                                <ListItemIcon sx={{ color: 'white', minWidth: 40 }}>{item.icon}</ListItemIcon>
+                                <ListItemText primary={item.text} />
+                                {subMenuOpen ? <ExpandLess /> : <ExpandMore />}
                             </ListItemButton>
-                        )}
-                    </ListItem>
+                            <Collapse in={subMenuOpen} timeout="auto" unmountOnExit>
+                                <List component="div" disablePadding>
+                                    {item.submenu.map(subItem => (
+                                        <ListItemButton key={subItem.name} sx={{ pl: 4, borderRadius: 2, my: 0.5 }} onClick={() => handleNavigation(subItem.path)}>
+                                            <ListItemIcon sx={{ color: 'white', minWidth: 40 }}>{subItem.icon}</ListItemIcon>
+                                            <ListItemText primary={subItem.name} />
+                                        </ListItemButton>
+                                    ))}
+                                </List>
+                            </Collapse>
+                        </React.Fragment>
+                    ) : (
+                        <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
+                            <ListItemButton onClick={() => handleNavigation(item.path)} sx={{ borderRadius: 2, '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}>
+                                <ListItemIcon sx={{ color: 'white', minWidth: 40 }}>{item.icon}</ListItemIcon>
+                                <ListItemText primary={item.text} />
+                            </ListItemButton>
+                        </ListItem>
+                    )
                 ))}
             </List>
             <Box sx={{ position: 'absolute', bottom: 0, width: '100%', p: 2 }}>
@@ -238,13 +223,13 @@ const Sidebar = () => {
                                 </Typography>
                             </Box>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Tooltip title="Notifications">
-                                    <IconButton color="inherit">
-                                        <Badge badgeContent={2} color="error">
-                                            <NotificationsIcon />
-                                        </Badge>
-                                    </IconButton>
-                                </Tooltip>
+                                {/* <Tooltip title="Notifications"> */}
+                                <IconButton color="inherit">
+                                    <Badge badgeContent={2} color="error">
+                                        <NotificationsIcon />
+                                    </Badge>
+                                </IconButton>
+                                {/* </Tooltip> */}
                                 <Button
                                     variant="outlined"
                                     sx={{
@@ -280,54 +265,80 @@ const Sidebar = () => {
                                 <a href="https://medyatra.space" style={{ textDecoration: 'none' }}>
                                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                         <Avatar
-                                        src="/logo.png"
-                                        alt="MedYatra Logo"
-                                        sx={{ width: 40, height: 40, mr: 1 }}
-                                        imgProps={{
-                                            style: {
-                                            objectFit: 'contain',
-                                            objectPosition: 'center',
-                                            transform: 'scale(1.5)',
-                                            },
-                                        }}
+                                            src="/logo.png"
+                                            alt="MedYatra Logo"
+                                            sx={{ width: 40, height: 40, mr: 1 }}
+                                            imgProps={{
+                                                style: {
+                                                    objectFit: 'contain',
+                                                    objectPosition: 'center',
+                                                    transform: 'scale(1.5)',
+                                                },
+                                            }}
                                         />
                                         <Box>
-                                        <Typography
-                                            variant="h6"
-                                            component="div"
-                                            sx={{ fontWeight: 700, color: 'white', lineHeight: 1.2 }}
-                                        >
-                                            MedYatra
-                                        </Typography>
-                                        <Typography
-                                            variant="caption"
-                                            component="div"
-                                            sx={{ fontWeight: 400, color: 'white', fontSize: '0.7rem', mt: '-2px' }}
-                                        >
-                                            Making Medical Travel Effortless
-                                        </Typography>
+                                            <Typography
+                                                variant="h6"
+                                                component="div"
+                                                sx={{ fontWeight: 700, color: 'white', lineHeight: 1.2 }}
+                                            >
+                                                MedYatra
+                                            </Typography>
+                                            <Typography
+                                                variant="caption"
+                                                component="div"
+                                                sx={{ fontWeight: 400, color: 'white', fontSize: '0.7rem', mt: '-2px' }}
+                                            >
+                                                Making Medical Travel Effortless
+                                            </Typography>
                                         </Box>
                                     </Box>
                                 </a>
 
-
                                 {/* Center: Navigation Items */}
-                                <Box sx={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
                                     {mainNavItems.map((item) => (
-                                        <Typography
-                                            key={item.name}
-                                            onClick={() => handleNavigation(item.path, item.action)}
-                                            sx={{
-                                                color: 'white',
-                                                cursor: 'pointer',
-                                                fontWeight: isActive(item.path) ? 900 : 500,
-                                                fontSize: '0.875rem',
-                                                textDecoration: isActive(item.path) ? 'underline' : 'none',
-                                                textUnderlineOffset: '4px'
-                                            }}
-                                        >
-                                            {item.name}
-                                        </Typography>
+                                        item.submenu ? (
+                                            <Box key={item.name} onMouseLeave={handleMenuClose}>
+                                                <Typography
+                                                    aria-owns={anchorEl ? 'treatment-menu' : undefined}
+                                                    aria-haspopup="true"
+                                                    onMouseEnter={handleMenuOpen}
+                                                    sx={{
+                                                        color: 'white',
+                                                        cursor: 'pointer',
+                                                        fontWeight: isActive(item.path) ? 900 : 500,
+                                                        fontSize: '0.875rem',
+                                                        textDecoration: isActive(item.path) ? 'underline' : 'none',
+                                                        textUnderlineOffset: '4px',
+                                                        display: 'flex',
+                                                        alignItems: 'center'
+                                                    }}
+                                                >
+                                                    {item.name}
+                                                    <ArrowDropDown sx={{ ml: 0.5 }} />
+                                                </Typography>
+                                                <Menu
+                                                    id="treatment-menu"
+                                                    anchorEl={anchorEl}
+                                                    open={Boolean(anchorEl)}
+                                                    onClose={handleMenuClose}
+                                                    MenuListProps={{ 'aria-labelledby': 'treatment-button', onMouseLeave: handleMenuClose }}
+                                                    anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+                                                    transformOrigin={{ vertical: 'top', horizontal: 'center' }}
+                                                >
+                                                    {item.submenu.map(subItem => (
+                                                        <MenuItem key={subItem.name} onClick={() => handleNavigation(subItem.path)}>
+                                                            {subItem.name}
+                                                        </MenuItem>
+                                                    ))}
+                                                </Menu>
+                                            </Box>
+                                        ) : (
+                                            <Typography key={item.name} onClick={() => handleNavigation(item.path)} sx={{ color: 'white', cursor: 'pointer', fontWeight: isActive(item.path) ? 900 : 500, textDecoration: isActive(item.path) ? 'underline' : 'none', textUnderlineOffset: '4px' }}>
+                                                {item.name}
+                                            </Typography>
+                                        )
                                     ))}
                                 </Box>
 

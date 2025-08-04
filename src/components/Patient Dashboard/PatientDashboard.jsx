@@ -93,7 +93,7 @@ const navigationItems = [
   { title: "Post-Care Plan", icon: <LocalPharmacy />, id: "postcare" },
   { title: "Messages & Support", icon: <Message />, id: "messages" },
   { title: "My Profile", icon: <Person />, id: "profile" },
-  { title: "Notifications", icon: <Notifications />, id: "notifications" },
+  // { title: "Notifications", icon: <Notifications />, id: "notifications" },
 ]
 
 function AppSidebar({
@@ -116,11 +116,10 @@ function AppSidebar({
         keepMounted: true,
       }}
       sx={{
-        width: isMobile ? drawerWidth : (sidebarOpen ? drawerWidth : collapsedDrawerWidth),
-        flexShrink: isMobile ? 0 : 1,
-        "& .MuiDrawer-paper": {
-          width: isMobile ? drawerWidth : (sidebarOpen ? drawerWidth : collapsedDrawerWidth),
-          boxSizing: "border-box",
+        display: { xs: 'block', sm: 'block' },
+        '& .MuiDrawer-paper': {
+          boxSizing: 'border-box',
+          width: sidebarOpen ? drawerWidth : collapsedDrawerWidth,
           transition: theme.transitions.create('width', {
             easing: theme.transitions.easing.sharp,
             duration: theme.transitions.duration.enteringScreen,
@@ -131,34 +130,34 @@ function AppSidebar({
       <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         <Toolbar sx={{ backgroundColor: 'transparent', justifyContent: 'space-evenly' }}>
           {sidebarOpen && (
-        <a href="https://medyatra.space" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <Avatar
-              src="/logo.png"
-              alt="MedYatra Logo"
-              sx={{ width: 40, height: 40, mr: 1 }}
-              imgProps={{
-                style: {
-                  objectFit: 'contain',
-                  objectPosition: 'center',
-                  transform: 'scale(1.5)',
-                },
-              }}
-            />
-            <Box>
-              <Typography variant="h6" component="div" sx={{ fontWeight: 700, color: 'black', lineHeight: 1.2 }}>
-                MedYatra
-              </Typography>
-              <Typography
-                variant="caption"
-                component="div"
-                sx={{ fontWeight: 400, color: 'black', fontSize: '0.7rem' }}
-              >
-                Patient Dashboard
-              </Typography>
-            </Box>
-          </Box>
-        </a>
+            <a href="https://medyatra.space" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Avatar
+                  src="/logo.png"
+                  alt="MedYatra Logo"
+                  sx={{ width: 40, height: 40, mr: 1 }}
+                  imgProps={{
+                    style: {
+                      objectFit: 'contain',
+                      objectPosition: 'center',
+                      transform: 'scale(1.5)',
+                    },
+                  }}
+                />
+                <Box>
+                  <Typography variant="h6" component="div" sx={{ fontWeight: 700, color: 'black', lineHeight: 1.2 }}>
+                    MedYatra
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    component="div"
+                    sx={{ fontWeight: 400, color: 'black', fontSize: '0.7rem' }}
+                  >
+                    Patient Dashboard
+                  </Typography>
+                </Box>
+              </Box>
+            </a>
 
           )}
           <IconButton onClick={onSidebarToggle}>
@@ -270,7 +269,7 @@ function MainContent({ activeSection, user, appointments, isSidebarOpen, isMobil
       case "recovery":
         return <RecoverySection />
       case "documents":
-        return <DocumentsSection />
+        return <DocumentsSection user={user} />
       case "journey":
         return <JourneySection />
       case "postcare":
@@ -292,8 +291,9 @@ function MainContent({ activeSection, user, appointments, isSidebarOpen, isMobil
       sx={{
         flexGrow: 1,
         p: 3,
-        ml: isMobile ? 0 : (isSidebarOpen ? `${drawerWidth}px` : `${collapsedDrawerWidth}px`),
-        transition: theme.transitions.create('margin', {
+        width: { sm: `calc(100% - ${isSidebarOpen ? drawerWidth : collapsedDrawerWidth}px)` },
+        ml: { sm: isSidebarOpen ? `${drawerWidth}px` : `${collapsedDrawerWidth}px` },
+        transition: theme.transitions.create(['margin', 'width'], {
           easing: theme.transitions.easing.sharp,
           duration: theme.transitions.duration.enteringScreen,
         }),
@@ -310,7 +310,7 @@ export function PatientDashboard({ user, appointments, onLogout, error, loading 
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [activeSection, setActiveSection] = React.useState("home")
   const [sidebarOpen, setSidebarOpen] = React.useState(!isMobile);
-  
+
   const drawerWidth = 240
   const collapsedDrawerWidth = 60
 
@@ -318,7 +318,11 @@ export function PatientDashboard({ user, appointments, onLogout, error, loading 
     setSidebarOpen(!sidebarOpen);
   }
 
- return (
+  const handleNotificationClick = () => {
+    setActiveSection('notifications');
+  };
+
+  return (
     <ThemeProvider theme={theme}>
       <Box sx={{ display: "flex" }}>
         <CssBaseline />
@@ -347,12 +351,13 @@ export function PatientDashboard({ user, appointments, onLogout, error, loading 
             backgroundColor: '#fff',
             color: '#000',
             borderBottom: '1px solid #e0e0e0',
-            width: `calc(100% - ${isMobile ? 0 : (sidebarOpen ? drawerWidth : collapsedDrawerWidth)}px)`,
-            ml: isMobile ? 0 : (sidebarOpen ? `${drawerWidth}px` : `${collapsedDrawerWidth}px`),
+            width: { sm: `calc(100% - ${sidebarOpen ? drawerWidth : collapsedDrawerWidth}px)` },
+            ml: { sm: sidebarOpen ? `${drawerWidth}px` : `${collapsedDrawerWidth}px` },
             transition: theme.transitions.create(['width', 'margin'], {
               easing: theme.transitions.easing.sharp,
               duration: theme.transitions.duration.enteringScreen,
             }),
+            zIndex: (theme) => theme.zIndex.drawer + 1,
           }}
         >
           <Toolbar sx={{ justifyContent: 'space-between' }}>
@@ -363,7 +368,7 @@ export function PatientDashboard({ user, appointments, onLogout, error, loading 
                 color="inherit"
                 aria-label="menu"
                 sx={{
-                  display: isMobile || !sidebarOpen ? 'block' : 'none', 
+                  display: isMobile || !sidebarOpen ? 'block' : 'none',
                 }}
               >
                 <MenuIcon />
@@ -432,13 +437,20 @@ export function PatientDashboard({ user, appointments, onLogout, error, loading 
               >
                 Logout
               </Button>
-              <IconButton color="inherit" sx={{
-                backgroundColor: '#F0F2F5'
-              }}>
+
+              <IconButton
+                color="inherit"
+                onClick={handleNotificationClick} // Use the handler from props
+                sx={{
+                  backgroundColor: '#F0F2F5', // Or a theme color like 'grey.100'
+                  color: '#333' // Set icon color explicitly if needed
+                }}
+              >
                 <Badge badgeContent={4} color="error">
-                  <Notifications color="#F0F2F5" />
+                  <Notifications />
                 </Badge>
               </IconButton>
+
               <Avatar sx={{ bgcolor: 'secondary.main' }}>
                 {user?.firstName?.charAt(0) || user?.name?.charAt(0) || 'U'}
               </Avatar>

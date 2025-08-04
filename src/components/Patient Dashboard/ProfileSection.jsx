@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Box,
   Card,
@@ -36,6 +36,9 @@ import {
   Warning
 } from "@mui/icons-material"
 
+import { doc, updateDoc, getDoc, setDoc } from "firebase/firestore";
+import { db } from "../../firebase";
+
 const StyledTabs = styled(Tabs)(({ theme }) => ({
   '& .MuiTabs-flexContainer': {
     backgroundColor: '#f5f5f5',
@@ -61,12 +64,141 @@ const StyledTabs = styled(Tabs)(({ theme }) => ({
   }
 }));
 
-export function ProfileSection({user}) {
-  const [tabValue, setTabValue] = useState(0)
+const bloodTypes = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'];
+
+export function ProfileSection({ user }) {
+  const [tabValue, setTabValue] = useState(0);
+
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    dateOfBirth: "",
+    city: "",
+    emergencyContact: "",
+  });
+
+  const [isSaving, setIsSaving] = useState(false);
+  const [feedbackMessage, setFeedbackMessage] = useState("");
+
+  // Sync formData with the user prop when it loads or changes
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        email: user.email || "",
+        phone: user.phone || "",
+        dateOfBirth: user.dateOfBirth || "",
+        city: user.city || "",
+        emergencyContact: user.emergencyContact || "",
+      });
+    }
+  }, [user]);
+
+  // 1. ADD STATE FOR MEDICAL INFO
+  const [medicalData, setMedicalData] = useState({
+    bloodType: "",
+    allergies: "",
+    medicalConditions: "",
+    currentMedications: "",
+    insuranceProvider: "",
+  });
+  const [isSavingMedical, setIsSavingMedical] = useState(false);
+  const [medicalFeedback, setMedicalFeedback] = useState("");
+
+  // This runs when the component loads and fetches existing medical data
+  useEffect(() => {
+    if (!user || !user.id) return;
+
+    const fetchMedicalData = async () => {
+      // Path to the subcollection document: /users/{userId}/medicalInfo/default
+      const medicalDocRef = doc(db, 'users', user.id, 'medicalInfo', 'default');
+      const docSnap = await getDoc(medicalDocRef);
+
+      if (docSnap.exists()) {
+        setMedicalData(docSnap.data());
+      } else {
+        console.log("No medical document found for this user.");
+      }
+    };
+
+    fetchMedicalData();
+  }, [user]);
+
+
+  // 3. ADD HANDLERS FOR MEDICAL INFO
+  const handleMedicalInputChange = (e) => {
+    const { name, value } = e.target;
+    setMedicalData((prevData) => ({
+      ...prevData,
+      [name]: value,
+    }));
+  };
+
+  const handleUpdateMedicalInfo = async () => {
+    if (!user || !user.id) {
+      setMedicalFeedback("Error: User not found.");
+      return;
+    }
+
+    setIsSavingMedical(true);
+    setMedicalFeedback("");
+
+    // Create a reference to the document in the 'medicalInfo' subcollection
+    const medicalDocRef = doc(db, 'users', user.id, 'medicalInfo', 'default');
+
+    try {
+      // Use setDoc with { merge: true } to create or update the document
+      await setDoc(medicalDocRef, medicalData, { merge: true });
+      setMedicalFeedback("Medical info updated successfully!");
+    } catch (error) {
+      console.error("Error updating medical info: ", error);
+      setMedicalFeedback("Failed to update medical info. Please try again.");
+    } finally {
+      setIsSavingMedical(false);
+    }
+  };
+
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue)
   }
+
+  // Function to handle input changes in the Profile Form
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prevData) => ({
+      ...prevData,
+      [name]: value,
+    }));
+  };
+
+  // Function to handle the save operation in the Profile Form
+  const handleSaveChanges = async () => {
+    if (!user || !user.id) {
+      setFeedbackMessage("Error: User not found.");
+      return;
+    }
+
+    setIsSaving(true);
+    setFeedbackMessage("");
+
+    // Assumes your collection is named 'users' and user object has a unique 'id'
+    const userDocRef = doc(db, "users", user.id);
+
+    try {
+      // updateDoc will update existing fields and create new ones if they don't exist
+      await updateDoc(userDocRef, formData);
+      setFeedbackMessage("Profile updated successfully!");
+    } catch (error) {
+      console.error("Error updating document: ", error);
+      setFeedbackMessage("Failed to update profile. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   // console.log("User Data in ProfileSection:", user);
 
@@ -117,7 +249,9 @@ export function ProfileSection({user}) {
                       <TextField
                         fullWidth
                         label="First Name"
-                        defaultValue={user ? user.firstName : ""}
+                        name="firstName" // Add name attribute
+                        value={formData.firstName} // Use value from state
+                        onChange={handleInputChange} // Add onChange handler
                         variant="outlined"
                       />
                     </Grid>
@@ -125,18 +259,26 @@ export function ProfileSection({user}) {
                       <TextField
                         fullWidth
                         label="Last Name"
-                        defaultValue={user ? user.lastName : ""}
+                        name="lastName" // Add name attribute
+                        value={formData.lastName} // Use value from state
+                        onChange={handleInputChange} // Add onChange handler
                         variant="outlined"
                       />
                     </Grid>
                   </Grid>
 
+                  {/* Apply the same pattern (name, value, onChange) to all other TextFields */}
                   <TextField
                     fullWidth
                     label="Email Address"
                     type="email"
-                    defaultValue={user ? user.email : ""}  
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
                     variant="outlined"
+                    InputProps={{
+                      readOnly: true, // Prevent email from being changed
+                    }}
                   />
 
                   <Grid container spacing={2}>
@@ -144,7 +286,9 @@ export function ProfileSection({user}) {
                       <TextField
                         fullWidth
                         label="Phone Number"
-                        defaultValue={user ? user.phone : ""}
+                        name="phone"
+                        value={formData.phone}
+                        onChange={handleInputChange}
                         variant="outlined"
                       />
                     </Grid>
@@ -153,7 +297,9 @@ export function ProfileSection({user}) {
                         fullWidth
                         label="Date of Birth"
                         type="date"
-                        defaultValue={user?.dateOfBirth || new Date().toISOString().split('T')[0]}
+                        name="dateOfBirth"
+                        value={formData.dateOfBirth}
+                        onChange={handleInputChange}
                         variant="outlined"
                         InputLabelProps={{ shrink: true }}
                       />
@@ -163,23 +309,53 @@ export function ProfileSection({user}) {
                   <TextField
                     fullWidth
                     label="Address"
-                    defaultValue={user ? user.city : ""}
+                    name="city"
+                    value={formData.city}
+                    onChange={handleInputChange}
                     variant="outlined"
                   />
 
                   <TextField
                     fullWidth
                     label="Emergency Contact"
-                    defaultValue={user ? user.emergencyContact : ""}
+                    name="emergencyContact"
+                    value={formData.emergencyContact}
+                    onChange={handleInputChange}
                     variant="outlined"
                   />
 
-                  <Button
-                    fullWidth
-                    sx={{ backgroundColor: 'black', px: 5, py: 1, color: 'white', '&:hover': { backgroundColor: '#333' } }}
-                  >
-                    Save Changes
-                  </Button>
+                  {/* UPDATE THE BUTTON and add feedback message */}
+                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                    <Button
+                      fullWidth
+                      onClick={handleSaveChanges}
+                      disabled={isSaving}
+                      sx={{
+                        backgroundColor: 'black',
+                        color: 'white',
+                        px: 5,
+                        py: 1,
+                        '&:hover': {
+                          backgroundColor: '#333',
+                        },
+                        '&.Mui-disabled': {
+                          backgroundColor: 'black',
+                          color: 'white',
+                          opacity: 1, // Prevent dimming
+                        },
+                      }}
+                    >
+                      {isSaving ? 'Saving...' : 'Save Changes'}
+                    </Button>
+                    {feedbackMessage && (
+                      <Typography
+                        variant="body2"
+                        color={feedbackMessage.includes("Error") || feedbackMessage.includes("Failed") ? "error" : "green"}
+                      >
+                        {feedbackMessage}
+                      </Typography>
+                    )}
+                  </Box>
                 </Box>
               </CardContent>
             </Card>
@@ -246,47 +422,73 @@ export function ProfileSection({user}) {
               <CardHeader title="Medical Information" />
               <CardContent>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                  <TextField
-                    fullWidth
+                  <InputLabel id="blood-type-select-label">Blood Type</InputLabel>
+                  <Select
+                    labelId="blood-type-select-label"
+                    id="blood-type-select"
+                    name="bloodType"
+                    value={medicalData.bloodType}
+                    onChange={handleMedicalInputChange}
                     label="Blood Type"
-                    defaultValue="O+"
-                    variant="outlined"
-                  />
+                  >
+                    {/* Creates a dropdown item for each blood type */}
+                    {bloodTypes.map((type) => (
+                      <MenuItem key={type} value={type}>
+                        {type}
+                      </MenuItem>
+                    ))}
+                  </Select>
 
                   <TextField
                     fullWidth
                     label="Allergies"
-                    defaultValue="Penicillin, Shellfish"
+                    name="allergies"
+                    value={medicalData.allergies}
+                    onChange={handleMedicalInputChange}
                     variant="outlined"
                   />
 
                   <TextField
                     fullWidth
                     label="Medical Conditions"
-                    defaultValue="Hypertension, Diabetes Type 2"
+                    name="medicalConditions"
+                    value={medicalData.medicalConditions}
+                    onChange={handleMedicalInputChange}
                     variant="outlined"
                   />
 
                   <TextField
                     fullWidth
                     label="Current Medications"
-                    defaultValue="Metformin 500mg, Lisinopril 10mg"
+                    name="currentMedications"
+                    value={medicalData.currentMedications}
+                    onChange={handleMedicalInputChange}
                     variant="outlined"
                   />
 
                   <TextField
                     fullWidth
                     label="Insurance Provider"
-                    defaultValue="Blue Cross Blue Shield"
+                    name="insuranceProvider"
+                    value={medicalData.insuranceProvider}
+                    onChange={handleMedicalInputChange}
                     variant="outlined"
                   />
-
-                  <Button
-                    fullWidth
-                    sx={{ backgroundColor: 'black', px: 5, py: 1, color: 'white', '&:hover': { backgroundColor: '#333' } }}
-                  >
-                    Update Medical Info
-                  </Button>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                    <Button
+                      fullWidth
+                      onClick={handleUpdateMedicalInfo}
+                      disabled={isSavingMedical}
+                      sx={{ backgroundColor: 'black', px: 5, py: 1, color: 'white', '&:hover': { backgroundColor: '#333' } }}
+                    >
+                      {isSavingMedical ? 'Saving...' : 'Update Medical Info'}
+                    </Button>
+                    {medicalFeedback && (
+                      <Typography variant="body2" color={medicalFeedback.includes("Error") || medicalFeedback.includes("Failed") ? "error" : "green"}>
+                        {medicalFeedback}
+                      </Typography>
+                    )}
+                  </Box>
                 </Box>
               </CardContent>
             </Card>

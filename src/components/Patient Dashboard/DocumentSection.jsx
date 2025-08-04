@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import {
     Box,
     Typography,
@@ -12,7 +12,8 @@ import {
     CardContent,
     Chip,
     useTheme,
-    styled
+    styled,
+    IconButton
 } from '@mui/material';
 import {
     Upload,
@@ -22,65 +23,10 @@ import {
     Article, // Icon for Medical
     Flight,  // Icon for Travel
     Shield, // Icon for Insurance
+    Close
 } from '@mui/icons-material';
-
-// --- 1. Sample data for documents ---
-const allDocuments = [
-    {
-        id: 1,
-        title: 'Blood Test Report',
-        category: 'Medical',
-        date: '2025-07-15',
-        uploader: 'Dr. Evelyn Reed',
-        size: '2.4 MB',
-        status: 'New',
-    },
-    {
-        id: 2,
-        title: 'Visa Approval',
-        category: 'Travel',
-        date: '2025-07-10',
-        uploader: 'Consulate Office',
-        size: '850 KB',
-        status: 'Reviewed',
-    },
-    {
-        id: 3,
-        title: 'Health Insurance Policy',
-        category: 'Insurance',
-        date: '2025-06-28',
-        uploader: 'MediSecure Inc.',
-        size: '5.1 MB',
-        status: 'Reviewed',
-    },
-    {
-        id: 4,
-        title: 'MRI Scan Results',
-        category: 'Medical',
-        date: '2025-06-20',
-        uploader: 'City Imaging Center',
-        size: '15.8 MB',
-        status: 'Reviewed',
-    },
-    {
-        id: 5,
-        title: 'Flight Itinerary',
-        category: 'Travel',
-        date: '2025-06-18',
-        uploader: 'You',
-        size: '1.2 MB',
-        status: 'Pending',
-    },
-    {
-        id: 6,
-        title: 'Insurance Claim Form',
-        category: 'Insurance',
-        date: '2025-06-15',
-        uploader: 'You',
-        size: '1.8 MB',
-        status: 'Pending',
-    },
-];
+import { storage } from "../../firebase.js"
+import { ref, listAll, getDownloadURL, getMetadata, uploadBytes } from 'firebase/storage';
 
 const categoryTabs = ['All', 'Medical', 'Travel', 'Insurance'];
 
@@ -109,7 +55,13 @@ const StyledTabs = styled(Tabs)(({ theme }) => ({
 }));
 
 // --- 2. Reusable DocumentCard component for cleaner code ---
-const DocumentCard = ({ document }) => {
+const DocumentCard = ({ document, onView }) => {
+    // console.log(document);
+
+    const cleanTitle = document.title.startsWith(document.userId + "_")
+        ? document.title.slice(document.userId.length + 1)
+        : document.title;
+
     const getStatusChip = (status) => {
         switch (status) {
             case 'New':
@@ -145,8 +97,8 @@ const DocumentCard = ({ document }) => {
         <Card elevation={0} sx={{ borderRadius: 4, p: 2, border: "1px solid #E4E7EC", height: '100%', display: 'flex', flexDirection: 'column' }}>
             <CardHeader
                 avatar={getCategoryIcon(document.category)}
-                title={document.title}
-                subheader={`Uploaded: ${new Date(document.date).toLocaleDateString()}`}
+                title={cleanTitle}
+                subheader={`Uploaded: ${new Date(document.created).toLocaleDateString()}`}
                 action={getStatusChip(document.status)}
                 titleTypographyProps={{ fontWeight: 'bold' }}
             />
@@ -155,7 +107,7 @@ const DocumentCard = ({ document }) => {
                     By: {document.uploader}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                    Size: {document.size}
+                    <p><strong>Size:</strong> {(document.size / (1024 * 1024)).toFixed(2)} MB</p>
                 </Typography>
             </CardContent>
             <Box sx={{ p: 2, pt: 0, display: 'flex', gap: 2 }}>
@@ -163,20 +115,7 @@ const DocumentCard = ({ document }) => {
                     fullWidth
                     startIcon={<Visibility />}
                     variant="outlined"
-                    sx={{
-                        backgroundColor: '#FFFFFF',
-                        color: 'black',
-                        textTransform: 'none',
-                        borderColor: '#1D4645',
-                        '&:hover': {
-                            backgroundColor: '#f0f0f0',
-                            borderColor: '#1D4645',
-                        },
-                    }}>View</Button>
-                <Button
-                    fullWidth
-                    startIcon={<Download />}
-                    variant="outlined"
+                    onClick={() => onView(document.downloadURL)}
                     sx={{
                         backgroundColor: '#FFFFFF',
                         color: 'black',
@@ -187,15 +126,57 @@ const DocumentCard = ({ document }) => {
                             borderColor: '#1D4645',
                         },
                     }}
-                >Download</Button>
+                >
+                    View
+                </Button>
+                <a href={document.downloadURL} download target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
+                    <Button
+                        fullWidth
+                        startIcon={<Download />}
+                        variant="outlined"
+                        sx={{
+                            backgroundColor: '#FFFFFF',
+                            color: 'black',
+                            textTransform: 'none',
+                            borderColor: '#1D4645',
+                            '&:hover': {
+                                backgroundColor: '#f0f0f0',
+                                borderColor: '#1D4645',
+                            },
+                        }}
+                    >
+                        Download
+                    </Button>
+                </a>
             </Box>
         </Card>
     );
 };
 
-const DocumentsSection = () => {
+const DocumentsSection = ({ user }) => {
     const [tabIndex, setTabIndex] = useState(0);
     const [searchQuery, setSearchQuery] = useState('');
+    const [fileList, setFileList] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState(null);
+
+    // State for file upload
+    const [isUploading, setIsUploading] = useState(false);
+    const fileInputRef = useRef(null);
+
+    // console.log("DocumentsSection user:", user);
+
+    const [viewingDocUrl, setViewingDocUrl] = useState(null);
+
+    // Handler to open the viewer with a specific URL
+    const handleViewDocument = (url) => {
+        setViewingDocUrl(url);
+    };
+
+    // Handler to close the viewer
+    const handleCloseViewer = () => {
+        setViewingDocUrl(null);
+    };
 
     const handleTabChange = (event, newValue) => {
         setTabIndex(newValue);
@@ -204,27 +185,139 @@ const DocumentsSection = () => {
     // --- 3. Memoized filtering logic for tabs and search ---
     const filteredDocuments = useMemo(() => {
         const selectedCategory = categoryTabs[tabIndex];
-
-        return allDocuments.filter(doc => {
+        return fileList.filter(doc => {
             const matchesCategory = selectedCategory === 'All' || doc.category === selectedCategory;
             const matchesSearch = doc.title.toLowerCase().includes(searchQuery.toLowerCase());
             return matchesCategory && matchesSearch;
         });
-    }, [tabIndex, searchQuery]);
+    }, [tabIndex, searchQuery, fileList]);
+
+    const fetchFiles = useCallback(async () => {
+        if (!user?.id) return;
+        setIsLoading(true);
+        setError(null);
+        const folderRef = ref(storage, `medical-records/${user.id}`);
+        try {
+            const response = await listAll(folderRef);
+            const files = await Promise.all(
+                response.items.map(async (itemRef) => {
+                    const [url, metadata] = await Promise.all([
+                        getDownloadURL(itemRef),
+                        getMetadata(itemRef)
+                    ]);
+                    return {
+                        title: metadata.name,
+                        size: metadata.size,
+                        contentType: metadata.contentType,
+                        created: metadata.timeCreated,
+                        updated: metadata.updated,
+                        downloadURL: url,
+                        category: metadata?.customMetadata?.category || 'Medical',
+                        status: "Reviewed",
+                        uploader: user.firstName,
+                        userId: user.id,
+                    };
+                })
+            );
+            setFileList(files);
+        } catch (err) {
+            console.error("Error fetching files:", err);
+            setError("Failed to load medical records.");
+        } finally {
+            setIsLoading(false);
+        }
+    }, [user]); // Re-run when user object changes
+
+
+    useEffect(() => {
+        fetchFiles();
+    }, [fetchFiles]);
+
+    const handleUploadClick = () => {
+        console.log("Upload button clicked");
+        if (fileInputRef.current) {
+            fileInputRef.current.click();
+        }
+    };
+
+    const handleFileSelected = async (event) => {
+        const file = event.target.files[0];
+        if (!file || !user?.id) return;
+
+        setIsUploading(true);
+        setError(null);
+
+        const storageRef = ref(storage, `medical-records/${user.id}/${user.id}_${file.name}`);
+
+        try {
+            await uploadBytes(storageRef, file);
+            await fetchFiles();
+        } catch (uploadError) {
+            console.error("Error uploading file:", uploadError);
+            setError("File upload failed. Please try again.");
+        } finally {
+            setIsUploading(false);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = "";
+            }
+        }
+    };
+
+
+    if (isLoading && fileList.length === 0) { // Show loading only on initial load
+        return <p>Loading records...</p>;
+    }
+
+    if (error) {
+        return <p style={{ color: 'red' }}>{error}</p>;
+    }
 
     return (
-        <Box p={3}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 , pl: 0}}>
             {/* Header Section */}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
+                {/* This is the title on the left */}
                 <Box>
                     <Typography variant="h4" fontWeight="bold">Documents Vault</Typography>
                     <Typography variant="body1" color="text.secondary">
                         Secure storage for all your medical and travel documents.
                     </Typography>
                 </Box>
-                <Button variant="contained" startIcon={<Upload />} sx={{ textTransform: 'none', borderRadius: 2, bgcolor: 'black', '&:hover': { bgcolor: '#333' } }}>
-                    Upload New
+
+                {/* This is the VISIBLE button on the right */}
+                <Button
+                    variant="contained"
+                    startIcon={<Upload />}
+                    sx={{
+                        textTransform: 'none',
+                        borderRadius: 2,
+                        bgcolor: 'black',
+                        '&:hover': { bgcolor: '#333' }
+                    }}
+                    onClick={handleUploadClick}
+                    disabled={isUploading}
+                >
+                    {isUploading ? 'Uploading...' : 'Upload New'}
                 </Button>
+
+                {/* This is the HIDDEN file input that the button clicks for you */}
+                <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileSelected}
+                    style={{
+                        clip: 'rect(0 0 0 0)',
+                        clipPath: 'inset(50%)',
+                        height: 1,
+                        overflow: 'hidden',
+                        position: 'absolute',
+                        bottom: 0,
+                        left: 0,
+                        whiteSpace: 'nowrap',
+                        width: 1,
+                    }}
+                    accept="application/pdf,image/*,.doc,.docx"
+                />
             </Box>
 
             {/* Filter and Search Section */}
@@ -244,12 +337,12 @@ const DocumentsSection = () => {
             {/* Tabs Section */}
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                 <StyledTabs
-                value={tabIndex}
-                onChange={handleTabChange}
-                sx={{
-                    width: 'fit-content',
-                }}
-            >
+                    value={tabIndex}
+                    onChange={handleTabChange}
+                    sx={{
+                        width: 'fit-content',
+                    }}
+                >
                     {categoryTabs.map(label => <Tab key={label} label={label} />)}
                 </StyledTabs>
             </Box>
@@ -257,10 +350,10 @@ const DocumentsSection = () => {
             {/* --- 4. Display filtered documents or a message --- */}
             <Box mt={3}>
                 {filteredDocuments.length > 0 ? (
-                    <Grid container spacing={3}>
+                    <Grid container spacing={2}>
                         {filteredDocuments.map((doc) => (
-                            <Grid item key={doc.id} xs={12} sm={6} md={4}>
-                                <DocumentCard document={doc} />
+                            <Grid item key={doc.title} xs={12} sm={6} md={4}>
+                                <DocumentCard document={doc} onView={handleViewDocument} />
                             </Grid>
                         ))}
                     </Grid>
@@ -275,6 +368,57 @@ const DocumentsSection = () => {
                     </Box>
                 )}
             </Box>
+
+            {/* Document Viewer Modal */}
+            {viewingDocUrl && (
+                <Box
+                    // This is the semi-transparent backdrop
+                    sx={{
+                        position: 'fixed',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        borderRadius: '8px',
+                        width: '80vw',
+                        height: '80vh',
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        backdropFilter: 'blur(8px)',
+                        zIndex: 1300,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        p: 2,
+                    }}
+                >
+                    {/* Close Button */}
+                    <Box sx={{ textAlign: 'right' }}>
+                        <IconButton onClick={handleCloseViewer} sx={{ color: 'white' }}>
+                            <Close fontSize="large" />
+                        </IconButton>
+                    </Box>
+
+                    {/* Image Container - Replaces the iframe */}
+                    <Box
+                        sx={{
+                            flex: 1,
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            overflow: 'hidden' // Prevents any potential overflow
+                        }}
+                    >
+                        <img
+                            src={viewingDocUrl}
+                            alt="Document Preview"
+                            style={{
+                                maxWidth: '100%',
+                                maxHeight: '100%',
+                                objectFit: 'contain', // This is the magic property
+                                borderRadius: '8px' // Optional: for aesthetics
+                            }}
+                        />
+                    </Box>
+                </Box>
+            )}
         </Box>
     );
 }

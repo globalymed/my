@@ -11,7 +11,9 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import ChatLayout from '../components/ChatLayout';
 import NewLoginPage from './NewLoginPage.jsx';
 import NewSignupPage from './NewSignupPage.jsx';
+import ConfirmEmail from './ConfirmEmail.jsx';
 import DoctorLoginPage from '../components/DoctorLoginPage';
+import { DoctorDashboard as NewDoctorDashboard } from '../components/DoctorDashboard/DoctorDashboard.jsx';
 
 const AIChat = React.lazy(() => import('../components/AIChatFinal'));
 const ClinicRecommender = React.lazy(() => import('../components/ClinicRecommenderEnhanced'));
@@ -30,12 +32,10 @@ import TermsOfService from './TermsOfService.jsx';
 import PrivacyPolicy from './PrivacyPolicy.jsx';
 import CompareCost from './compareCost.jsx';
 import PostHogPageViewTracker from '../utils/PostHogPageViewTracker';
-import AboutPage from './Aboutus.jsx';
 
-// Create a component to render the doctor dashboard in an iframe
+// Create a component to render the doctor dashboard with logout functionality
 const DoctorDashboard = () => {
   const navigate = useNavigate();
-  const theme = useTheme();
 
   // Function to handle doctor logout
   const handleLogout = () => {
@@ -48,39 +48,9 @@ const DoctorDashboard = () => {
   };
 
   return (
-    <Box sx={{ width: '100%', height: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* Dashboard iframe - now takes full height */}
-      <iframe
-        src="https://dd-green-kappa.vercel.app/"
-        title="Doctor Dashboard"
-        style={{
-          width: '100%',
-          height: '100%',
-          border: 'none',
-          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-        }}
-      />
-
-      {/* Logout button positioned absolutely in bottom left */}
-      <Button
-        variant="contained"
-        color="error"
-        onClick={handleLogout}
-        startIcon={<LogoutIcon />}
-        sx={{
-          position: 'absolute',
-          bottom: '40px',
-          left: '70px',
-          textTransform: 'none',
-          bgcolor: 'error.main',
-          zIndex: 1000,
-          '&:hover': {
-            bgcolor: 'error.dark',
-          }
-        }}
-      >
-        Logout
-      </Button>
+    <Box sx={{ width: '100%', height: '100vh', position: 'relative' }}>
+      {/* New Doctor Dashboard JSX Component */}
+      <NewDoctorDashboard />
     </Box>
   );
 };
@@ -200,7 +170,11 @@ const App = () => {
                 <Route path="/free-consultation" element={<FreeConsultation />} />
                 <Route path="/contact" element={<ContactUs />} />
                 <Route path="/compare-cost" element={<CompareCost />} />
-                <Route path="/treatment" element={<Blog />} />
+                <Route path="/treatment/dental" element={<DentalTreatment />} />
+                <Route path="/treatment/ivf" element={<IVFTreatment />} />
+                <Route path="/treatment/hair" element={<HairTreatment />} />
+                <Route path="/treatment/cosmetics" element={<CosmeticsTreatment />} />
+                <Route path="/treatment/blog" element={<Blog />} />
                 <Route path="/treatment/:id" element={<BlogPostPage />} />
                 <Route path="/newLogin" element={<LoginPage />} />
                 <Route path="/newSignup" element={<NewSignupPage />} />
@@ -229,6 +203,7 @@ const App = () => {
                     <NewLoginPage />
                   </AuthRoute>
                 } />
+                <Route path="/confirm-email" element={<ConfirmEmail />} />
                 <Route path="/doctor-login" element={
                   <DoctorAuthRoute>
                     <DoctorLoginPage />

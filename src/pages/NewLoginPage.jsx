@@ -402,11 +402,12 @@ function LoginForm() {
 
           <Box sx={{ textAlign: 'center', mb: 2 }}>
             <Link
-              href="#"
+              onClick={() => navigate('/confirm-email')}
               sx={{
                 color: '#4A90E2',
                 textDecoration: 'none',
                 fontSize: '14px',
+                cursor: 'pointer',
                 '&:hover': {
                   textDecoration: 'underline'
                 }
