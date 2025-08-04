@@ -195,7 +195,7 @@ export default function AboutPage() {
                   size="small"
                   key={index}
                   sx={{
-                    
+                    color: black,
                     borderRadius: 1,
                     mx: 0.5,
                     transition: 'transform 0.3s ease-in-out',
