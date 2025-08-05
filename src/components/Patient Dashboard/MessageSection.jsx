@@ -340,12 +340,6 @@ const MessagesSection = ({user}) => {
     const [supportHistory, setSupportHistory] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // console.log("Support rendered")
-    const handleSubmit = async () => {
-    if (supportMessage.trim() === "" || supportCategory === "") {
-      alert("Please enter a question and select a category.");
-      return;
-    }
   const handleSubmit = async () => {
   if (supportMessage.trim() === "" || supportCategory === "") {
     alert("Please enter a question and select a category.");
@@ -896,6 +890,7 @@ return (
       </Box>
     </Box>
   )
+  }
 }
 
 export default MessagesSection;
