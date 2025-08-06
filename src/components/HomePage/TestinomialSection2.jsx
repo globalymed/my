@@ -28,13 +28,14 @@ const imageStyle = {
 };
 
 const reviewImages = [
-    '/treatmentExperience/1.png',
-    '/treatmentExperience/2.png',
-    '/treatmentExperience/3.png',
-    '/treatmentExperience/4.png',
+    '/reviews_post/1.png',
+    '/reviews_post/2.png',
+    '/reviews_post/3.png',
+    '/reviews_post/4.png',
+    '/reviews_post/5.png',
 ];
 
-const TreatmentExperience = () => {
+function TestimonialsSection() {
     return (
         <Box sx={{
             backgroundColor: { xs: '#2b938c', md: '#111' },
@@ -92,16 +93,19 @@ const TreatmentExperience = () => {
                             extensions={{ AutoScroll }}
                         >
                             <SplideSlide>
-                                <img src={reviewImages[0]} alt="Treatment Experience 1" style={imageStyle} />
+                                <img src={reviewImages[0]} alt="Review 1" style={imageStyle} />
                             </SplideSlide>
                             <SplideSlide>
-                                <img src={reviewImages[1]} alt="Treatment Experience 2" style={imageStyle} />
+                                <img src={reviewImages[1]} alt="Review 2" style={imageStyle} />
                             </SplideSlide>
                             <SplideSlide>
-                                <img src={reviewImages[2]} alt="Treatment Experience 3" style={imageStyle} />
+                                <img src={reviewImages[2]} alt="Review 3" style={imageStyle} />
                             </SplideSlide>
                             <SplideSlide>
-                                <img src={reviewImages[3]} alt="Treatment Experience 4" style={imageStyle} />
+                                <img src={reviewImages[3]} alt="Review 4" style={imageStyle} />
+                            </SplideSlide>
+                            <SplideSlide>
+                                <img src={reviewImages[4]} alt="Review 5" style={imageStyle} />
                             </SplideSlide>
                         </Splide>
                     </Box>
@@ -109,6 +113,6 @@ const TreatmentExperience = () => {
             </Box>
         </Box>
     );
-};
+}
 
-export default TreatmentExperience;
+export default TestimonialsSection;

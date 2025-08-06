@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
     Box,
     Typography,
@@ -15,7 +15,17 @@ import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
 import StarIcon from '@mui/icons-material/Star';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import { keyframes } from '@emotion/react';
+import { Splide, SplideSlide } from "@splidejs/react-splide";
+import { AutoScroll } from "@splidejs/splide-extension-auto-scroll";
+import "@splidejs/splide/dist/css/splide.min.css";
+
+// Define the style for the images in the carousel
+const imageStyle = {
+    width: '447px',
+    height: '664px',
+    borderRadius: '20px',
+    border: '1px solid #FFFFFF33',
+};
 
 const stats = [
     { value: '10,000+', label: 'Patients Served' },
@@ -55,66 +65,14 @@ const testimonials = [
 
 const partners = ['Apollo', 'Fortis', 'Max', 'Manipal', 'Narayana', 'AIIMS'];
 
-const IMAGES_PER_VIEW = {
-    xs: 1,
-    sm: 2,
-    md: 3,
-};
-
-const IMAGE_HEIGHTS = { xs: 400, sm: 500, md: 600 };
-
-function useResponsiveImagesPerView() {
-    const [imagesPerView, setImagesPerView] = useState(3);
-    useEffect(() => {
-        function handleResize() {
-            if (window.innerWidth < 600) setImagesPerView(IMAGES_PER_VIEW.xs);
-            else if (window.innerWidth < 900) setImagesPerView(IMAGES_PER_VIEW.sm);
-            else setImagesPerView(IMAGES_PER_VIEW.md);
-        }
-        handleResize();
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
-    return imagesPerView;
-}
-
-const marquee = keyframes`
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-`;
-
 const TestimonialsSection = () => {
-    const [animatedStats, setAnimatedStats] = useState(false);
-    const imagesPerView = useResponsiveImagesPerView();
-    useEffect(() => {
-        const timer = setTimeout(() => setAnimatedStats(true), 500);
-        return () => clearTimeout(timer);
-    }, []);
-
-    // Duplicate images for seamless looping
-    const allImages = [...reviewImages, ...reviewImages];
-    // Responsive height
-    const getCarouselHeight = () => {
-        if (window.innerWidth < 600) return IMAGE_HEIGHTS.xs;
-        if (window.innerWidth < 900) return IMAGE_HEIGHTS.sm;
-        return IMAGE_HEIGHTS.md;
-    };
-    const [carouselHeight, setCarouselHeight] = useState(getCarouselHeight());
-    useEffect(() => {
-        function handleResize() {
-            setCarouselHeight(getCarouselHeight());
-        }
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
-
     return (
         <Box sx={{ 
-            backgroundColor: { xs: '#2b938c', md: '#52C7BE' }, // CHANGED: Mobile background color
+            backgroundColor: { xs: '#2b938c', md: '#52C7BE' },
             color: 'white', 
             py: 10,
             backgroundImage: { 
-                xs: 'none', // CHANGED: Remove image on mobile
+                xs: 'none',
                 md: "url('/testimonial background.png')" 
             },
             backgroundSize: 'cover',
@@ -122,7 +80,7 @@ const TestimonialsSection = () => {
             backgroundRepeat: 'no-repeat',
         }}>
             <Box maxWidth="lg" mx="auto" px={2}>
-                {/* Stats with Animation */}
+                {/* Stats */}
                 <Grid container spacing={4} justifyContent="center" mb={6}>
                     {stats.map((item, i) => (
                         <Grid item xs={6} sm={3} key={i} textAlign="center">
@@ -131,9 +89,6 @@ const TestimonialsSection = () => {
                                 fontWeight={900}
                                 sx={{
                                     fontSize: { xs: '2.5rem', md: '3.5rem' },
-                                    opacity: animatedStats ? 1 : 0,
-                                    transform: animatedStats ? 'translateY(0)' : 'translateY(20px)',
-                                    transition: `all 0.6s ease ${i * 0.2}s`,
                                     color: 'white',
                                     textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
                                 }}
@@ -143,9 +98,6 @@ const TestimonialsSection = () => {
                             <Typography 
                                 variant="h6" 
                                 sx={{
-                                    opacity: animatedStats ? 1 : 0,
-                                    transform: animatedStats ? 'translateY(0)' : 'translateY(20px)',
-                                    transition: `all 0.6s ease ${i * 0.2 + 0.3}s`,
                                     fontWeight: 600,
                                     color: 'white',
                                 }}
@@ -192,7 +144,7 @@ const TestimonialsSection = () => {
                     </Typography>
                 </Box>
 
-                {/* Review Carousel */}
+                {/* Review Carousel using Splide */}
                 <Box sx={{ position: 'relative', maxWidth: '100%', mx: 'auto', mb: 8 }}>
                     <Box
                         sx={{
@@ -201,56 +153,43 @@ const TestimonialsSection = () => {
                             overflow: 'hidden',
                             boxShadow: 6,
                             width: '100%',
-                            height: `${carouselHeight}px`,
                             maxHeight: '80vh',
                         }}
                     >
-                        {/* Marquee Row */}
-                        <Box
-                            sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 4,
-                                height: '100%',
-                                animation: `${marquee} 15s linear infinite`,
+                        <Splide
+                            options={{
+                                type: "loop",
+                                autoScroll: {
+                                    pauseOnHover: false,
+                                    pauseOnFocus: false,
+                                    rewind: true,
+                                    speed: 1
+                                },
+                                arrows: false,
+                                pagination: false,
+                                fixedWidth: '445px',
+                                gap: '12px',
                             }}
+                            extensions={{ AutoScroll }}
                         >
-                            {allImages.map((image, idx) => (
-                                <Box
-                                    key={idx}
-                                    component="img"
-                                    src={image}
-                                    alt={`Review ${idx + 1}`}
-                                    sx={{
-                                        height: '100%',
-                                        width: 'auto',
-                                        maxWidth: '100%',
-                                        borderRadius: 2,
-                                        // REMOVED: boxShadow and background properties
-                                    }}
-                                />
-                            ))}
-                        </Box>
-                        {/* Edge Fade Overlays */}
-                        <Box
-                            sx={{
-                                pointerEvents: 'none',
-                                position: 'absolute',
-                                top: 0,
-                                left: 0,
-                                width: '100%',
-                                height: '100%',
-                                zIndex: 2,
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                            }}
-                        >
-                        
-                        </Box>
+                            <SplideSlide>
+                                <img src={reviewImages[0]} alt="Review 1" style={imageStyle} />
+                            </SplideSlide>
+                            <SplideSlide>
+                                <img src={reviewImages[1]} alt="Review 2" style={imageStyle} />
+                            </SplideSlide>
+                            <SplideSlide>
+                                <img src={reviewImages[2]} alt="Review 3" style={imageStyle} />
+                            </SplideSlide>
+                            <SplideSlide>
+                                <img src={reviewImages[3]} alt="Review 4" style={imageStyle} />
+                            </SplideSlide>
+                            <SplideSlide>
+                                <img src={reviewImages[4]} alt="Review 5" style={imageStyle} />
+                            </SplideSlide>
+                        </Splide>
                     </Box>
                 </Box>
-
-                {/* REMOVED: Trusted Healthcare Partners section */}
             </Box>
         </Box>
     );
