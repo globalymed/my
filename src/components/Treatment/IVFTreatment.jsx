@@ -1,18 +1,5 @@
-import React from 'react';
 import {
-  Container,
-  Box,
-  Typography,
-  Button,
-  Grid,
-  Card,
-  CardContent,
-  CardMedia,
-  Chip,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Paper,
+    Box,
 } from '@mui/material';
 
 import TreatmentHeroSection from './components/ivfComponents/HeroSection';
@@ -30,31 +17,6 @@ import LatestBlogTreatmentSection from './components/ivfComponents/LatestBlogTre
 
 
 const IVFTreatment = () => {
-
-  const StatCard = ({ icon, value, label, color = '#1976d2' }) => (
-    <Paper
-      elevation={2}
-      sx={{
-        p: 2,
-        textAlign: 'center',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: 1,
-        borderRadius: 2,
-        height: '100%',
-      }}
-    >
-      <Box sx={{ color }}>{icon}</Box>
-      <Typography variant="h5" fontWeight="bold">
-        {value}
-      </Typography>
-      <Typography variant="body2" color="text.secondary">
-        {label}
-      </Typography>
-    </Paper>
-  );
-
 
   return (
     <Box sx={{ bgcolor: 'white', overflow: 'hidden' }}>
