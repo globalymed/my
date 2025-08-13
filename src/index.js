@@ -7,6 +7,8 @@ import './index.css';
 import App from './pages/App';
 import posthog from 'posthog-js';
 import { PostHogProvider } from 'posthog-js/react';
+import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 
 const theme = createTheme();
 
@@ -22,6 +24,8 @@ root.render(
         <CssBaseline />
         <PostHogProvider client={posthog}>
           <App />
+          <Analytics />
+          <SpeedInsights />
         </PostHogProvider>
       </ThemeProvider>
     </BrowserRouter>
