@@ -14,6 +14,7 @@ import NewSignupPage from './NewSignupPage.jsx';
 import ConfirmEmail from './ConfirmEmail.jsx';
 import DoctorLoginPage from '../components/DoctorLoginPage';
 import { DoctorDashboard as NewDoctorDashboard } from '../components/DoctorDashboard/DoctorDashboard.jsx';
+import ClinicRegistration from '../components/DoctorDashboard/components/ClinicRegistration';
 
 const AIChat = React.lazy(() => import('../components/AIChatFinal'));
 const ClinicRecommender = React.lazy(() => import('../components/ClinicRecommenderEnhanced'));
@@ -220,6 +221,11 @@ const App = () => {
                 } />
                 <Route path="/terms" element={<TermsOfService />} />
                 <Route path="/privacy" element={<PrivacyPolicy />} />
+                <Route path="/clinic-registration" element={
+                  <DoctorProtectedRoute>
+                    <ClinicRegistration />
+                  </DoctorProtectedRoute>
+                } />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Layout>
