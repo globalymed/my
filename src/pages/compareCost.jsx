@@ -134,7 +134,7 @@ const treatmentData = {
     description: "Surgical repair of gums and bones to halt gum disease",
     rating: 4.5,
   },
-  "Breast Augmentation/Reduction": {
+  "Cosmetic Surgery": {
     costs: {
       "United States": 7500,
       "United Kingdom": 6200,
@@ -248,7 +248,7 @@ const popularTreatments = [
     borderColor: "#c8e6c9",
   },
   {
-    name: "Breast Augmentation/Reduction",
+    name: "Cosmetic Surgery",
     icon: Female,
     color: "#9c27b0",
     bgColor: "#f3e5f5",
@@ -720,10 +720,14 @@ export default function Component() {
                     variant="contained"
                     size="large"
                     sx={{ 
-                      bgcolor: 'white', 
-                      color: 'primary.main',
+                      borderColor: 'white', 
+                      color: 'white',
                       fontWeight: 'bold',
-                      '&:hover': { bgcolor: 'grey.100' }
+                      '&:hover': { 
+                        bgcolor: 'white', 
+                        color: 'primary.main',
+                        borderColor: 'white'
+                      }
                     }}
                     endIcon={<ArrowForward />}
                   >

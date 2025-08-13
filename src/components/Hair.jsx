@@ -16,7 +16,7 @@ const Hair = () => (
 
         <Box
             component="img"
-            src="/hair/hair.png"
+            src="/hair/hair.webp"
             alt="Hair Treatment"
             sx={{
                 width: "100%",
@@ -126,7 +126,7 @@ const Hair = () => (
                     {/* Image Section */}
                     <Box
                         component="img"
-                        src="hair/step.jpg"
+                        src="hair/step.webp"
                         alt="Hair Procedures"
                         sx={{
                             width: "100%",
@@ -239,7 +239,7 @@ const Hair = () => (
                     {/* Image Section */}
                     <Box
                         component="img"
-                        src="/hair/non surgical.jpg"
+                        src="/hair/non surgical.webp"
                         alt="Non Surgical Hair Restoration"
                         sx={{
                             width: "100%",

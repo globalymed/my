@@ -79,7 +79,7 @@ const Footer = () => {
               <a href="https://medyatra.space" style={{ textDecoration: 'none', color: 'inherit'}}>
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                   <Avatar
-                    src="/logo.png"
+                    src="/logo.webp"
                     alt="MedYatra Logo"
                     sx={{ width: 36, height: 36, mr: 1 }}
                   />

@@ -18,10 +18,10 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { keyframes } from '@emotion/react';
 
 const reviewImages = [
-    '/treatmentExperience/1.png',
-    '/treatmentExperience/2.png',
-    '/treatmentExperience/3.png',
-    '/treatmentExperience/4.png',
+    '/treatmentExperience/1.webp',
+    '/treatmentExperience/2.webp',
+    '/treatmentExperience/3.webp',
+    '/treatmentExperience/4.webp',
 ];
 
 const IMAGES_PER_VIEW = {
@@ -80,7 +80,7 @@ const TreatmentExperience = () => {
     return (
         <Box sx={{
             backgroundColor: { xs: '#2b938c', md: '#111' },
-            backgroundImage: { xs: 'none', md: 'url(/treatmentExperience/background.png)' },
+            backgroundImage: { xs: 'none', md: 'url(/treatmentExperience/background.webp)' },
             backgroundSize: 'cover',
             backgroundPosition: 'center bottom',
             backgroundRepeat: 'no-repeat',

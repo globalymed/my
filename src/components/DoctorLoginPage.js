@@ -205,7 +205,7 @@ const DoctorLoginPage = () => {
         <CardContent sx={{ p: 4 }}>
           <LogoContainer>
             <img
-              src="/logo.png"
+              src="/logo.webp"
               alt="MedYatra Logo"
               style={{
                 width: isMobile ? 64 : 80,

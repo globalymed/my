@@ -17,7 +17,7 @@ const Dental = () => (
     {/* Image */}
     <Box
       component="img"
-      src="/dental/dental.jpg"
+      src="/dental/dental.webp"
       alt="Dental Treatment"
       sx={{
         width: "100%",
@@ -95,7 +95,7 @@ const Dental = () => (
           {/* Image Section */}
           <Box
             component="img"
-            src="/dental/dental polishing.jpg"
+            src="/dental/dental polishing.webp"
             alt="Dental Polishing"
             sx={{
               width: "100%",
@@ -128,7 +128,7 @@ const Dental = () => (
       </AccordionSummary>
       <Box
         component="img"
-        src="/dental/dental filling.jpg"
+        src="/dental/dental filling.webp"
         alt="Dental Filling"
         sx={{
           width: "100%",
@@ -232,7 +232,7 @@ const Dental = () => (
           {/* Image Section */}
           <Box
             component="img"
-            src="/dental/gum contouring.jpg"
+            src="/dental/gum contouring.webp"
             alt="gum contouring"
             sx={{
               width: "100%",
@@ -303,7 +303,7 @@ const Dental = () => (
           {/* Image Section */}
           <Box
             component="img"
-            src="/dental/dental braces.jpg"
+            src="/dental/dental braces.webp"
             alt="Dental Braces"
             sx={{
               width: "100%",
@@ -380,7 +380,7 @@ const Dental = () => (
           {/* Image Section */}
           <Box
             component="img"
-            src="/dental/dental surgery.png"
+            src="/dental/dental surgery.webp"
             alt="Dental Surgery"
             sx={{
               width: "100%",
@@ -451,7 +451,7 @@ const Dental = () => (
           {/* Image Section */}
           <Box
             component="img"
-            src="/dental/cavity filling.jpg"
+            src="/dental/cavity filling.webp"
             alt="Cavity Filling"
             sx={{
               width: "100%",
@@ -528,7 +528,7 @@ const Dental = () => (
           {/* Image Section */}
           <Box
             component="img"
-            src="/dental/root canal.jpg"
+            src="/dental/root canal.webp"
             alt="IVF Treatment"
             sx={{
               width: "100%",
@@ -560,7 +560,7 @@ const Dental = () => (
       </AccordionSummary>
       <Box
         component="img"
-        src="/dental/dental implant.jpg"
+        src="/dental/dental implant.webp"
         alt="Dental Treatment"
         sx={{
           width: "100%",

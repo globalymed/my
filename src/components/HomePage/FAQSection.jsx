@@ -49,7 +49,7 @@ const FAQSection = (props) => {
                     <Grid item xs={12} md={6} sx={{ display: 'flex', justifyContent: 'center' }}>
                         <Box
                             component="img"
-                            src="/faq-illustration.png" // update path accordingly
+                            src="/faq-illustration.webp" // update path accordingly
                             alt="Doctor FAQ"
                             sx={{
                                 maxWidth: '100%',

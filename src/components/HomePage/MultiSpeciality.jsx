@@ -17,7 +17,7 @@ const treatments = [
         ],
         fee: "Free",
         tag: "Available Today",
-        image: "/doctors/ivf.png",
+        image: "/doctors/ivf.webp",
     },
     {
         name: "Hair Transplant",
@@ -33,7 +33,7 @@ const treatments = [
         ],
         fee: "Free",
         tag: "Available Today",
-        image: "/doctors/hair transplant.png",
+        image: "/doctors/hair transplant.webp",
     },
     {
         name: "Dental Care",
@@ -49,7 +49,7 @@ const treatments = [
         ],
         fee: "Free",
         tag: "Available Today",
-        image: "/doctors/dental.png",
+        image: "/doctors/dental.webp",
     },
     {
         name: "Cosmetic Procedures",
@@ -65,7 +65,7 @@ const treatments = [
         ],
         fee: "Free",
         tag: "Available Today",
-        image: "/doctors/cosmetic.png",
+        image: "/doctors/cosmetic.webp",
     },
 ];
 
