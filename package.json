@@ -38,10 +38,10 @@
     "zustand": "^4.5.6"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "dev": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
+    "start": "craco start",
+    "dev": "craco start",
+    "build": "craco build",
+    "test": "craco test",
     "build:dashboard": "cd patient-dashboard-ai && npm run build",
     "postbuild:dashboard": "if not exist public\\patient-dashboard-ai mkdir public\\patient-dashboard-ai && xcopy /E /Y patient-dashboard-ai\\dist\\* public\\patient-dashboard-ai\\",
     "predeploy:all": "npm install && cd patient-dashboard-ai && npm install",
@@ -66,6 +66,7 @@
     ]
   },
   "devDependencies": {
+    "@craco/craco": "^7.1.0",
     "@types/dom-mediacapture-record": "^1.0.21",
     "@types/node": "^22.13.4",
     "@types/react": "^19.0.8",
