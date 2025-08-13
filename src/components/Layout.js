@@ -91,7 +91,7 @@ const Layout = ({ children }) => {
       }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Avatar
-            src="/logo192.png"
+            src="/logo192.webp"
             alt="MedYatra Logo"
             sx={{ width: 40, height: 40 }}
           />
@@ -166,7 +166,7 @@ const Layout = ({ children }) => {
             <>
               <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1, justifyContent: 'center' }}>
                 <Avatar
-                  src="/logo192.png"
+                  src="/logo192.webp"
                   alt="MedYatra Logo"
                   sx={{ width: 32, height: 32, mr: 1 }}
                 />
@@ -206,7 +206,7 @@ const Layout = ({ children }) => {
             <>
               <Box sx={{ display: 'flex', alignItems: 'center', mr: 4 }}>
                 <Avatar
-                  src="/logo192.png"
+                  src="/logo192.webp"
                   alt="MedYatra Logo"
                   sx={{ width: 36, height: 36, mr: 1 }}
                 />

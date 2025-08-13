@@ -63,7 +63,6 @@ import {
   Lens as StatusIndicatorIcon,
 } from '@mui/icons-material';
 
-
 // Firebase imports - replace with your actual Firebase config
 import { ref, listAll, getDownloadURL, getMetadata, uploadBytes } from 'firebase/storage';
 import { getAllUsers, getAppointmentsByClinicIds, storage, getDoctorById } from '../../../firebase';
@@ -82,6 +81,378 @@ const useMenu = () => {
   return { anchorEl, open, handleClick, handleClose };
 };
 
+// Enhanced Document Viewer Component
+const EnhancedDocumentViewer = ({ open, onClose, document }) => {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (open && document) {
+      setLoading(true);
+      setError(null);
+    }
+  }, [open, document]);
+
+  const renderDocumentContent = () => {
+    if (!document?.previewUrl && !document?.downloadURL) {
+      return (
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          height: '100%',
+          flexDirection: 'column',
+          gap: 2
+        }}>
+          <FileText size={48} color="#9CA3AF" />
+          <Typography variant="h6" color="text.secondary">
+            No preview available
+          </Typography>
+          {document?.downloadURL && (
+            <Button
+              variant="contained"
+              startIcon={<Download size={16} />}
+              onClick={() => window.open(document.downloadURL, '_blank')}
+              sx={{ mt: 1 }}
+            >
+              Download to View
+            </Button>
+          )}
+        </Box>
+      );
+    }
+
+    const fileType = document.type?.toLowerCase();
+    const previewUrl = document.previewUrl || document.downloadURL;
+    
+    switch (fileType) {
+      case 'pdf':
+        return (
+          <iframe
+            src={`${previewUrl}#toolbar=1&navpanes=1&scrollbar=1`}
+            title={`Preview of ${document.title}`}
+            width="100%"
+            height="100%"
+            style={{ border: 0 }}
+            onLoad={() => setLoading(false)}
+            onError={() => {
+              setError('Failed to load PDF preview');
+              setLoading(false);
+            }}
+          />
+        );
+
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+      case 'gif':
+      case 'webp':
+      case 'bmp':
+      case 'svg':
+        return (
+          <Box sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '100%',
+            p: 2,
+            position: 'relative'
+          }}>
+            <img
+              src={previewUrl}
+              alt={document.title}
+              style={{
+                maxWidth: "100%",
+                maxHeight: "100%",
+                objectFit: 'contain',
+                borderRadius: 8,
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+              }}
+              onLoad={() => setLoading(false)}
+              onError={() => {
+                setError('Failed to load image preview');
+                setLoading(false);
+              }}
+            />
+          </Box>
+        );
+
+      case 'txt':
+      case 'csv':
+        return (
+          <Box sx={{ p: 2, height: '100%', overflow: 'auto' }}>
+            <iframe
+              src={previewUrl}
+              title={`Preview of ${document.title}`}
+              width="100%"
+              height="100%"
+              style={{ 
+                border: '1px solid #e0e0e0', 
+                borderRadius: 8,
+                backgroundColor: 'white'
+              }}
+              onLoad={() => setLoading(false)}
+              onError={() => {
+                setError('Failed to load text preview');
+                setLoading(false);
+              }}
+            />
+          </Box>
+        );
+
+      case 'xlsx':
+      case 'xls':
+      case 'ppt':
+      case 'pptx':
+        // For Office documents (except Word), show a preview placeholder with download option
+        return (
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center', 
+            height: '100%',
+            flexDirection: 'column',
+            gap: 2,
+            p: 4
+          }}>
+            {fileType.includes('xl') ? (
+              <FileSpreadsheet size={64} color="#4CAF50" />
+            ) : (
+              <FileText size={64} color="#FF5722" />
+            )}
+            <Typography variant="h6" color="text.primary" textAlign="center">
+              {document.title}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" textAlign="center">
+              {fileType.includes('xl') ? 'Excel' : 'PowerPoint'} files require download to view
+            </Typography>
+            <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
+              <Button
+                variant="contained"
+                startIcon={<Download size={16} />}
+                onClick={() => {
+                  window.open(document.downloadURL || previewUrl, '_blank');
+                  setLoading(false);
+                }}
+              >
+                Download
+              </Button>
+              <Button
+                variant="outlined"
+                startIcon={<Eye size={16} />}
+                onClick={() => {
+                  window.open(`https://docs.google.com/viewer?url=${encodeURIComponent(previewUrl)}`, '_blank');
+                  setLoading(false);
+                }}
+              >
+                View in Google Docs
+              </Button>
+            </Stack>
+          </Box>
+        );
+
+      case 'doc':
+      case 'docx':
+        // For Word documents, provide multiple viewing options with timeout handling
+        return (
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center', 
+            height: '100%',
+            flexDirection: 'column',
+            gap: 3,
+            p: 4
+          }}>
+            <FileText size={64} color="#2196F3" />
+            <Typography variant="h6" color="text.primary" textAlign="center">
+              {document.title}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ mb: 2 }}>
+              Word document - Choose your preferred viewing method
+            </Typography>
+            
+            <Stack direction="column" spacing={2} sx={{ width: '100%', maxWidth: 400 }}>
+              <Button
+                variant="contained"
+                startIcon={<Download size={16} />}
+                onClick={() => {
+                  window.open(document.downloadURL || previewUrl, '_blank');
+                  setLoading(false);
+                }}
+                sx={{ py: 1.5 }}
+              >
+                Download & Open Locally
+              </Button>
+              
+              <Button
+                variant="outlined"
+                startIcon={<Eye size={16} />}
+                onClick={() => {
+                  // Open Google Docs viewer in new tab with timeout warning
+                  const newTab = window.open('about:blank', '_blank');
+                  newTab.document.write(`
+                    <html>
+                      <head><title>Loading Document...</title></head>
+                      <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+                        <h3>Loading document preview...</h3>
+                        <p>If this takes too long, please close this tab and download the file instead.</p>
+                        <div style="margin: 20px;">
+                          <button onclick="window.close()" style="padding: 10px 20px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer;">Close Tab</button>
+                        </div>
+                        <script>
+                          setTimeout(() => {
+                            window.location.href = "https://docs.google.com/viewer?url=${encodeURIComponent(previewUrl)}";
+                          }, 1000);
+                        </script>
+                      </body>
+                    </html>
+                  `);
+                  setLoading(false);
+                }}
+                sx={{ py: 1.5 }}
+              >
+                Quick Preview (May be slow)
+              </Button>
+              
+              <Button
+                variant="text"
+                startIcon={<Eye size={16} />}
+                onClick={() => {
+                  // Try Office Online viewer
+                  window.open(`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(previewUrl)}`, '_blank');
+                  setLoading(false);
+                }}
+                sx={{ py: 1.5 }}
+              >
+                Try Office Online Viewer
+              </Button>
+            </Stack>
+            
+            <Typography variant="caption" color="text.secondary" textAlign="center" sx={{ mt: 2 }}>
+              💡 For best experience, download the file to view it locally
+            </Typography>
+          </Box>
+        );
+
+      default:
+        // Fallback for unsupported file types
+        setLoading(false);
+        return (
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center', 
+            height: '100%',
+            flexDirection: 'column',
+            gap: 2
+          }}>
+            <FileText size={48} color="#9CA3AF" />
+            <Typography variant="h6" color="text.secondary">
+              Preview not supported for .{fileType} files
+            </Typography>
+            <Button
+              variant="contained"
+              startIcon={<Download size={16} />}
+              onClick={() => window.open(document.downloadURL || previewUrl, '_blank')}
+              sx={{ mt: 1 }}
+            >
+              Download File
+            </Button>
+          </Box>
+        );
+    }
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="lg"
+      fullWidth
+      PaperProps={{ sx: { borderRadius: 2, height: '90vh' } }}
+    >
+      <DialogTitle sx={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        pb: 2,
+        borderBottom: 1,
+        borderColor: 'divider'
+      }}>
+        <Box>
+          <Typography variant="h6">Document Preview</Typography>
+          <Typography variant="body2" color="text.secondary">
+            {document?.title} • {document?.size}
+          </Typography>
+        </Box>
+        <Stack direction="row" spacing={1}>
+          {(document?.downloadURL || document?.previewUrl) && (
+            <IconButton
+              onClick={() => window.open(document.downloadURL || document.previewUrl, '_blank')}
+              sx={{ 
+                bgcolor: 'success.main', 
+                color: 'white',
+                '&:hover': { bgcolor: 'success.dark' }
+              }}
+            >
+              <Download size={20} />
+            </IconButton>
+          )}
+          <IconButton
+            onClick={onClose}
+            sx={{ bgcolor: 'grey.100', '&:hover': { bgcolor: 'grey.200' } }}
+          >
+            <X size={20} />
+          </IconButton>
+        </Stack>
+      </DialogTitle>
+      
+      <DialogContent dividers sx={{ height: 'calc(90vh - 120px)', p: 0, position: 'relative' }}>
+        {loading && (
+          <Box sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            bgcolor: 'rgba(255,255,255,0.8)',
+            zIndex: 1
+          }}>
+            <CircularProgress size={48} />
+          </Box>
+        )}
+        
+        {error ? (
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center', 
+            height: '100%',
+            flexDirection: 'column',
+            gap: 2
+          }}>
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+            <Button
+              variant="contained"
+              startIcon={<Download size={16} />}
+              onClick={() => window.open(document?.downloadURL || document?.previewUrl, '_blank')}
+            >
+              Download Instead
+            </Button>
+          </Box>
+        ) : (
+          renderDocumentContent()
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 const DoctorDocumentSection = ({ doctor }) => {
   // console.log("Doctor Document Section Rendered for:", doctor);
@@ -90,7 +461,7 @@ const DoctorDocumentSection = ({ doctor }) => {
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const [selectedDocument, setSelectedDocument] = useState([]);
+  const [selectedDocument, setSelectedDocument] = useState(null);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [aiAssistantOpen, setAiAssistantOpen] = useState(false);
   const [size, setSize] = useState(0);
@@ -107,7 +478,6 @@ const DoctorDocumentSection = ({ doctor }) => {
     setStatusFilter(status);
     filterMenu.handleClose();
   };
-
 
   // Fetch users from Firebase
   const [users, setUsers] = useState([]);
@@ -154,7 +524,6 @@ const DoctorDocumentSection = ({ doctor }) => {
     const buildPatientsList = () => {
       const patientMap = new Map();
       const now = new Date();
-
 
       allAppointments.forEach((appointment) => {
         const { patientEmail } = appointment;
@@ -293,8 +662,6 @@ const DoctorDocumentSection = ({ doctor }) => {
     fetchAllDocuments();
   }, [patients]);
 
-
-
   const getDocumentIcon = (type) => {
     switch (type?.toLowerCase()) {
       case 'pdf':
@@ -305,6 +672,10 @@ const DoctorDocumentSection = ({ doctor }) => {
       case 'jpg':
       case 'jpeg':
       case 'png':
+      case 'gif':
+      case 'webp':
+      case 'bmp':
+      case 'svg':
         return <Image size={24} style={{ color: '#2196f3' }} />;
       default:
         return <FileText size={24} style={{ color: '#757575' }} />;
@@ -420,8 +791,6 @@ const DoctorDocumentSection = ({ doctor }) => {
     }
   ];
 
-
-
   const handleViewDocument = (doc) => {
     setSelectedDocument(doc);
     setViewerOpen(true);
@@ -512,7 +881,6 @@ const DoctorDocumentSection = ({ doctor }) => {
 
       {/* Search and Filter */}
       <Box sx={{ display: 'flex', gap: 2, mb: 3, alignItems: 'center' }}>
-
         <TextField
           fullWidth
           label="Search Document"
@@ -699,7 +1067,7 @@ const DoctorDocumentSection = ({ doctor }) => {
                     </TableCell>
                     <TableCell align="right" sx={{ py: 2 }}>
                       <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
-                        {doc.previewUrl && (
+                        {(doc.previewUrl || doc.downloadURL) && (
                           <IconButton
                             size="small"
                             onClick={() => handleViewDocument(doc)}
@@ -714,10 +1082,10 @@ const DoctorDocumentSection = ({ doctor }) => {
                             <Eye size={16} />
                           </IconButton>
                         )}
-                        {doc.url && (
+                        {(doc.downloadURL || doc.previewUrl) && (
                           <IconButton
                             size="small"
-                            onClick={() => window.open(doc.url, '_blank')}
+                            onClick={() => window.open(doc.downloadURL || doc.previewUrl, '_blank')}
                             sx={{
                               bgcolor: 'success.main',
                               color: 'white',
@@ -760,61 +1128,12 @@ const DoctorDocumentSection = ({ doctor }) => {
         </TableContainer>
       </Paper>
 
-      {/* Document Viewer Dialog */}
-      <Dialog
+      {/* Enhanced Document Viewer Dialog */}
+      <EnhancedDocumentViewer
         open={viewerOpen}
         onClose={() => setViewerOpen(false)}
-        maxWidth="lg"
-        fullWidth
-        PaperProps={{ sx: { borderRadius: 2 } }}
-      >
-        <DialogTitle sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          pb: 2
-        }}>
-          <Typography variant="h6">Document Preview</Typography>
-          <IconButton
-            onClick={() => setViewerOpen(false)}
-            sx={{ bgcolor: 'grey.100', '&:hover': { bgcolor: 'grey.200' } }}
-          >
-            <X size={20} />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent dividers sx={{ height: '70vh', p: 0 }}>
-          {selectedDocument?.previewUrl && (
-            selectedDocument.type === "pdf" ? (
-              <iframe
-                src={selectedDocument.previewUrl}
-                title={`Preview of ${selectedDocument.title}`}
-                width="100%"
-                height="100%"
-                style={{ border: 0 }}
-              />
-            ) : (
-              <Box sx={{
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                height: '100%',
-                p: 2
-              }}>
-                <img
-                  src={selectedDocument.previewUrl}
-                  alt={selectedDocument.title}
-                  style={{
-                    maxWidth: "100%",
-                    maxHeight: "100%",
-                    objectFit: 'contain',
-                    borderRadius: 8
-                  }}
-                />
-              </Box>
-            )
-          )}
-        </DialogContent>
-      </Dialog>
+        document={selectedDocument}
+      />
 
       {/* AI Assistant Dialog */}
       <Dialog

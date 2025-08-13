@@ -122,7 +122,7 @@ const Sidebar = () => {
             }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Avatar
-                        src="/logo.png"
+                        src="/logo.webp"
                         alt="MedYatra Logo"
                         sx={{ width: 40, height: 40, mr: 1 }}
                         imgProps={{
@@ -207,7 +207,7 @@ const Sidebar = () => {
                             </IconButton>
                             <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1, justifyContent: 'center' }}>
                                 <Avatar
-                                    src="/logo.png"
+                                    src="/logo.webp"
                                     alt="MedYatra Logo"
                                     sx={{ width: 40, height: 40, mr: 1 }}
                                     imgProps={{
@@ -265,7 +265,7 @@ const Sidebar = () => {
                                 <a href="https://medyatra.space" style={{ textDecoration: 'none' }}>
                                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                         <Avatar
-                                            src="/logo.png"
+                                            src="/logo.webp"
                                             alt="MedYatra Logo"
                                             sx={{ width: 40, height: 40, mr: 1 }}
                                             imgProps={{

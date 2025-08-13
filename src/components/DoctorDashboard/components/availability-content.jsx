@@ -874,7 +874,14 @@ const AvailabilityContent = ({ loggedInDoctorId }) => {
   }
 
   return (
-    <Box p={{ xs: 1, md: 3 }}>
+    <Box sx={{ 
+      width: '100%', 
+      minHeight: 'auto', 
+      overflow: 'visible',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 3
+    }}>
       {/* Header */}
       <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'center' }} gap={2} mb={2}>
         <div>
@@ -1067,7 +1074,7 @@ const AvailabilityContent = ({ loggedInDoctorId }) => {
       {/* Stats Cards */}
       <Grid container spacing={2} mb={3}>
         <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ height: '100%' }}>
+          <Card sx={{ minHeight: 'auto' }}>
             <CardContent sx={{ p: 2 }}>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <div>
@@ -1082,7 +1089,7 @@ const AvailabilityContent = ({ loggedInDoctorId }) => {
           </Card>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ height: '100%' }}>
+          <Card sx={{ minHeight: 'auto' }}>
             <CardContent sx={{ p: 2 }}>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <div>
@@ -1097,7 +1104,7 @@ const AvailabilityContent = ({ loggedInDoctorId }) => {
           </Card>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ height: '100%' }}>
+          <Card sx={{ minHeight: 'auto' }}>
             <CardContent sx={{ p: 2 }}>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <div>
@@ -1114,7 +1121,7 @@ const AvailabilityContent = ({ loggedInDoctorId }) => {
           </Card>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ height: '100%' }}>
+          <Card sx={{ minHeight: 'auto' }}>
             <CardContent sx={{ p: 2 }}>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <div>
@@ -1170,7 +1177,7 @@ const AvailabilityContent = ({ loggedInDoctorId }) => {
             )}
           </Box>
           
-          <Grid container spacing={3}>
+                    <Grid container spacing={3} sx={{ flex: 1 }}>
             {/* Calendar View */}
             <Grid item xs={12} md={5}>
               <Card elevation={0} sx={{ 
@@ -1213,10 +1220,11 @@ const AvailabilityContent = ({ loggedInDoctorId }) => {
                   />
                 </LocalizationProvider>
               </Card>
-              
-              {/* Selected Day Summary */}
+            </Grid>
+            
+            {/* Day Slots Selector */}
+            <Grid item xs={12} md={7}>
               <Card elevation={0} sx={{ 
-                mt: 3, 
                 borderRadius: 3,
                 boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
                 border: '1px solid rgba(0, 0, 0, 0.05)',
@@ -1305,252 +1313,239 @@ const AvailabilityContent = ({ loggedInDoctorId }) => {
                 </CardContent>
               </Card>
             </Grid>
-            
-            {/* Weekly Slots View */}
-            <Grid item xs={12} md={7}>
-              <Card elevation={0} sx={{ 
-                borderRadius: 3, 
-                boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
-                border: '1px solid rgba(0, 0, 0, 0.05)',
-                overflow: 'hidden'
+          </Grid>
+          
+          {/* Weekly Availability - Now positioned below both calendar and day slots */}
+          <Grid item xs={12}>
+            <Card elevation={0} sx={{ 
+              borderRadius: 3, 
+              boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
+              border: '1px solid rgba(0, 0, 0, 0.05)',
+              overflow: 'hidden'
+            }}>
+              <Box sx={{ 
+                backgroundColor: 'rgba(37, 99, 235, 0.05)', 
+                p: 2,
+                borderBottom: '1px solid rgba(0, 0, 0, 0.05)'
               }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                  Weekly Availability (Click to toggle slots)
+                </Typography>
+              </Box>
+              <CardContent>
                 <Box sx={{ 
-                  backgroundColor: 'rgba(37, 99, 235, 0.05)', 
-                  p: 2,
-                  borderBottom: '1px solid rgba(0, 0, 0, 0.05)'
+                  display: 'flex', 
+                  gap: 2, 
+                  flexWrap: 'wrap',
+                  pb: 2
                 }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                    Weekly Availability (Click to toggle slots)
-                  </Typography>
-                </Box>
-                <CardContent>
-                  <Box sx={{ 
-                    display: 'flex', 
-                    gap: 2, 
-                    overflowX: 'auto',
-                    pb: 2,
-                    scrollbarWidth: 'thin',
-                    '&::-webkit-scrollbar': {
-                      height: 6,
-                    },
-                    '&::-webkit-scrollbar-track': {
-                      background: 'rgba(0,0,0,0.02)',
-                      borderRadius: 2,
-                    },
-                    '&::-webkit-scrollbar-thumb': {
-                      background: 'rgba(0,0,0,0.1)',
-                      borderRadius: 2,
-                    }
-                  }}>
-                    {weekDays.map((day) => {
-                      const dayKey = format(day, 'yyyy-MM-dd');
-                      const dayData = availabilityData[dayKey] || {};
-                      const activeSlots = getActiveSlotCount(dayKey);
-                      const isSelected = isSameDay(day, selectedDate);
-                      const isDayToday = isToday(day);
-                      
-                      return (
-                        <Card 
-                          key={dayKey}
-                          onClick={() => setSelectedDate(day)}
-                          elevation={0}
-                          sx={{
-                            minWidth: 160,
-                            borderRadius: 3,
-                            border: '1px solid',
-                            borderColor: isSelected ? '#2563eb' : 'rgba(0, 0, 0, 0.08)',
-                            backgroundColor: isSelected ? 'rgba(37, 99, 235, 0.05)' : 'white',
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
-                            flexShrink: 0,
-                            cursor: 'pointer',
-                            transition: 'all 0.3s ease',
-                            '&:hover': {
-                              transform: 'translateY(-3px)',
-                              boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
-                            }
-                          }}
-                        >
-                          <CardContent>
-                            {/* Day Header */}
+                  {weekDays.map((day) => {
+                    const dayKey = format(day, 'yyyy-MM-dd');
+                    const dayData = availabilityData[dayKey] || {};
+                    const activeSlots = getActiveSlotCount(dayKey);
+                    const isSelected = isSameDay(day, selectedDate);
+                    const isDayToday = isToday(day);
+                    
+                    return (
+                      <Card 
+                        key={dayKey}
+                        onClick={() => setSelectedDate(day)}
+                        elevation={0}
+                        sx={{
+                          width: { xs: '100%', sm: 160, md: 180 },
+                          borderRadius: 3,
+                          border: '1px solid',
+                          borderColor: isSelected ? '#2563eb' : 'rgba(0, 0, 0, 0.08)',
+                          backgroundColor: isSelected ? 'rgba(37, 99, 235, 0.05)' : 'white',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease',
+                          '&:hover': {
+                            transform: 'translateY(-3px)',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+                          }
+                        }}
+                      >
+                        <CardContent>
+                          {/* Day Header */}
+                          <Box sx={{ 
+                            display: 'flex', 
+                            justifyContent: 'space-between',
+                            alignItems: 'flex-start',
+                            mb: 2
+                          }}>
+                            <Box>
+                              <Typography variant="body2" sx={{
+                                fontWeight: 600,
+                                color: isDayToday ? '#2563eb' : 'text.primary',
+                              }}>
+                                {format(day, 'EEE')}
+                              </Typography>
+                              <Typography variant="h6" sx={{
+                                fontWeight: 700,
+                                color: isDayToday ? '#2563eb' : 'text.primary',
+                              }}>
+                                {format(day, 'd')}
+                              </Typography>
+                            </Box>
+                            
+                            {/* Status Indicator */}
                             <Box sx={{ 
-                              display: 'flex', 
-                              justifyContent: 'space-between',
-                              alignItems: 'flex-start',
-                              mb: 2
+                              width: 10, 
+                              height: 10, 
+                              borderRadius: '50%',
+                              backgroundColor: dayData.isOffDay 
+                                ? '#ef4444' 
+                                : activeSlots > 0 ? '#22c55e' : '#f59e0b',
+                              mt: 0.5
+                            }} />
+                          </Box>
+                          
+                          {/* Off Day Toggle */}
+                          <Box sx={{ 
+                            display: 'flex', 
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            mb: 2
+                          }}>
+                            <Typography variant="caption" sx={{ 
+                              fontWeight: 500,
+                              color: dayData.isOffDay ? '#ef4444' : 'text.secondary'
                             }}>
-                              <Box>
-                                <Typography variant="body2" sx={{
-                                  fontWeight: 600,
-                                  color: isDayToday ? '#2563eb' : 'text.primary',
-                                }}>
-                                  {format(day, 'EEE')}
-                                </Typography>
-                                <Typography variant="h6" sx={{
-                                  fontWeight: 700,
-                                  color: isDayToday ? '#2563eb' : 'text.primary',
-                                }}>
-                                  {format(day, 'd')}
-                                </Typography>
+                              {dayData.isOffDay ? 'Day Off' : 'Available'}
+                            </Typography>
+                            <Switch 
+                              size="small"
+                              checked={!dayData.isOffDay}
+                              onChange={(e) => {
+                                e.stopPropagation();
+                                handleOffDayToggle(dayKey);
+                              }}
+                              color="primary"
+                            />
+                          </Box>
+                          
+                          {/* Slot Grid */}
+                          {!dayData.isOffDay && (
+                            <>
+                              <Box sx={{ 
+                                display: 'grid', 
+                                gridTemplateColumns: 'repeat(4, 1fr)',
+                                gap: 0.5,
+                                mb: 1.5
+                              }}>
+                                {timeSlots.map((slot, index) => (
+                                  <Box
+                                    key={slot}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleSlotToggle(dayKey, slot);
+                                    }}
+                                    sx={{
+                                      height: 12,
+                                      borderRadius: 1,
+                                      cursor: 'pointer',
+                                      transition: 'all 0.2s',
+                                      backgroundColor: dayData.slots?.[slot] 
+                                        ? 'rgba(34, 197, 94, 0.3)' 
+                                        : 'rgba(0, 0, 0, 0.05)',
+                                      border: '1px solid',
+                                      borderColor: dayData.slots?.[slot] 
+                                        ? 'rgba(34, 197, 94, 0.4)' 
+                                        : 'rgba(0, 0, 0, 0.08)',
+                                      '&:hover': {
+                                        transform: 'scale(1.1)',
+                                        borderColor: dayData.slots?.[slot] 
+                                          ? '#22c55e' 
+                                          : 'rgba(0, 0, 0, 0.15)'
+                                      }
+                                    }}
+                                  />
+                                ))}
                               </Box>
                               
-                              {/* Status Indicator */}
-                              <Box sx={{ 
-                                width: 10, 
-                                height: 10, 
-                                borderRadius: '50%',
-                                backgroundColor: dayData.isOffDay 
-                                  ? '#ef4444' 
-                                  : activeSlots > 0 ? '#22c55e' : '#f59e0b',
-                                mt: 0.5
-                              }} />
-                            </Box>
-                            
-                            {/* Off Day Toggle */}
-                            <Box sx={{ 
-                              display: 'flex', 
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              mb: 2
-                            }}>
-                              <Typography variant="caption" sx={{ 
+                              {/* Slot Count */}
+                              <Typography variant="caption" sx={{
+                                display: 'block',
+                                textAlign: 'center',
                                 fontWeight: 500,
-                                color: dayData.isOffDay ? '#ef4444' : 'text.secondary'
+                                color: activeSlots > 8 ? '#22c55e' : 
+                                       activeSlots > 0 ? '#f59e0b' : '#ef4444'
                               }}>
-                                {dayData.isOffDay ? 'Day Off' : 'Available'}
+                                {activeSlots}/16 slots active
                               </Typography>
-                              <Switch 
-                                size="small"
-                                checked={!dayData.isOffDay}
-                                onChange={(e) => {
-                                  e.stopPropagation();
-                                  handleOffDayToggle(dayKey);
-                                }}
-                                color="primary"
-                              />
-                            </Box>
-                            
-                            {/* Slot Grid */}
-                            {!dayData.isOffDay && (
-                              <>
-                                <Box sx={{ 
-                                  display: 'grid', 
-                                  gridTemplateColumns: 'repeat(4, 1fr)',
-                                  gap: 0.5,
-                                  mb: 1.5
-                                }}>
-                                  {timeSlots.map((slot, index) => (
-                                    <Box
-                                      key={slot}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleSlotToggle(dayKey, slot);
-                                      }}
-                                      sx={{
-                                        height: 12,
-                                        borderRadius: 1,
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s',
-                                        backgroundColor: dayData.slots?.[slot] 
-                                          ? 'rgba(34, 197, 94, 0.3)' 
-                                          : 'rgba(0, 0, 0, 0.05)',
-                                        border: '1px solid',
-                                        borderColor: dayData.slots?.[slot] 
-                                          ? 'rgba(34, 197, 94, 0.4)' 
-                                          : 'rgba(0, 0, 0, 0.08)',
-                                        '&:hover': {
-                                          transform: 'scale(1.1)',
-                                          borderColor: dayData.slots?.[slot] 
-                                            ? '#22c55e' 
-                                            : 'rgba(0, 0, 0, 0.15)'
-                                        }
-                                      }}
-                                    />
-                                  ))}
-                                </Box>
-                                
-                                {/* Slot Count */}
-                                <Typography variant="caption" sx={{
-                                  display: 'block',
-                                  textAlign: 'center',
-                                  fontWeight: 500,
-                                  color: activeSlots > 8 ? '#22c55e' : 
-                                         activeSlots > 0 ? '#f59e0b' : '#ef4444'
-                                }}>
-                                  {activeSlots}/16 slots active
-                                </Typography>
-                              </>
-                            )}
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
-                  </Box>
-                  
-                  {/* Legend */}
-                  <Box sx={{ 
-                    mt: 3, 
-                    p: 2, 
-                    backgroundColor: 'rgba(0, 0, 0, 0.02)', 
-                    borderRadius: 3,
-                    border: '1px solid rgba(0, 0, 0, 0.03)'
-                  }}>
-                    <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 600 }}>
-                      Availability Legend
-                    </Typography>
-                    <Grid container spacing={2}>
-                      <Grid item xs={6} md={3}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Box sx={{ 
-                            width: 16, 
-                            height: 16, 
-                            borderRadius: '4px',
-                            backgroundColor: 'rgba(34, 197, 94, 0.3)',
-                            border: '1px solid rgba(34, 197, 94, 0.4)'
-                          }} />
-                          <Typography variant="caption">Available slot</Typography>
-                        </Box>
-                      </Grid>
-                      <Grid item xs={6} md={3}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Box sx={{ 
-                            width: 16, 
-                            height: 16, 
-                            borderRadius: '4px',
-                            backgroundColor: 'rgba(0, 0, 0, 0.05)',
-                            border: '1px solid rgba(0, 0, 0, 0.08)'
-                          }} />
-                          <Typography variant="caption">Unavailable slot</Typography>
-                        </Box>
-                      </Grid>
-                      <Grid item xs={6} md={3}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Box sx={{ 
-                            width: 16, 
-                            height: 16, 
-                            borderRadius: '4px',
-                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                            border: '1px solid rgba(239, 68, 68, 0.2)'
-                          }} />
-                          <Typography variant="caption">Day off</Typography>
-                        </Box>
-                      </Grid>
-                      <Grid item xs={6} md={3}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Box sx={{ 
-                            width: 16, 
-                            height: 16, 
-                            borderRadius: '4px',
-                            backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                            border: '1px solid rgba(37, 99, 235, 0.2)'
-                          }} />
-                          <Typography variant="caption">Today</Typography>
-                        </Box>
-                      </Grid>
+                            </>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </Box>
+                
+                {/* Legend */}
+                <Box sx={{ 
+                  mt: 3, 
+                  p: 2, 
+                  backgroundColor: 'rgba(0, 0, 0, 0.02)', 
+                  borderRadius: 3,
+                  border: '1px solid rgba(0, 0, 0, 0.03)'
+                }}>
+                  <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 600 }}>
+                    Availability Legend
+                  </Typography>
+                  <Grid container spacing={2}>
+                    <Grid item xs={6} md={3}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box sx={{ 
+                          width: 16, 
+                          height: 16, 
+                          borderRadius: '4px',
+                          backgroundColor: 'rgba(34, 197, 94, 0.3)',
+                          border: '1px solid rgba(34, 197, 94, 0.4)'
+                        }} />
+                        <Typography variant="caption">Available slot</Typography>
+                      </Box>
                     </Grid>
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
+                    <Grid item xs={6} md={3}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box sx={{ 
+                          width: 16, 
+                          height: 16, 
+                          borderRadius: '4px',
+                          backgroundColor: 'rgba(0, 0, 0, 0.05)',
+                          border: '1px solid rgba(0, 0, 0, 0.08)'
+                        }} />
+                        <Typography variant="caption">Unavailable slot</Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={6} md={3}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box sx={{ 
+                          width: 16, 
+                          height: 16, 
+                          borderRadius: '4px',
+                          backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                          border: '1px solid rgba(239, 68, 68, 0.2)'
+                        }} />
+                        <Typography variant="caption">Day off</Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={6} md={3}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box sx={{ 
+                          width: 16, 
+                          height: 16, 
+                          borderRadius: '4px',
+                          backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                          border: '1px solid rgba(37, 99, 235, 0.2)'
+                        }} />
+                        <Typography variant="caption">Today</Typography>
+                      </Box>
+                    </Grid>
+                  </Grid>
+                </Box>
+              </CardContent>
+            </Card>
           </Grid>
         </>
       )}

@@ -480,7 +480,7 @@ function SignupForm() {
                                     </Typography>
                                     <input
                                         type="file"
-                                        accept=".pdf,.jpg,.jpeg,.png"
+                                        accept=".pdf,.webp,.jpeg,.webp"
                                         onChange={handleFileChange}
                                         style={{ display: 'none' }}
                                         id="file-upload"
