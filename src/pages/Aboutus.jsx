@@ -171,7 +171,7 @@ export default function AboutPage() {
     mx: 'auto', // center horizontally in container
     mb: 2
   }}
-        >Transforming Global Healthcare, One Journey at a Time</Typography>
+        ><i>The Future of Medical Travel Starts Here.</i></Typography>
               <Divider sx={{ mb: 4, maxWidth: 800, mx: "auto" }} />
 
       {/* Intro */}
@@ -225,6 +225,7 @@ export default function AboutPage() {
           lg: '3rem'  // text-6xl
         },
         fontWeight: 'bold',
+        mb: 5,
         background: 'linear-gradient(to right, #111827, #1e3a8a, #312e81)', // gray-900 → blue-800 → indigo-900
         WebkitBackgroundClip: 'text',
         color: 'transparent',
@@ -233,6 +234,21 @@ export default function AboutPage() {
 >
   Why We Exist
 </Typography>
+
+<Typography variant="h6"
+  sx={{
+    fontSize: { xs: '1.25rem', sm: '1.5rem' }, // text-xl sm:text-2xl
+    fontWeight: 300,
+    background: 'linear-gradient(to right, #4b5563, #1f2937)', // gray-600 → gray-800
+    WebkitBackgroundClip: 'text',
+    color: 'transparent',
+    textAlign: 'center', // <-- centers text
+    maxWidth: '800px',
+    mx: 'auto', // center horizontally in container
+    mb: 2
+  }}
+        >Because Medical Travel is Confusing, Risky, and Outdated.</Typography>
+              <Divider sx={{ mb: 4, maxWidth: 800, mx: "auto" }} />
 
 <Typography
   sx={{
@@ -328,6 +344,7 @@ export default function AboutPage() {
     >
       What We Do
     </Typography>
+    <Divider sx={{ mb: 4, maxWidth: 800, mx: "auto" }} />
 
 
 <Typography
@@ -467,6 +484,7 @@ export default function AboutPage() {
       >
         Because when it comes to your health, shortcuts and chaos aren’t an option.
       </Typography>
+      <Divider sx={{ mb: 4, maxWidth: 800, mx: "auto" }} />
 
       <Grid container spacing={4}>
         {whyMedYatraFeatures.map((feature, index) => (
@@ -566,7 +584,7 @@ export default function AboutPage() {
             lg: '3rem'  // text-6xl
           },
           fontWeight: 'bold',
-          mb: 5,
+          mb: 2,
           background: 'linear-gradient(to right, #111827, #1e3a8a, #312e81)', // gray-900 → blue-800 → indigo-900
           WebkitBackgroundClip: 'text',
           color: 'transparent',
@@ -575,7 +593,7 @@ export default function AboutPage() {
       >
         Our Values
       </Typography>
-
+      <Divider sx={{ mb: 4, maxWidth: 800, mx: "auto" }} />
 
 
       <Grid container spacing={4}>
@@ -672,7 +690,7 @@ export default function AboutPage() {
       </Typography>
       <Typography
   sx={{
-    mb: 4,
+    mb: 2,
     maxWidth: 800,
     mx: "auto",
     textAlign: "center",
@@ -688,6 +706,7 @@ export default function AboutPage() {
   From an Idea to Impact <br/>
   Born out of frustration. Built to fix the system.
 </Typography>
+<Divider sx={{ mb: 4, maxWidth: 800, mx: "auto" }} />
       <Typography
   sx={{
     mb: 2,
