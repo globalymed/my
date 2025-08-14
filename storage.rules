@@ -1,0 +1,31 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Allow access to registration documents for development
+    // In production, this should be restricted to authenticated users
+    match /registration-documents/{doctorId}/{document=**} {
+      allow read, write: if true; // Allow all access for development
+    }
+    
+    // Allow access to medical records for development
+    match /medical-records/{userId}/{document=**} {
+      allow read, write: if true; // Allow all access for development
+    }
+    
+    // Allow access to profile images for development
+    match /profile-images/{userId}/{document=**} {
+      allow read, write: if true; // Allow all access for development
+    }
+    
+    // Allow access to appointment documents for development
+    match /appointment-documents/{userId}/{document=**} {
+      allow read, write: if true; // Allow all access for development
+    }
+    
+    // Default rule: allow all access for development
+    // In production, this should be restricted
+    match /{allPaths=**} {
+      allow read, write: if true;
+    }
+  }
+}

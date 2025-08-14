@@ -208,11 +208,7 @@ const ClinicRegistration = () => {
       ivf: false,
       hair: false,
       cosmetic: false,
-      dental: false,
-      orthopedic: false,
-      cardiology: false,
-      general: false,
-      other: false
+      dental: false
     },
     address: '',
     city: '',
@@ -221,6 +217,9 @@ const ClinicRegistration = () => {
     country: 'India',
     website: ''
   });
+
+  // Validation state
+  const [validationErrors, setValidationErrors] = useState({});
 
   const [regulatory, setRegulatory] = useState({
     clinicRegistrationNumber: '',
@@ -268,13 +267,20 @@ const ClinicRegistration = () => {
 
   useEffect(() => {
     const doctorDataString = localStorage.getItem('doctorData');
+    console.log('Raw doctor data from localStorage:', doctorDataString);
+    
     if (!doctorDataString) {
+      console.log('No doctor data found in localStorage, redirecting to login');
       navigate('/doctor-login');
       return;
     }
     try {
       const parsed = JSON.parse(doctorDataString);
+      console.log('Parsed doctor data:', parsed);
+      console.log('Doctor ID:', parsed?.id);
+      
       setDoctor(parsed);
+      
       // Verify latest clinicIds from Firestore and redirect if already has clinic
       if (parsed?.id) {
         (async () => {
@@ -282,39 +288,131 @@ const ClinicRegistration = () => {
             const dSnap = await getDoc(doc(db, 'doctors', parsed.id));
             const data = dSnap.exists() ? dSnap.data() : null;
             const clinicIds = Array.isArray(data?.clinicIds) ? data.clinicIds : [];
+            console.log('Clinic IDs from Firestore:', clinicIds);
+            
             if (clinicIds.length > 0) {
+              console.log('Doctor already has clinics, redirecting to dashboard');
               navigate('/doctor-dashboard');
             }
           } catch (e) {
+            console.error('Error fetching doctor data from Firestore:', e);
             // If fetch fails, allow access; dashboard check still controls button visibility
           }
         })();
+      } else {
+        console.error('Doctor ID is missing from parsed data');
       }
     } catch (e) {
+      console.error('Error parsing doctor data from localStorage:', e);
       navigate('/doctor-login');
     }
   }, [navigate]);
 
   const progress = useMemo(() => (activeStep + 1) * 25, [activeStep]);
 
+  // Input validation functions
+  const validateAlphabetsOnly = (value) => {
+    return /^[A-Za-z\s]+$/.test(value);
+  };
+
+  const validateNumbersOnly = (value) => {
+    return /^\d+$/.test(value);
+  };
+
+  const validateContactNumber = (value) => {
+    return /^\d{7,15}$/.test(value);
+  };
+
+  const validatePincode = (value) => {
+    return /^\d{6}$/.test(value);
+  };
+
+  // Handle input changes with validation
+  const handleBasicChange = (field, value) => {
+    let isValid = true;
+    let errorMessage = '';
+
+    switch (field) {
+      case 'name':
+      case 'city':
+      case 'state':
+        if (!validateAlphabetsOnly(value)) {
+          isValid = false;
+          errorMessage = 'Only alphabets and spaces are allowed';
+        }
+        break;
+      case 'contactNumber':
+        if (!validateContactNumber(value)) {
+          isValid = false;
+          errorMessage = 'Please enter a valid contact number (7-15 digits)';
+        }
+        break;
+      case 'pincode':
+        if (!validatePincode(value)) {
+          isValid = false;
+          errorMessage = 'Please enter a valid 6-digit pincode';
+        }
+        break;
+      case 'clinicRegistrationNumber':
+        if (!validateNumbersOnly(value)) {
+          isValid = false;
+          errorMessage = 'Only numbers are allowed';
+        }
+        break;
+    }
+
+    setValidationErrors(prev => ({
+      ...prev,
+      [field]: isValid ? null : errorMessage
+    }));
+
+    setBasic(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleRegulatoryChange = (field, value) => {
+    let isValid = true;
+    let errorMessage = '';
+
+    if (field === 'clinicRegistrationNumber' && !validateNumbersOnly(value)) {
+      isValid = false;
+      errorMessage = 'Only numbers are allowed';
+    }
+
+    setValidationErrors(prev => ({
+      ...prev,
+      [field]: isValid ? null : errorMessage
+    }));
+
+    setRegulatory(prev => ({ ...prev, [field]: value }));
+  };
+
   const isBasicValid = useMemo(() => {
     return (
       basic.name.trim().length > 2 &&
+      !validationErrors.name &&
       basic.contactNumber.trim().length >= 7 &&
+      !validationErrors.contactNumber &&
       basic.address.trim().length > 5 &&
       basic.city.trim().length > 1 &&
+      !validationErrors.city &&
       basic.state.trim().length > 1 &&
-      basic.pincode.trim().length >= 3
+      !validationErrors.state &&
+      basic.pincode.trim().length === 6 &&
+      !validationErrors.pincode
     );
-  }, [basic]);
+  }, [basic, validationErrors]);
 
   const isRegulatoryValid = useMemo(() => {
     return (
       regulatory.clinicRegistrationNumber.trim().length >= 3 &&
+      !validationErrors.clinicRegistrationNumber &&
       regulatory.issuingAuthority.trim().length >= 2 &&
-      regulatory.ownerName.trim().length >= 3
+      regulatory.ownerName.trim().length >= 3 &&
+      regulatory.ownerIdProofFile &&
+      regulatory.registrationCertFile &&
+      regulatory.addressProofFile
     );
-  }, [regulatory]);
+  }, [regulatory, validationErrors]);
 
   const isFacilitiesValid = useMemo(() => {
     return facilities.numConsultRooms >= 0 && facilities.numOperationTheatres >= 0;
@@ -324,6 +422,19 @@ const ClinicRegistration = () => {
     return !!media.exteriorPhoto && !!media.interiorPhoto && !!media.logo; // staff optional
   }, [media]);
 
+  // Get validation messages for media
+  const getMediaValidationMessage = () => {
+    const missing = [];
+    if (!media.exteriorPhoto) missing.push('Clinic Exterior Photo');
+    if (!media.interiorPhoto) missing.push('Reception/Interior Photo');
+    if (!media.logo) missing.push('Clinic Logo');
+    
+    if (missing.length > 0) {
+      return `Required: ${missing.join(', ')}`;
+    }
+    return null;
+  };
+
   const toggleSpecialty = (key) => setBasic((p) => ({ ...p, specialties: { ...p.specialties, [key]: !p.specialties[key] } }));
   const toggleAmenity = (key) => setFacilities((p) => ({ ...p, amenities: { ...p.amenities, [key]: !p.amenities[key] } }));
   const toggleLanguage = (key) => setFacilities((p) => ({ ...p, languages: { ...p.languages, [key]: !p.languages[key] } }));
@@ -332,81 +443,157 @@ const ClinicRegistration = () => {
 
   const uploadToStorage = async (file, path) => {
     if (!file) return null;
-    const fileRef = ref(storage, `${path}/${Date.now()}_${file.name}`);
-    const snap = await uploadBytes(fileRef, file);
-    return await getDownloadURL(snap.ref);
+    
+    // Check if doctor.id exists
+    if (!doctor || !doctor.id) {
+      console.error('Doctor ID is missing:', doctor);
+      throw new Error('Doctor ID is required for file upload');
+    }
+    
+    try {
+      // Create path: registration-documents/doctorId/documents/filename
+      const fileRef = ref(storage, `registration-documents/${doctor.id}/documents/${Date.now()}_${file.name}`);
+      console.log('Uploading file to path:', fileRef.fullPath);
+      
+      const snap = await uploadBytes(fileRef, file);
+      console.log('File uploaded successfully:', snap.ref.fullPath);
+      
+      const downloadURL = await getDownloadURL(snap.ref);
+      console.log('Download URL generated:', downloadURL);
+      
+      return downloadURL;
+    } catch (error) {
+      console.error('Error uploading file:', file.name, error);
+      throw new Error(`Failed to upload ${file.name}: ${error.message}`);
+    }
   };
 
   const persist = async (finalize) => {
-    if (!doctor) return;
+    if (!doctor) {
+      setError('Doctor information not found. Please log in again.');
+      return;
+    }
+    
+    if (!doctor.id) {
+      setError('Doctor ID is missing. Please log in again.');
+      return;
+    }
+    
     setSubmitting(true);
     setError('');
     setSuccess('');
 
     try {
-      const payload = {
-        doctorId: doctor.id,
-        status: finalize ? 'pending' : 'draft',
-        isDraft: !finalize,
-        progress,
-        basic,
-        regulatory: {
-          clinicRegistrationNumber: regulatory.clinicRegistrationNumber,
-          issuingAuthority: regulatory.issuingAuthority,
-          ownerName: regulatory.ownerName,
-          panOrGst: regulatory.panOrGst || ''
-        },
-        facilities,
-        media: {},
-        updatedAt: serverTimestamp ? serverTimestamp() : new Date(),
-        ...(draftId ? {} : { createdAt: serverTimestamp ? serverTimestamp() : new Date() })
-      };
+      console.log('Starting clinic registration process for doctor:', doctor.id);
+      
+      // Get selected specialties
+      const selectedSpecialties = Object.keys(basic.specialties).filter(key => basic.specialties[key]);
+      
+      if (selectedSpecialties.length === 0) {
+        setError('Please select at least one specialty');
+        setSubmitting(false);
+        return;
+      }
 
-      // upload files
-      const basePath = `clinics/${doctor.id}`;
+      // Upload all documents to Firebase storage
+      const basePath = `registration-documents/${doctor.id}/documents`;
+      console.log('Uploading documents to base path:', basePath);
+      
       const [ownerIdUrl, certUrl, addrUrl, exteriorUrl, interiorUrl, logoUrl] = await Promise.all([
-        uploadToStorage(regulatory.ownerIdProofFile, `${basePath}/regulatory`),
-        uploadToStorage(regulatory.registrationCertFile, `${basePath}/regulatory`),
-        uploadToStorage(regulatory.addressProofFile, `${basePath}/regulatory`),
-        uploadToStorage(media.exteriorPhoto, `${basePath}/media`),
-        uploadToStorage(media.interiorPhoto, `${basePath}/media`),
-        uploadToStorage(media.logo, `${basePath}/media`)
+        uploadToStorage(regulatory.ownerIdProofFile, basePath),
+        uploadToStorage(regulatory.registrationCertFile, basePath),
+        uploadToStorage(regulatory.addressProofFile, basePath),
+        uploadToStorage(media.exteriorPhoto, basePath),
+        uploadToStorage(media.interiorPhoto, basePath),
+        uploadToStorage(media.logo, basePath)
       ]);
 
       let staffUrls = [];
       if (media.staffPhotos && media.staffPhotos.length > 0) {
+        // Limit to maximum 3 staff photos
+        const limitedStaffPhotos = media.staffPhotos.slice(0, 3);
         staffUrls = await Promise.all(
-          media.staffPhotos.map((f) => uploadToStorage(f, `${basePath}/media/staff`))
+          limitedStaffPhotos.map((f) => uploadToStorage(f, basePath))
         );
       }
 
-      payload.media = {
-        ownerIdProofUrl: ownerIdUrl || null,
-        registrationCertUrl: certUrl || null,
-        addressProofUrl: addrUrl || null,
-        exteriorPhotoUrl: exteriorUrl || null,
-        interiorPhotoUrl: interiorUrl || null,
-        logoUrl: logoUrl || null,
-        staffPhotoUrls: staffUrls.filter(Boolean)
+      // Create clinic document
+      const clinicData = {
+        doctorId: doctor.id,
+        name: basic.name,
+        contactNumber: basic.contactNumber,
+        treatmentType: selectedSpecialties, // Array of selected specialties
+        location: basic.city, // Use city as location
+        address: basic.address,
+        city: basic.city,
+        state: basic.state,
+        pincode: basic.pincode,
+        country: basic.country,
+        website: basic.website || '',
+        status: 'unverified', // Default status as requested
+        isDraft: !finalize,
+        progress,
+        
+        // Regulatory information
+        clinicRegistrationNumber: regulatory.clinicRegistrationNumber,
+        issuingAuthority: regulatory.issuingAuthority,
+        ownerName: regulatory.ownerName,
+        panOrGst: regulatory.panOrGst || '',
+        
+        // Facilities
+        numConsultRooms: facilities.numConsultRooms,
+        numOperationTheatres: facilities.numOperationTheatres,
+        amenities: facilities.amenities,
+        languages: facilities.languages,
+        emergency: facilities.emergency,
+        operatingHours: facilities.hours,
+        
+        // Media URLs
+        documents: {
+          ownerIdProofUrl: ownerIdUrl,
+          registrationCertUrl: certUrl,
+          addressProofUrl: addrUrl,
+          exteriorPhotoUrl: exteriorUrl,
+          interiorPhotoUrl: interiorUrl,
+          logoUrl: logoUrl,
+          staffPhotoUrls: staffUrls.filter(Boolean)
+        },
+        
+        createdAt: serverTimestamp ? serverTimestamp() : new Date(),
+        updatedAt: serverTimestamp ? serverTimestamp() : new Date()
       };
 
       if (draftId) {
-        await updateDoc(doc(db, 'clinics', draftId), payload);
-        console.log('Clinic draft updated', { draftId, payload });
+        await updateDoc(doc(db, 'clinics', draftId), clinicData);
+        console.log('Clinic draft updated', { draftId, clinicData });
       } else {
-        const res = await addDoc(collection(db, 'clinics'), payload);
+        const res = await addDoc(collection(db, 'clinics'), clinicData);
         setDraftId(res.id);
         localStorage.setItem('clinicRegistrationDraftId', res.id);
-        console.log('Clinic draft created', { docId: res.id, payload });
+        console.log('Clinic draft created', { docId: res.id, clinicData });
       }
 
       setSuccess(finalize ? 'Registration submitted successfully for review.' : 'Draft saved successfully.');
       if (finalize) {
         setConfirmOpen(false);
+        // Redirect to dashboard after successful submission
+        setTimeout(() => {
+          navigate('/doctor-dashboard');
+        }, 2000);
       }
     } catch (e) {
       console.error('Clinic save failed', e);
-      setError('Failed to save. Please try again.');
+      
+      // Provide more specific error messages
+      if (e.message.includes('Doctor ID is required')) {
+        setError('Authentication error: Please log in again.');
+      } else if (e.message.includes('Failed to upload')) {
+        setError(`File upload failed: ${e.message}. Please check your internet connection and try again.`);
+      } else if (e.message.includes('storage/unauthorized')) {
+        setError('Permission denied. Please contact support or try logging in again.');
+      } else {
+        setError(`Failed to save: ${e.message}. Please try again.`);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -453,12 +640,26 @@ const ClinicRegistration = () => {
             <Box>
               <Typography variant="subtitle1" fontWeight={800} mb={2}>Basic Information</Typography>
               <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
-                  <TextField label={<Req>Clinic/Hospital Name</Req>} fullWidth value={basic.name} onChange={(e) => setBasic({ ...basic, name: e.target.value })} />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField label={<Req>Contact Number</Req>} fullWidth value={basic.contactNumber} onChange={(e) => setBasic({ ...basic, contactNumber: e.target.value })} />
-                </Grid>
+                              <Grid item xs={12} md={6}>
+                <TextField 
+                  label={<Req>Clinic/Hospital Name</Req>} 
+                  fullWidth 
+                  value={basic.name} 
+                  onChange={(e) => handleBasicChange('name', e.target.value)}
+                  error={!!validationErrors.name}
+                  helperText={validationErrors.name}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField 
+                  label={<Req>Contact Number</Req>} 
+                  fullWidth 
+                  value={basic.contactNumber} 
+                  onChange={(e) => handleBasicChange('contactNumber', e.target.value)}
+                  error={!!validationErrors.contactNumber}
+                  helperText={validationErrors.contactNumber}
+                />
+              </Grid>
                 <Grid item xs={12}>
                   <Typography variant="body2" fontWeight={700}><Req>Clinic Type / Specialty</Req></Typography>
                   <Stack direction="row" flexWrap="wrap" spacing={1} rowGap={1} mt={1}>
@@ -466,24 +667,67 @@ const ClinicRegistration = () => {
                       <FormControlLabel key={key} control={<Checkbox checked={basic.specialties[key]} onChange={() => toggleSpecialty(key)} />} label={key.charAt(0).toUpperCase() + key.slice(1)} />
                     ))}
                   </Stack>
+                  {Object.values(basic.specialties).every(specialty => !specialty) && (
+                    <Typography variant="caption" color="error.main" sx={{ mt: 1, display: 'block' }}>
+                      Please select at least one specialty
+                    </Typography>
+                  )}
                 </Grid>
                 <Grid item xs={12}>
-                  <TextField label={<Req>Full Address</Req>} fullWidth multiline minRows={2} value={basic.address} onChange={(e) => setBasic({ ...basic, address: e.target.value })} />
+                  <TextField 
+                    label={<Req>Full Address</Req>} 
+                    fullWidth 
+                    multiline 
+                    minRows={2} 
+                    value={basic.address} 
+                    onChange={(e) => handleBasicChange('address', e.target.value)} 
+                  />
                 </Grid>
                 <Grid item xs={12} md={3}>
-                  <TextField label={<Req>City</Req>} fullWidth value={basic.city} onChange={(e) => setBasic({ ...basic, city: e.target.value })} />
+                  <TextField 
+                    label={<Req>City</Req>} 
+                    fullWidth 
+                    value={basic.city} 
+                    onChange={(e) => handleBasicChange('city', e.target.value)}
+                    error={!!validationErrors.city}
+                    helperText={validationErrors.city}
+                  />
                 </Grid>
                 <Grid item xs={12} md={3}>
-                  <TextField label={<Req>State</Req>} fullWidth value={basic.state} onChange={(e) => setBasic({ ...basic, state: e.target.value })} />
+                  <TextField 
+                    label={<Req>State</Req>} 
+                    fullWidth 
+                    value={basic.state} 
+                    onChange={(e) => handleBasicChange('state', e.target.value)}
+                    error={!!validationErrors.state}
+                    helperText={validationErrors.state}
+                  />
                 </Grid>
                 <Grid item xs={12} md={3}>
-                  <TextField label={<Req>Pincode</Req>} fullWidth value={basic.pincode} onChange={(e) => setBasic({ ...basic, pincode: e.target.value })} />
+                  <TextField 
+                    label={<Req>Pincode</Req>} 
+                    fullWidth 
+                    value={basic.pincode} 
+                    onChange={(e) => handleBasicChange('pincode', e.target.value)}
+                    error={!!validationErrors.pincode}
+                    helperText={validationErrors.pincode}
+                  />
                 </Grid>
                 <Grid item xs={12} md={3}>
-                  <TextField label="Country" fullWidth value={basic.country} onChange={(e) => setBasic({ ...basic, country: e.target.value })} />
+                  <TextField 
+                    label="Country" 
+                    fullWidth 
+                    value={basic.country} 
+                    onChange={(e) => handleBasicChange('country', e.target.value)} 
+                  />
                 </Grid>
                 <Grid item xs={12} md={6}>
-                  <TextField label="Website URL (Optional)" fullWidth value={basic.website} onChange={(e) => setBasic({ ...basic, website: e.target.value })} />
+                  <TextField 
+                    label="Website URL (Optional)" 
+                    fullWidth 
+                    value={basic.website} 
+                    onChange={(e) => handleBasicChange('website', e.target.value)} 
+                  />
                 </Grid>
               </Grid>
             </Box>
@@ -494,7 +738,14 @@ const ClinicRegistration = () => {
               <Typography variant="subtitle1" fontWeight={800} mb={2}>Regulatory Details</Typography>
               <Grid container spacing={2}>
                 <Grid item xs={12} md={6}>
-                  <TextField label={<Req>Clinic Registration Number</Req>} fullWidth value={regulatory.clinicRegistrationNumber} onChange={(e) => setRegulatory({ ...regulatory, clinicRegistrationNumber: e.target.value })} />
+                  <TextField 
+                    label={<Req>Clinic Registration Number</Req>} 
+                    fullWidth 
+                    value={regulatory.clinicRegistrationNumber} 
+                    onChange={(e) => handleRegulatoryChange('clinicRegistrationNumber', e.target.value)}
+                    error={!!validationErrors.clinicRegistrationNumber}
+                    helperText={validationErrors.clinicRegistrationNumber}
+                  />
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <TextField label={<Req>Issuing Authority</Req>} fullWidth value={regulatory.issuingAuthority} onChange={(e) => setRegulatory({ ...regulatory, issuingAuthority: e.target.value })} />
@@ -595,6 +846,11 @@ const ClinicRegistration = () => {
           {activeStep === 3 && (
             <Box>
               <Typography variant="subtitle1" fontWeight={800} mb={2}>Media & Branding</Typography>
+              {!isMediaValid && (
+                <Alert severity="warning" sx={{ mb: 2 }}>
+                  {getMediaValidationMessage()}
+                </Alert>
+              )}
               <Grid container spacing={2}>
                 <Grid item xs={12} md={6}>
                   <UploadDropzone
@@ -632,9 +888,19 @@ const ClinicRegistration = () => {
                     multiple
                     accept="image/*"
                     files={media.staffPhotos}
-                    onChange={(arr) => setMedia({ ...media, staffPhotos: Array.isArray(arr) ? arr : [] })}
-                    hint="JPG/PNG, max 5MB each"
+                    onChange={(arr) => {
+                      const files = Array.isArray(arr) ? arr : [];
+                      // Limit to maximum 3 files
+                      const limitedFiles = files.slice(0, 3);
+                      setMedia({ ...media, staffPhotos: limitedFiles });
+                    }}
+                    hint="JPG/PNG, max 5MB each, maximum 3 photos"
                   />
+                  {media.staffPhotos.length >= 3 && (
+                    <Typography variant="caption" color="warning.main" sx={{ mt: 1, display: 'block' }}>
+                      Maximum 3 photos allowed
+                    </Typography>
+                  )}
                 </Grid>
               </Grid>
             </Box>
