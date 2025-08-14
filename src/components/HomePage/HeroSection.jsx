@@ -50,19 +50,7 @@ const HeroSection = () => {
                                 }
                             }}
                         >
-                            World-Class Medical
-                        </Typography>
-                        <Typography
-                            variant="h3"
-                            component="h1"
-                            sx={{
-                                fontWeight: 700, mb: 2, fontSize: { xs: '2rem', md: '3rem' }, color: "#333333", textAlign: {
-                                    xs: 'center', md: 'left'
-                                }
-                            }}
-                        >
-                            Care Made Simple
-                            & Affordable.
+                            Compare Treatment Costs in India & Get Your Custom Plan and Save Up to 70% on World-Class Care
                         </Typography>
 
                         <Typography sx={{
@@ -73,7 +61,7 @@ const HeroSection = () => {
                                 xs: 'auto', md: 0
                             },
                         }}>
-                            From diagnosis to travel – our AI assistant ensures effortless treatment planning in India's top hospitals.
+                            Speak to our MedYatra AI companion – We’ve Helped 10,000+ People Like You
                         </Typography>
 
                         {/* CTA Buttons */}
