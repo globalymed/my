@@ -441,7 +441,7 @@ const ClinicRegistration = () => {
   const toggleClosed = (day) => setFacilities((p) => ({ ...p, hours: { ...p.hours, [day]: { ...p.hours[day], closed: !p.hours[day].closed } } }));
   const setHour = (day, field, value) => setFacilities((p) => ({ ...p, hours: { ...p.hours, [day]: { ...p.hours[day], [field]: value } } }));
 
-  const uploadToStorage = async (file, path) => {
+  const uploadToStorage = async (file, documentType) => {
     if (!file) return null;
     
     // Check if doctor.id exists
@@ -451,8 +451,8 @@ const ClinicRegistration = () => {
     }
     
     try {
-      // Create path: registration-documents/doctorId/documents/filename
-      const fileRef = ref(storage, `registration-documents/${doctor.id}/documents/${Date.now()}_${file.name}`);
+      // Create path: registration-documents/doctorId/documentType/filename
+      const fileRef = ref(storage, `registration-documents/${doctor.id}/${documentType}/${Date.now()}_${file.name}`);
       console.log('Uploading file to path:', fileRef.fullPath);
       
       const snap = await uploadBytes(fileRef, file);
@@ -495,17 +495,18 @@ const ClinicRegistration = () => {
         return;
       }
 
-      // Upload all documents to Firebase storage
-      const basePath = `registration-documents/${doctor.id}/documents`;
-      console.log('Uploading documents to base path:', basePath);
+      // Upload all documents to Firebase storage with organized folder structure
+      // New folder structure: registration-documents/doctorId/documentType/filename
+      // This makes it easier for admins to locate specific document types
+      console.log('Uploading documents with organized folder structure');
       
       const [ownerIdUrl, certUrl, addrUrl, exteriorUrl, interiorUrl, logoUrl] = await Promise.all([
-        uploadToStorage(regulatory.ownerIdProofFile, basePath),
-        uploadToStorage(regulatory.registrationCertFile, basePath),
-        uploadToStorage(regulatory.addressProofFile, basePath),
-        uploadToStorage(media.exteriorPhoto, basePath),
-        uploadToStorage(media.interiorPhoto, basePath),
-        uploadToStorage(media.logo, basePath)
+        uploadToStorage(regulatory.ownerIdProofFile, 'owners-id-proof'),
+        uploadToStorage(regulatory.registrationCertFile, 'clinic-registration-certificate'),
+        uploadToStorage(regulatory.addressProofFile, 'clinic-address-proof'),
+        uploadToStorage(media.exteriorPhoto, 'clinic-exterior-photos'),
+        uploadToStorage(media.interiorPhoto, 'clinic-interior-photos'),
+        uploadToStorage(media.logo, 'clinic-logo')
       ]);
 
       let staffUrls = [];
@@ -513,7 +514,7 @@ const ClinicRegistration = () => {
         // Limit to maximum 3 staff photos
         const limitedStaffPhotos = media.staffPhotos.slice(0, 3);
         staffUrls = await Promise.all(
-          limitedStaffPhotos.map((f) => uploadToStorage(f, basePath))
+          limitedStaffPhotos.map((f) => uploadToStorage(f, 'clinic-staff-photos'))
         );
       }
 
@@ -557,6 +558,19 @@ const ClinicRegistration = () => {
           interiorPhotoUrl: interiorUrl,
           logoUrl: logoUrl,
           staffPhotoUrls: staffUrls.filter(Boolean)
+        },
+        
+        // Document folder structure for admin dashboard
+        // This mapping helps admins understand the folder organization
+        // and makes it easier to fetch specific document types
+        documentFolders: {
+          ownersIdProof: 'owners-id-proof',
+          clinicRegistrationCertificate: 'clinic-registration-certificate',
+          clinicAddressProof: 'clinic-address-proof',
+          clinicExteriorPhotos: 'clinic-exterior-photos',
+          clinicInteriorPhotos: 'clinic-interior-photos',
+          clinicLogo: 'clinic-logo',
+          clinicStaffPhotos: 'clinic-staff-photos'
         },
         
         createdAt: serverTimestamp ? serverTimestamp() : new Date(),
