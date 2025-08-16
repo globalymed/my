@@ -198,6 +198,7 @@ const ClinicRegistration = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [submissionAcknowledgment, setSubmissionAcknowledgment] = useState(false);
   const [draftId, setDraftId] = useState(localStorage.getItem('clinicRegistrationDraftId') || '');
 
   // Step state
@@ -590,10 +591,7 @@ const ClinicRegistration = () => {
       setSuccess(finalize ? 'Registration submitted successfully for review.' : 'Draft saved successfully.');
       if (finalize) {
         setConfirmOpen(false);
-        // Redirect to dashboard after successful submission
-        setTimeout(() => {
-          navigate('/doctor-dashboard');
-        }, 2000);
+        setSubmissionAcknowledgment(true);
       }
     } catch (e) {
       console.error('Clinic save failed', e);
@@ -956,6 +954,55 @@ const ClinicRegistration = () => {
           <Button onClick={() => setConfirmOpen(false)}>Cancel</Button>
           <Button variant="contained" onClick={() => persist(true)} disabled={submitting}>Yes, Submit</Button>
         </DialogActions>
+      </Dialog>
+
+      {/* Submission Acknowledgment Dialog */}
+      <Dialog 
+        open={submissionAcknowledgment} 
+        onClose={() => setSubmissionAcknowledgment(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogContent sx={{ p: 4, textAlign: 'center' }}>
+          <Box sx={{ 
+            width: 80, 
+            height: 80, 
+            borderRadius: '50%', 
+            bgcolor: '#16a34a', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            mx: 'auto', 
+            mb: 3 
+          }}>
+            <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>✓</Typography>
+          </Box>
+          
+          <Typography variant="h6" fontWeight={800} gutterBottom>
+            Registration Submitted Successfully!
+          </Typography>
+          
+          <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+            Your clinic registration has been submitted and is now under review.
+          </Typography>
+          <DialogActions sx={{ p: 3, justifyContent: 'center' }}>
+          <Button 
+            variant="contained" 
+            onClick={() => {
+              setSubmissionAcknowledgment(false);
+              navigate('/doctor-dashboard');
+            }}
+            sx={{ 
+              bgcolor: '#0ea5b7', 
+              '&:hover': { bgcolor: '#0891b2' },
+              px: 4,
+              py: 1.5
+            }}
+          >
+            Go to Dashboard
+          </Button>
+        </DialogActions>
+        </DialogContent>
       </Dialog>
     </Box>
   );
