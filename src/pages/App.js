@@ -14,6 +14,8 @@ import NewSignupPage from './NewSignupPage.jsx';
 import ConfirmEmail from './ConfirmEmail.jsx';
 import DoctorLoginPage from '../components/DoctorLoginPage';
 import { DoctorDashboard as NewDoctorDashboard } from '../components/DoctorDashboard/DoctorDashboard.jsx';
+import AdminAuthProvider from '../components/AdminDashboard/auth/context.js';
+
 
 const AIChat = React.lazy(() => import('../components/AIChatFinal'));
 const ClinicRecommender = React.lazy(() => import('../components/ClinicRecommenderEnhanced'));
@@ -36,6 +38,11 @@ import DentalTreatment from '../components/Treatment/DentalTreatment';
 import IVFTreatment from '../components/Treatment/IVFTreatment';
 import HairTreatment from '../components/Treatment/HairTreatment';
 import CosmeticsTreatment from '../components/Treatment/CosmeticsTreatment';
+
+// Admin Dashboard Components
+import AdminLayout from '../components/AdminLayout'; // The AdminLayout component that caused the nested router
+import AdminLoginPage from '../components/AdminDashboard/LoginPage.jsx'; // Assuming this is the Admin Login Page
+import AdminDashboardPage from '../components/AdminDashboard/AdminDashboardPage.jsx'; // Assuming this is the Admin Dashboard Page
 
 // Create a component to render the doctor dashboard with logout functionality
 const DoctorDashboard = () => {
@@ -148,86 +155,102 @@ const DoctorAuthRoute = ({ children }) => {
 const App = () => {
   return (
     <PostHogProvider client={posthog}>
-      <PostHogPageViewTracker/>
+      <PostHogPageViewTracker />
       <ThemeProvider theme={theme}>
-      <Suspense fallback={<LoadingFallback />}>
-        <Routes>
-          {/* Chat route with ChatLayout */}
-          <Route path="/chat" element={
-            <ChatLayout>
-              <AIChat />
-            </ChatLayout>
-          } />
+        <Suspense fallback={<LoadingFallback />}>
+          <Routes>
+            {/* Chat route with ChatLayout */}
+            <Route path="/chat" element={
+              <ChatLayout>
+                <AIChat />
+              </ChatLayout>
+            } />
 
-          <Route path="/dashboard" element={
-            <ProtectedRoute>
-              <DashboardPage />
-            </ProtectedRoute>
-          } />
+            {/* Admin Dashboard routes, wrapped in AdminAuthProvider */}
+            <Route path="/admin/*" element={ // Use /* to match nested routes within /admin
+              <AdminAuthProvider>
+                {/* AdminLayout itself will contain its own Routes for /admin/login, /admin/dashboard etc. */}
+                <AdminLayout>
+                  <Routes>
+                    <Route path="login" element={<AdminLoginPage />} />
+                    <Route path="dashboard" element={<AdminDashboardPage />} />
+                    {/* Add other admin-specific routes here */}
+                    <Route path="*" element={<Navigate to="dashboard" replace />} /> {/* Default admin route */}
+                  </Routes>
+                </AdminLayout>
+              </AdminAuthProvider>
+            } />
 
-          {/* Doctor dashboard route without Layout (no footer) */}
-          <Route path="/doctor-dashboard" element={
-            <DoctorProtectedRoute>
-              <DoctorDashboard />
-            </DoctorProtectedRoute>
-          } />
 
-          {/* All other routes with default Layout */}
-          <Route path="/*" element={
-            <Layout>
-              <Routes>
-                <Route path="/" element={<HomePage />} />
-                <Route path="/free-consultation" element={<FreeConsultation />} />
-                <Route path="/contact" element={<ContactUs />} />
-                <Route path="/compare-cost" element={<CompareCost />} />
-                <Route path="/treatment/dental" element={<DentalTreatment />} />
-                <Route path="/treatment/ivf" element={<IVFTreatment />} />
-                <Route path="/treatment/hair" element={<HairTreatment />} />
-                <Route path="/treatment/cosmetics" element={<CosmeticsTreatment />} />
-                <Route path="/treatment/blog" element={<Blog />} />
-                <Route path="/treatment/:id" element={<BlogPostPage />} />
-                <Route path="/newLogin" element={<LoginPage />} />
-                <Route path="/newSignup" element={<NewSignupPage />} />
-                <Route path="/recommend" element={<ClinicRecommender />} />
-                <Route path="/book" element={
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                    <CalendarComponent />
-                    <TimeSlotGrid />
-                    <BookingConfirmationForm />
-                  </Box>
-                } />
-                <Route path="/appointment-booking" element={
-                  <ProtectedRoute>
-                    <AppointmentBookingPage />
-                  </ProtectedRoute>
-                } />
-                <Route path="/book-now" element={<AppointmentBookingPage />} />
-                <Route path="/plan-journey" element={<PlanJourney />} />
-                <Route path="/login" element={
-                  <AuthRoute>
-                    <NewLoginPage />
-                  </AuthRoute>
-                } />
-                <Route path="/confirm-email" element={<ConfirmEmail />} />
-                <Route path="/doctor-login" element={
-                  <DoctorAuthRoute>
-                    <DoctorLoginPage />
-                  </DoctorAuthRoute>
-                } />
-                <Route path="/patient-dashboard-ai" element={
-                  <ProtectedRoute>
-                    <DashboardPage />
-                  </ProtectedRoute>
-                } />
-                <Route path="/terms" element={<TermsOfService />} />
-                <Route path="/privacy" element={<PrivacyPolicy />} />
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </Layout>
-          } />
-        </Routes>
-      </Suspense>
-    </ThemeProvider>
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <DashboardPage />
+              </ProtectedRoute>
+            } />
+
+            {/* Doctor dashboard route without Layout (no footer) */}
+            <Route path="/doctor-dashboard" element={
+              <DoctorProtectedRoute>
+                <DoctorDashboard />
+              </DoctorProtectedRoute>
+            } />
+
+            {/* All other routes with default Layout */}
+            <Route path="/*" element={
+              <Layout>
+                <Routes>
+                  <Route path="/" element={<HomePage />} />
+                  <Route path="/free-consultation" element={<FreeConsultation />} />
+                  <Route path="/contact" element={<ContactUs />} />
+                  <Route path="/compare-cost" element={<CompareCost />} />
+                  <Route path="/treatment/dental" element={<DentalTreatment />} />
+                  <Route path="/treatment/ivf" element={<IVFTreatment />} />
+                  <Route path="/treatment/hair" element={<HairTreatment />} />
+                  <Route path="/treatment/cosmetics" element={<CosmeticsTreatment />} />
+                  <Route path="/treatment/blog" element={<Blog />} />
+                  <Route path="/treatment/:id" element={<BlogPostPage />} />
+                  <Route path="/newLogin" element={<LoginPage />} />
+                  <Route path="/newSignup" element={<NewSignupPage />} />
+                  <Route path="/recommend" element={<ClinicRecommender />} />
+                  <Route path="/book" element={
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                      <CalendarComponent />
+                      <TimeSlotGrid />
+                      <BookingConfirmationForm />
+                    </Box>
+                  } />
+                  <Route path="/appointment-booking" element={
+                    <ProtectedRoute>
+                      <AppointmentBookingPage />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/book-now" element={<AppointmentBookingPage />} />
+                  <Route path="/plan-journey" element={<PlanJourney />} />
+                  <Route path="/login" element={
+                    <AuthRoute>
+                      <NewLoginPage />
+                    </AuthRoute>
+                  } />
+                  <Route path="/confirm-email" element={<ConfirmEmail />} />
+                  <Route path="/doctor-login" element={
+                    <DoctorAuthRoute>
+                      <DoctorLoginPage />
+                    </DoctorAuthRoute>
+                  } />
+                  <Route path="/patient-dashboard-ai" element={
+                    <ProtectedRoute>
+                      <DashboardPage />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/terms" element={<TermsOfService />} />
+                  <Route path="/privacy" element={<PrivacyPolicy />} />
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </Layout>
+            } />
+          </Routes>
+        </Suspense>
+      </ThemeProvider>
     </PostHogProvider>
   );
 };

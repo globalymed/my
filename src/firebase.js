@@ -14,14 +14,17 @@ import {
   serverTimestamp,
   orderBy,
   limit,
-  deleteDoc
+  deleteDoc,
+  setDoc
 } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL, listAll } from "firebase/storage";
 import {
+    getAuth,
     signInWithEmailAndPassword,
     signInWithPopup,
     signOut as firebaseSignOut,
-    onAuthStateChanged
+    onAuthStateChanged,
+    GoogleAuthProvider
 } from 'firebase/auth';
 
 // Import the Brevo service for email notifications
@@ -73,6 +76,11 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
+
+// Initialize Auth
+const auth = getAuth(app); // <-- Add this line to initialize auth
+const googleProvider = new GoogleAuthProvider(); // <-- Initialize Google Auth Provider
+
 
 // Initialize Analytics - only in browser environments
 let analytics = null;

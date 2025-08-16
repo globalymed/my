@@ -26,6 +26,7 @@
     "posthog-js": "^1.257.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-hook-form": "^7.62.0",
     "react-icons": "^5.5.0",
     "react-redux": "^9.2.0",
     "react-router-dom": "^6.30.1",
@@ -38,10 +39,10 @@
     "zustand": "^4.5.6"
   },
   "scripts": {
-    "start": "craco start",
-    "dev": "craco start",
-    "build": "craco build",
-    "test": "craco test",
+    "start": "react-scripts start",
+    "dev": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
     "build:dashboard": "cd patient-dashboard-ai && npm run build",
     "postbuild:dashboard": "if not exist public\\patient-dashboard-ai mkdir public\\patient-dashboard-ai && xcopy /E /Y patient-dashboard-ai\\dist\\* public\\patient-dashboard-ai\\",
     "predeploy:all": "npm install && cd patient-dashboard-ai && npm install",
