@@ -65,8 +65,17 @@ const UploadDropzone = ({
     const list = Array.from(pickedFiles);
     // Filter by size 5MB
     const valid = list.filter((f) => f.size <= 5 * 1024 * 1024);
-    onChange(multiple ? valid : valid[0] || null);
-  }, [multiple, onChange]);
+    
+    if (multiple) {
+      // For multiple files, append to existing files instead of replacing
+      const existingFiles = files || [];
+      const newFiles = [...existingFiles, ...valid];
+      onChange(newFiles);
+    } else {
+      // For single file, replace as before
+      onChange(valid[0] || null);
+    }
+  }, [multiple, onChange, files]); // Add 'files' to dependency array
 
   const onDrop = (e) => {
     e.preventDefault();
@@ -77,6 +86,8 @@ const UploadDropzone = ({
 
   const onBrowse = (e) => {
     handleFiles(e.target.files);
+    // Clear the input value so the same file can be selected again
+    e.target.value = '';
   };
 
   const removeSingle = () => onChange(multiple ? [] : null);
@@ -159,7 +170,7 @@ const UploadDropzone = ({
         {hasFile && multiple && (
           <Grid container spacing={1}>
             {files.map((f, idx) => (
-              <Grid item key={`${f.name}-${idx}`}>
+              <Grid item key={`${f.name}-${idx}-${f.lastModified}`}>
                 <Box sx={{ position: 'relative', p: 1, bgcolor: 'rgba(16,185,129,0.05)', border: '1px dashed #16a34a', borderRadius: 2 }}>
                   <img src={URL.createObjectURL(f)} alt={f.name} style={{ width: 120, height: 80, objectFit: 'cover', borderRadius: 6 }} />
                   <Button
@@ -227,9 +238,9 @@ const ClinicRegistration = () => {
     issuingAuthority: '',
     ownerName: '',
     panOrGst: '',
-    ownerIdProofFile: null,
-    registrationCertFile: null,
-    addressProofFile: null
+    ownerIdProofFile: [], // Changed to array for multiple files
+    registrationCertFile: [], // Changed to array for multiple files
+    addressProofFile: [] // Changed to array for multiple files
   });
 
   const [facilities, setFacilities] = useState({
@@ -260,9 +271,9 @@ const ClinicRegistration = () => {
   });
 
   const [media, setMedia] = useState({
-    exteriorPhoto: null,
-    interiorPhoto: null,
-    logo: null,
+    exteriorPhoto: [], // Changed to array for multiple files
+    interiorPhoto: [], // Changed to array for multiple files
+    logo: [], // Changed to array for multiple files
     staffPhotos: [] // array of Files
   });
 
@@ -409,9 +420,9 @@ const ClinicRegistration = () => {
       !validationErrors.clinicRegistrationNumber &&
       regulatory.issuingAuthority.trim().length >= 2 &&
       regulatory.ownerName.trim().length >= 3 &&
-      regulatory.ownerIdProofFile &&
-      regulatory.registrationCertFile &&
-      regulatory.addressProofFile
+      regulatory.ownerIdProofFile.length >= 1 &&
+      regulatory.registrationCertFile.length >= 1 &&
+      regulatory.addressProofFile.length >= 1
     );
   }, [regulatory, validationErrors]);
 
@@ -420,15 +431,16 @@ const ClinicRegistration = () => {
   }, [facilities]);
 
   const isMediaValid = useMemo(() => {
-    return !!media.exteriorPhoto && !!media.interiorPhoto && !!media.logo; // staff optional
+    return media.exteriorPhoto.length >= 3 && media.interiorPhoto.length >= 3 && media.logo.length >= 1 && media.staffPhotos.length >= 3;
   }, [media]);
 
   // Get validation messages for media
   const getMediaValidationMessage = () => {
     const missing = [];
-    if (!media.exteriorPhoto) missing.push('Clinic Exterior Photo');
-    if (!media.interiorPhoto) missing.push('Reception/Interior Photo');
-    if (!media.logo) missing.push('Clinic Logo');
+    if (media.exteriorPhoto.length < 3) missing.push('Clinic Exterior Photo (minimum 3 required)');
+    if (media.interiorPhoto.length < 3) missing.push('Reception/Interior Photo (minimum 3 required)');
+    if (media.logo.length < 1) missing.push('Clinic Logo (minimum 1 required)');
+    if (media.staffPhotos.length < 3) missing.push('Doctor/Staff Photos (minimum 3 required)');
     
     if (missing.length > 0) {
       return `Required: ${missing.join(', ')}`;
@@ -501,19 +513,36 @@ const ClinicRegistration = () => {
       // This makes it easier for admins to locate specific document types
       console.log('Uploading documents with organized folder structure');
       
-      const [ownerIdUrl, certUrl, addrUrl, exteriorUrl, interiorUrl, logoUrl] = await Promise.all([
-        uploadToStorage(regulatory.ownerIdProofFile, 'owners-id-proof'),
-        uploadToStorage(regulatory.registrationCertFile, 'clinic-registration-certificate'),
-        uploadToStorage(regulatory.addressProofFile, 'clinic-address-proof'),
-        uploadToStorage(media.exteriorPhoto, 'clinic-exterior-photos'),
-        uploadToStorage(media.interiorPhoto, 'clinic-interior-photos'),
-        uploadToStorage(media.logo, 'clinic-logo')
-      ]);
+      // Upload regulatory documents (max 3 each)
+      const ownerIdUrls = await Promise.all(
+        regulatory.ownerIdProofFile.slice(0, 3).map((f) => uploadToStorage(f, 'owners-id-proof'))
+      );
+      
+      const certUrls = await Promise.all(
+        regulatory.registrationCertFile.slice(0, 3).map((f) => uploadToStorage(f, 'clinic-registration-certificate'))
+      );
+      
+      const addrUrls = await Promise.all(
+        regulatory.addressProofFile.slice(0, 3).map((f) => uploadToStorage(f, 'clinic-address-proof'))
+      );
+
+      // Upload media files (min 3 for photos, min 1 for logo)
+      const exteriorUrls = await Promise.all(
+        media.exteriorPhoto.slice(0, 10).map((f) => uploadToStorage(f, 'clinic-exterior-photos'))
+      );
+      
+      const interiorUrls = await Promise.all(
+        media.interiorPhoto.slice(0, 10).map((f) => uploadToStorage(f, 'clinic-interior-photos'))
+      );
+      
+      const logoUrls = await Promise.all(
+        media.logo.slice(0, 3).map((f) => uploadToStorage(f, 'clinic-logo'))
+      );
 
       let staffUrls = [];
       if (media.staffPhotos && media.staffPhotos.length > 0) {
-        // Limit to maximum 3 staff photos
-        const limitedStaffPhotos = media.staffPhotos.slice(0, 3);
+        // Limit to maximum 10 staff photos
+        const limitedStaffPhotos = media.staffPhotos.slice(0, 10);
         staffUrls = await Promise.all(
           limitedStaffPhotos.map((f) => uploadToStorage(f, 'clinic-staff-photos'))
         );
@@ -552,12 +581,12 @@ const ClinicRegistration = () => {
         
         // Media URLs
         documents: {
-          ownerIdProofUrl: ownerIdUrl,
-          registrationCertUrl: certUrl,
-          addressProofUrl: addrUrl,
-          exteriorPhotoUrl: exteriorUrl,
-          interiorPhotoUrl: interiorUrl,
-          logoUrl: logoUrl,
+          ownerIdProofUrls: ownerIdUrls.filter(Boolean),
+          registrationCertUrls: certUrls.filter(Boolean),
+          addressProofUrls: addrUrls.filter(Boolean),
+          exteriorPhotoUrls: exteriorUrls.filter(Boolean),
+          interiorPhotoUrls: interiorUrls.filter(Boolean),
+          logoUrls: logoUrls.filter(Boolean),
           staffPhotoUrls: staffUrls.filter(Boolean)
         },
         
@@ -572,6 +601,17 @@ const ClinicRegistration = () => {
           clinicInteriorPhotos: 'clinic-interior-photos',
           clinicLogo: 'clinic-logo',
           clinicStaffPhotos: 'clinic-staff-photos'
+        },
+        
+        // Document limits for admin reference
+        documentLimits: {
+          ownersIdProof: { min: 1, max: 3 },
+          clinicRegistrationCertificate: { min: 1, max: 3 },
+          clinicAddressProof: { min: 1, max: 3 },
+          clinicExteriorPhotos: { min: 3, max: 10 },
+          clinicInteriorPhotos: { min: 3, max: 10 },
+          clinicLogo: { min: 1, max: 3 },
+          clinicStaffPhotos: { min: 3, max: 10 }
         },
         
         createdAt: serverTimestamp ? serverTimestamp() : new Date(),
@@ -652,26 +692,26 @@ const ClinicRegistration = () => {
             <Box>
               <Typography variant="subtitle1" fontWeight={800} mb={2}>Basic Information</Typography>
               <Grid container spacing={2}>
-                              <Grid item xs={12} md={6}>
-                <TextField 
-                  label={<Req>Clinic/Hospital Name</Req>} 
-                  fullWidth 
-                  value={basic.name} 
-                  onChange={(e) => handleBasicChange('name', e.target.value)}
-                  error={!!validationErrors.name}
-                  helperText={validationErrors.name}
-                />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <TextField 
-                  label={<Req>Contact Number</Req>} 
-                  fullWidth 
-                  value={basic.contactNumber} 
-                  onChange={(e) => handleBasicChange('contactNumber', e.target.value)}
-                  error={!!validationErrors.contactNumber}
-                  helperText={validationErrors.contactNumber}
-                />
-              </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField 
+                    label={<Req>Clinic/Hospital Name</Req>} 
+                    fullWidth 
+                    value={basic.name} 
+                    onChange={(e) => handleBasicChange('name', e.target.value)}
+                    error={!!validationErrors.name}
+                    helperText={validationErrors.name}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField 
+                    label={<Req>Contact Number</Req>} 
+                    fullWidth 
+                    value={basic.contactNumber} 
+                    onChange={(e) => handleBasicChange('contactNumber', e.target.value)}
+                    error={!!validationErrors.contactNumber}
+                    helperText={validationErrors.contactNumber}
+                  />
+                </Grid>
                 <Grid item xs={12}>
                   <Typography variant="body2" fontWeight={700}><Req>Clinic Type / Specialty</Req></Typography>
                   <Stack direction="row" flexWrap="wrap" spacing={1} rowGap={1} mt={1}>
@@ -772,31 +812,61 @@ const ClinicRegistration = () => {
                   <UploadDropzone
                     label="Owner's ID Proof"
                     required
+                    multiple
                     accept=".pdf,.jpg,.jpeg,.png"
-                    file={regulatory.ownerIdProofFile}
-                    onChange={(f) => setRegulatory({ ...regulatory, ownerIdProofFile: f })}
-                    hint="PDF/JPG/PNG, max 5MB"
+                    files={regulatory.ownerIdProofFile}
+                    onChange={(f) => {
+                      const files = Array.isArray(f) ? f : [];
+                      const limitedFiles = files.slice(0, 3);
+                      setRegulatory({ ...regulatory, ownerIdProofFile: limitedFiles });
+                    }}
+                    hint="PDF/JPG/PNG, max 5MB each, maximum 3 documents"
                   />
+                  {regulatory.ownerIdProofFile.length >= 3 && (
+                    <Typography variant="caption" color="warning.main" sx={{ mt: 1, display: 'block' }}>
+                      Maximum 3 documents allowed
+                    </Typography>
+                  )}
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <UploadDropzone
                     label="Clinic Registration Certificate"
                     required
+                    multiple
                     accept=".pdf,.jpg,.jpeg,.png"
-                    file={regulatory.registrationCertFile}
-                    onChange={(f) => setRegulatory({ ...regulatory, registrationCertFile: f })}
-                    hint="PDF/JPG/PNG, max 5MB"
+                    files={regulatory.registrationCertFile}
+                    onChange={(f) => {
+                      const files = Array.isArray(f) ? f : [];
+                      const limitedFiles = files.slice(0, 3);
+                      setRegulatory({ ...regulatory, registrationCertFile: limitedFiles });
+                    }}
+                    hint="PDF/JPG/PNG, max 5MB each, maximum 3 documents"
                   />
+                  {regulatory.registrationCertFile.length >= 3 && (
+                    <Typography variant="caption" color="warning.main" sx={{ mt: 1, display: 'block' }}>
+                      Maximum 3 documents allowed
+                    </Typography>
+                  )}
                 </Grid>
                 <Grid item xs={12}>
                   <UploadDropzone
                     label="Address Proof of Clinic"
                     required
+                    multiple
                     accept=".pdf,.jpg,.jpeg,.png"
-                    file={regulatory.addressProofFile}
-                    onChange={(f) => setRegulatory({ ...regulatory, addressProofFile: f })}
-                    hint="Electricity bill/Lease agreement/Property tax receipt (PDF/JPG/PNG, max 5MB)"
+                    files={regulatory.addressProofFile}
+                    onChange={(f) => {
+                      const files = Array.isArray(f) ? f : [];
+                      const limitedFiles = files.slice(0, 3);
+                      setRegulatory({ ...regulatory, addressProofFile: limitedFiles });
+                    }}
+                    hint="Electricity bill/Lease agreement/Property tax receipt (PDF/JPG/PNG, max 5MB each, maximum 3 documents)"
                   />
+                  {regulatory.addressProofFile.length >= 3 && (
+                    <Typography variant="caption" color="warning.main" sx={{ mt: 1, display: 'block' }}>
+                      Maximum 3 documents allowed
+                    </Typography>
+                  )}
                 </Grid>
               </Grid>
             </Box>
@@ -868,49 +938,100 @@ const ClinicRegistration = () => {
                   <UploadDropzone
                     label="Clinic Exterior Photo"
                     required
+                    multiple
                     accept="image/*"
-                    file={media.exteriorPhoto}
-                    onChange={(f) => setMedia({ ...media, exteriorPhoto: f })}
-                    hint="JPG/PNG, max 5MB"
+                    files={media.exteriorPhoto}
+                    onChange={(f) => {
+                      const files = Array.isArray(f) ? f : [];
+                      const limitedFiles = files.slice(0, 10);
+                      setMedia({ ...media, exteriorPhoto: limitedFiles });
+                    }}
+                    hint="JPG/PNG, max 5MB each, minimum 3 required, maximum 10 photos"
                   />
+                  {media.exteriorPhoto.length < 3 && (
+                    <Typography variant="caption" color="error.main" sx={{ mt: 1, display: 'block' }}>
+                      Minimum 3 photos required
+                    </Typography>
+                  )}
+                  {media.exteriorPhoto.length >= 10 && (
+                    <Typography variant="caption" color="warning.main" sx={{ mt: 1, display: 'block' }}>
+                      Maximum 10 photos allowed
+                    </Typography>
+                  )}
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <UploadDropzone
                     label="Reception/Interior Photo"
                     required
+                    multiple
                     accept="image/*"
-                    file={media.interiorPhoto}
-                    onChange={(f) => setMedia({ ...media, interiorPhoto: f })}
-                    hint="JPG/PNG, max 5MB"
+                    files={media.interiorPhoto}
+                    onChange={(f) => {
+                      const files = Array.isArray(f) ? f : [];
+                      const limitedFiles = files.slice(0, 10);
+                      setMedia({ ...media, interiorPhoto: limitedFiles });
+                    }}
+                    hint="JPG/PNG, max 5MB each, minimum 3 required, maximum 10 photos"
                   />
+                  {media.interiorPhoto.length < 3 && (
+                    <Typography variant="caption" color="error.main" sx={{ mt: 1, display: 'block' }}>
+                      Minimum 3 photos required
+                    </Typography>
+                  )}
+                  {media.interiorPhoto.length >= 10 && (
+                    <Typography variant="caption" color="warning.main" sx={{ mt: 1, display: 'block' }}>
+                      Maximum 10 photos allowed
+                    </Typography>
+                  )}
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <UploadDropzone
                     label="Clinic Logo"
                     required
+                    multiple
                     accept="image/*"
-                    file={media.logo}
-                    onChange={(f) => setMedia({ ...media, logo: f })}
-                    hint="PNG recommended, max 5MB"
+                    files={media.logo}
+                    onChange={(f) => {
+                      const files = Array.isArray(f) ? f : [];
+                      const limitedFiles = files.slice(0, 3);
+                      setMedia({ ...media, logo: limitedFiles });
+                    }}
+                    hint="PNG recommended, max 5MB each, minimum 1 required, maximum 3 logos"
                   />
+                  {media.logo.length < 1 && (
+                    <Typography variant="caption" color="error.main" sx={{ mt: 1, display: 'block' }}>
+                      Minimum 1 logo required
+                    </Typography>
+                  )}
+                  {media.logo.length >= 3 && (
+                    <Typography variant="caption" color="warning.main" sx={{ mt: 1, display: 'block' }}>
+                      Maximum 3 logos allowed
+                    </Typography>
+                  )}
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <UploadDropzone
-                    label="Doctor/Staff Photos (Optional)"
+                    label="Doctor/Staff Photos"
+                    required
                     multiple
                     accept="image/*"
                     files={media.staffPhotos}
                     onChange={(arr) => {
                       const files = Array.isArray(arr) ? arr : [];
-                      // Limit to maximum 3 files
-                      const limitedFiles = files.slice(0, 3);
+                      // Limit to maximum 10 files
+                      const limitedFiles = files.slice(0, 10);
                       setMedia({ ...media, staffPhotos: limitedFiles });
                     }}
-                    hint="JPG/PNG, max 5MB each, maximum 3 photos"
+                    hint="JPG/PNG, max 5MB each, minimum 3 required, maximum 10 photos"
                   />
-                  {media.staffPhotos.length >= 3 && (
+                  {media.staffPhotos.length < 3 && (
+                    <Typography variant="caption" color="error.main" sx={{ mt: 1, display: 'block' }}>
+                      Minimum 3 photos required
+                    </Typography>
+                  )}
+                  {media.staffPhotos.length >= 10 && (
                     <Typography variant="caption" color="warning.main" sx={{ mt: 1, display: 'block' }}>
-                      Maximum 3 photos allowed
+                      Maximum 10 photos allowed
                     </Typography>
                   )}
                 </Grid>
@@ -947,7 +1068,7 @@ const ClinicRegistration = () => {
         <DialogTitle>Confirm Submission</DialogTitle>
         <DialogContent>
           <Typography variant="body2">
-            Are you sure you want to submit your clinic registration? Once submitted, you won’t be able to make changes until the review is complete.
+            Are you sure you want to submit your clinic registration? Once submitted, you won't be able to make changes until the review is complete.
           </Typography>
         </DialogContent>
         <DialogActions>
