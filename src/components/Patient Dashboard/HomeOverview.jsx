@@ -400,7 +400,7 @@ const HomeOverview = ({ user, appointments, setActiveSection }) => {
                                         id="file-upload"
                                         style={{ display: 'none' }}
                                         onChange={handleFileUpload}
-                                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.txt,.xls,.xlsx"
+                                        accept=".pdf,.doc,.docx,.webp,.jpeg,.webp,.gif,.txt,.xls,.xlsx"
                                     />
                                     <label htmlFor="file-upload">
                                         <Button 

@@ -133,7 +133,7 @@ function AppSidebar({
             <a href="https://medyatra.space" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 <Avatar
-                  src="/logo.png"
+                  src="/logo.webp"
                   alt="MedYatra Logo"
                   sx={{ width: 40, height: 40, mr: 1 }}
                   imgProps={{

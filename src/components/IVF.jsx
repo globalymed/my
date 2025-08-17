@@ -17,7 +17,7 @@ const IVF = () => (
         {/* Image */}
         <Box
             component="img"
-            src="/ivf/1.jpg" // <-- Update with your actual image path
+            src="/ivf/1.webp" // <-- Update with your actual image path
             alt="IVF Treatment"
             sx={{
                 width: "100%",
@@ -102,7 +102,7 @@ const IVF = () => (
             </AccordionSummary>
             <Box
                 component="img"
-                src="/ivf/2.jpg"
+                src="/ivf/2.webp"
                 alt="IVF Steps"
                 sx={{
                     width: "100%",
@@ -188,7 +188,7 @@ const IVF = () => (
                 </Box>
                 <Box
                     component="img"
-                    src="/ivf/3.jpg"
+                    src="/ivf/3.webp"
                     alt="Conventional IVF"
                     sx={{
                         width: "100%",
@@ -269,7 +269,7 @@ const IVF = () => (
                     {/* Image Section */}
                     <Box
                         component="img"
-                        src="/ivf/4.jpg"
+                        src="/ivf/4.webp"
                         alt="ICSI"
                         sx={{
                             width: "100%",
@@ -301,7 +301,7 @@ const IVF = () => (
             </AccordionSummary>
             <Box
                 component="img"
-                src="/ivf/5.jpg" // <-- Update with your actual image path
+                src="/ivf/5.webp" // <-- Update with your actual image path
                 alt="FET"
                 sx={{
                     width: "100%",
@@ -393,7 +393,7 @@ const IVF = () => (
                     {/* Image Section */}
                     <Box
                         component="img"
-                        src="/ivf/6.jpg"
+                        src="/ivf/6.webp"
                         alt="Mini IVF"
                         sx={{
                             width: "100%",
@@ -457,7 +457,7 @@ const IVF = () => (
                     {/* Image Section */}
                     <Box
                         component="img"
-                        src="/ivf/7.jpg"
+                        src="/ivf/7.webp"
                         alt="PGT"
                         sx={{
                             width: "100%",

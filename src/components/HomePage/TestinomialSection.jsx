@@ -25,11 +25,11 @@ const stats = [
 ];
 
 const reviewImages = [
-    '/reviews_post/1.png',
-    '/reviews_post/2.png',
-    '/reviews_post/3.png',
-    '/reviews_post/4.png',
-    '/reviews_post/5.png',
+    '/reviews_post/1.webp',
+    '/reviews_post/2.webp',
+    '/reviews_post/3.webp',
+    '/reviews_post/4.webp',
+    '/reviews_post/5.webp',
 ];
 
 const testimonials = [
@@ -115,7 +115,7 @@ const TestimonialsSection = () => {
             py: 10,
             backgroundImage: { 
                 xs: 'none', // CHANGED: Remove image on mobile
-                md: "url('/testimonial background.png')" 
+                md: "url('/testimonial background.webp')" 
             },
             backgroundSize: 'cover',
             backgroundPosition: 'center bottom',
@@ -175,7 +175,7 @@ const TestimonialsSection = () => {
                 <Box sx={{ textAlign: 'center', mb: 6 }}>
                     <Box
                         component="img"
-                        src="/google review.png"
+                        src="/google review.webp"
                         alt="Google Review"
                         sx={{
                             height: { 
