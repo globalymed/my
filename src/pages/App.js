@@ -43,6 +43,10 @@ import CosmeticsTreatment from '../components/Treatment/CosmeticsTreatment';
 import AdminLayout from '../components/AdminLayout'; // The AdminLayout component that caused the nested router
 import AdminLoginPage from '../components/AdminDashboard/LoginPage.jsx'; // Assuming this is the Admin Login Page
 import AdminDashboardPage from '../components/AdminDashboard/AdminDashboardPage.jsx'; // Assuming this is the Admin Dashboard Page
+import DoctorsPage from '../components/AdminDashboard/doctors/DoctorsPage';
+import { AuthGuard } from '../components/AdminDashboard/AuthGuard';
+import SingleDoctorPage from '../components/AdminDashboard/doctors/SingleDoctorPage';
+import PendingDoctors from '../components/AdminDashboard/doctors/PendingDoctorsPage';
 
 // Create a component to render the doctor dashboard with logout functionality
 const DoctorDashboard = () => {
@@ -173,9 +177,15 @@ const App = () => {
                 <AdminLayout>
                   <Routes>
                     <Route path="login" element={<AdminLoginPage />} />
-                    <Route path="dashboard" element={<AdminDashboardPage />} />
-                    {/* Add other admin-specific routes here */}
-                    <Route path="*" element={<Navigate to="dashboard" replace />} /> {/* Default admin route */}
+                    {/* Protected admin dashboard main page */}
+                    <Route path="dashboard" element={<AuthGuard><AdminDashboardPage /></AuthGuard>} />
+                    {/* Doctors pages, nested under /admin/dashboard */}
+                    <Route path="dashboard/doctors" element={<AuthGuard><DoctorsPage /></AuthGuard>} />
+                    <Route path="dashboard/doctors/:id" element={<AuthGuard><SingleDoctorPage /></AuthGuard>} />
+                    <Route path="dashboard/doctors/pending" element={<AuthGuard><PendingDoctors /></AuthGuard>} />
+                    {/* Add other admin-specific routes here (e.g., /admin/dashboard/users, /admin/dashboard/settings) */}
+                    {/* Default admin route (redirects to dashboard if authenticated) */}
+                    <Route path="*" element={<Navigate to="dashboard" replace />} />
                   </Routes>
                 </AdminLayout>
               </AdminAuthProvider>
