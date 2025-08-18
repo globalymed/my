@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // From react-router-dom
+import { useNavigate } from 'react-router-dom';
 import {
     Box,
     Typography,
     Paper,
     Button,
-    Chip, // Replaces Badge
+    Chip,
     CircularProgress,
     Alert,
     Avatar,
@@ -13,27 +13,37 @@ import {
     DialogTitle,
     DialogContent,
     DialogActions,
-    TextField
+    TextField,
+    List,
+    ListItem,
+    ListItemButton,
+    ListItemIcon,
+    ListItemText
 } from '@mui/material';
 import {
     CheckCircleOutline as CheckCircleOutlineIcon,
     ErrorOutline as ErrorOutlineIcon,
     ArrowBack as ArrowBackIcon,
-    PersonOutline as UserCircleIcon, // General user icon
+    PersonOutline as UserCircleIcon,
     PhoneOutlined as PhoneIcon,
     EmailOutlined as EnvelopeIcon,
     CalendarTodayOutlined as CalendarIcon,
-    AccessTimeOutlined as ClockSolidIcon, // For last updated
-    SchoolOutlined as AcademicCapIcon, // For education
-    LocalHospitalOutlined as BuildingOfficeIcon, // For clinic/hospital
-    LocationOnOutlined as MapPinIcon, // For address
-    PublicOutlined as GlobeAltIcon, // For languages
-    PeopleOutlined as UsersIcon // For patients treated
+    AccessTimeOutlined as ClockSolidIcon,
+    SchoolOutlined as AcademicCapIcon,
+    LocalHospitalOutlined as BuildingOfficeIcon,
+    LocationOnOutlined as MapPinIcon,
+    PublicOutlined as GlobeAltIcon,
+    PeopleOutlined as UsersIcon,
+    AttachMoney,
+    DescriptionOutlined as DescriptionOutlinedIcon
 } from '@mui/icons-material';
 
-import { useAuth } from '../auth/context.js'; // Corrected relative import for useAuth
-import { getDoctorById, updateDoctorVerification } from '../../../firebase.js'; // Assuming these are from firebase.js or doctorOperations.js
+import { getStorage, ref, listAll, getDownloadURL } from 'firebase/storage';
+import { storage } from '../../../firebase.js';
 
+import { useAuth } from '../auth/context.js';
+import { getDoctorById, updateDoctorVerification } from '../../../firebase.js';
+import { format } from 'date-fns';
 
 /**
  * DoctorDetails component to display a single doctor's profile and manage verification.
@@ -41,21 +51,25 @@ import { getDoctorById, updateDoctorVerification } from '../../../firebase.js'; 
  * @param {string} props.doctorId - The ID of the doctor to display.
  */
 const DoctorDetails = ({ doctorId }) => {
-    const navigate = useNavigate(); // Use useNavigate for navigation
-    const { user } = useAuth(); // Current logged-in admin
+    const navigate = useNavigate();
+    const { user } = useAuth();
     const [doctor, setDoctor] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+
+    // States for document fetching
+    const [doctorDocuments, setDoctorDocuments] = useState({}); // Changed to an object to store categories
+    const [documentsLoading, setDocumentsLoading] = useState(true);
+    const [documentsError, setDocumentsError] = useState(null);
+
+    // States for verification modal
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalReason, setModalReason] = useState('');
     const [modalNotes, setModalNotes] = useState('');
-    const [actionType, setActionType] = useState(''); // 'verify' or 'unverify'
+    const [actionType, setActionType] = useState('');
     const [loadingAction, setLoadingAction] = useState(false);
     const [actionError, setActionError] = useState(null);
 
-    /**
-     * Fetches doctor details from the API.
-     */
     const fetchDoctorDetails = async () => {
         setLoading(true);
         setError(null);
@@ -74,10 +88,61 @@ const DoctorDetails = ({ doctorId }) => {
         }
     };
 
-    // Fetch doctor details when component mounts or doctorId changes
+    /**
+     * Fetches doctor's registration documents from Firebase Storage, including nested folders.
+     */
+    const fetchDoctorDocuments = async () => {
+        setDocumentsLoading(true);
+        setDocumentsError(null);
+        try {
+            const storageRef = ref(storage, `registration-documents/${doctorId}`);
+            const result = await listAll(storageRef);
+
+            const documentsByCategory = {};
+
+            // Iterate through folders (prefixes)
+            for (const folderRef of result.prefixes) {
+                const folderName = folderRef.name;
+                const folderResult = await listAll(folderRef);
+
+                const files = [];
+                for (const itemRef of folderResult.items) {
+                    const url = await getDownloadURL(itemRef);
+                    files.push({
+                        name: itemRef.name,
+                        url: url,
+                    });
+                }
+                documentsByCategory[folderName] = files;
+            }
+
+            // Also check for any root-level documents
+            const rootFiles = [];
+            for (const itemRef of result.items) {
+                const url = await getDownloadURL(itemRef);
+                rootFiles.push({
+                    name: itemRef.name,
+                    url: url,
+                });
+            }
+            if (rootFiles.length > 0) {
+                documentsByCategory['General Documents'] = rootFiles;
+            }
+
+            setDoctorDocuments(documentsByCategory);
+        } catch (err) {
+            console.error('Error fetching doctor documents:', err);
+            setDocumentsError('Failed to load documents.');
+        } finally {
+            setDocumentsLoading(false);
+        }
+    };
+
+    // Fetch doctor details and documents when component mounts or doctorId changes
     useEffect(() => {
         if (doctorId) {
             fetchDoctorDetails();
+            fetchDoctorDocuments();
         }
     }, [doctorId]);
 
@@ -161,6 +226,8 @@ const DoctorDetails = ({ doctorId }) => {
         );
     }
 
+    const hasDocuments = Object.keys(doctorDocuments).length > 0;
+
     return (
         <Box sx={{ '& > :not(style)': { mb: 4 } }}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
@@ -204,15 +271,15 @@ const DoctorDetails = ({ doctorId }) => {
                 {/* Profile Section */}
                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     <Avatar
-                        src={doctor.photoURL || `https://ui-avatars.com/api/?name=${doctor.displayName || doctor.name || doctor.email}&background=random&color=fff&size=128`}
-                        alt={doctor.displayName || doctor.name || doctor.email}
+                        src={doctor.photoURL || `https://ui-avatars.com/api/?name=${doctor.displayName || doctor.name || doctor.firstName + " " + doctor.lastName || doctor.email}&background=random&color=fff&size=128`}
+                        alt={doctor.displayName || doctor.name || doctor.firstName + " " + doctor.lastName || doctor.email}
                         sx={{ width: 120, height: 120, mb: 2, boxShadow: 3 }}
                     />
                     <Typography variant="h5" component="h2" sx={{ fontWeight: 'semibold', color: 'text.primary', mb: 1 }}>
-                        {doctor.displayName || doctor.name || 'N/A'}
+                        {doctor.displayName || doctor.name || doctor.firstName + " " + doctor.lastName || 'N/A'}
                     </Typography>
                     <Typography variant="body1" color="text.secondary" sx={{ mb: 1 }}>
-                        {doctor.specialty || 'General Practitioner'}
+                        {doctor.specialization || 'General Practitioner'}
                     </Typography>
                     <Chip
                         label={doctor.isVerified ? 'Verified' : 'Pending Verification'}
@@ -223,46 +290,119 @@ const DoctorDetails = ({ doctorId }) => {
 
                     <Box sx={{ mt: 4, width: '100%', maxWidth: 300 }}>
                         <Typography variant="h6" sx={{ fontWeight: 'semibold', color: 'text.primary', mb: 2 }}>Contact Information</Typography>
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                            <EnvelopeIcon sx={{ mr: 1, color: 'grey.500' }} />
-                            <Typography variant="body1" color="text.primary">{doctor.email}</Typography>
-                        </Box>
+                        {
+                            doctor.email && (
+                                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                    <EnvelopeIcon sx={{ mr: 1, color: 'grey.500' }} />
+                                    <Typography variant="body1" color="text.primary">{doctor.email}</Typography>
+                                </Box>
+                            )
+                        }
                         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                             <PhoneIcon sx={{ mr: 1, color: 'grey.500' }} />
                             <Typography variant="body1" color="text.primary">{doctor.phone || 'N/A'}</Typography>
                         </Box>
-                        <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 1 }}>
-                            <MapPinIcon sx={{ mr: 1, color: 'grey.500' }} />
-                            <Typography variant="body1" color="text.primary">
-                                {doctor.address || 'N/A'}, {doctor.city || 'N/A'}, {doctor.country || 'N/A'}
-                            </Typography>
-                        </Box>
+                        {
+                            doctor.address || doctor.city || doctor.country && (
+                                <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 1 }}>
+                                    <MapPinIcon sx={{ mr: 1, color: 'grey.500' }} />
+                                    <Typography variant="body1" color="text.primary">
+                                        {doctor.address || 'N/A'}, {doctor.city || 'N/A'}, {doctor.country || 'N/A'}
+                                    </Typography>
+                                </Box>
+                            )
+                        }
+                        {
+                            doctor.consultationFee != null && (
+                                <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 1 }}>
+                                    <AttachMoney sx={{ mr: 1, color: 'grey.500' }} />
+                                    <Typography variant="body1" color="text.primary">
+                                        Consultation Fee: ₹{doctor.consultationFee.toLocaleString('en-IN', { maximumFractionDigits: 2 }) || 'N/A'}
+                                    </Typography>
+                                </Box>
+                            )
+                        }
+                    </Box>
+
+                    <Box sx={{ mt: 4, width: '100%', maxWidth: 300 }}>
+                        <Typography variant="h6" sx={{ fontWeight: 'semibold', color: 'text.primary', mb: 2 }}>About</Typography>
+                        <Typography variant="body1" color="text.primary">
+                            {doctor.about || doctor.bio || 'No additional information provided.'}
+                        </Typography>
                     </Box>
                 </Box>
 
                 {/* Details Section */}
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 'semibold', color: 'text.primary', mt: { xs: 4, md: 0 }, mb: 2 }}>Professional Details</Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
-                        <AcademicCapIcon sx={{ mr: 1.5, color: 'grey.500', flexShrink: 0 }} />
-                        <Typography variant="body1" color="text.primary">Education: {doctor.education || 'N/A'}</Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
-                        <BuildingOfficeIcon sx={{ mr: 1.5, color: 'grey.500', flexShrink: 0 }} />
-                        <Typography variant="body1" color="text.primary">Clinic/Hospital: {doctor.clinicName || 'N/A'}</Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
-                        <UserCircleIcon sx={{ mr: 1.5, color: 'grey.500', flexShrink: 0 }} />
-                        <Typography variant="body1" color="text.primary">Experience: {doctor.yearsOfExperience ? `${doctor.yearsOfExperience} years` : 'N/A'}</Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
-                        <GlobeAltIcon sx={{ mr: 1.5, color: 'grey.500', flexShrink: 0 }} />
-                        <Typography variant="body1" color="text.primary">Languages: {doctor.languages?.join(', ') || 'N/A'}</Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
-                        <UsersIcon sx={{ mr: 1.5, color: 'grey.500', flexShrink: 0 }} />
-                        <Typography variant="body1" color="text.primary">Patients Treated: {doctor.patientsTreated || 'N/A'}</Typography>
-                    </Box>
+
+                    <Typography variant="h6" sx={{ fontWeight: 'semibold', color: 'text.primary', mt: { xs: 4, md: 0 }, mb: 1 }}>Professional Details</Typography>
+                    {
+                        doctor.qualifications && doctor.qualifications.length > 0 && (
+                            <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+                                <AcademicCapIcon sx={{ mr: 1.5, color: 'grey.500', flexShrink: 0 }} />
+                                <Typography variant="body1" color="text.primary">Qualifications:
+                                    <List dense disablePadding>
+                                        {doctor.qualifications.map((qual, index) => (
+                                            <ListItem key={index} disablePadding sx={{ py: 0.2 }}>
+                                                <ListItemText primary={qual} />
+                                            </ListItem>
+                                        ))}
+                                    </List>
+                                </Typography>
+                            </Box>
+                        )
+                    }
+
+                    {/* clinics */}
+                    {
+                        doctor.clinicIds && doctor.clinicIds.length > 0 && (
+                            <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+                                <BuildingOfficeIcon sx={{ mr: 1.5, color: 'grey.500', flexShrink: 0 }} />
+                                <Typography variant="body1" color="text.primary">Clinic/Hospital:
+                                    <List dense disablePadding>
+                                        {doctor.clinicIds.map((clinic, index) => (
+                                            <ListItem key={index} disablePadding sx={{ py: 0.2 }}>
+                                                <ListItemText primary={`${clinic.name || clinic || 'Unnamed Clinic'} ${clinic.address ? `(${clinic.address})` : ''}`} />
+                                            </ListItem>
+                                        ))}
+                                    </List>
+                                </Typography>
+                            </Box>
+                        )
+                    }
+
+                    {/* experience */}
+
+                    {
+                        (doctor.experience || doctor.yearsOfExperience) && (
+                            <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+                                <UserCircleIcon sx={{ mr: 1.5, color: 'grey.500', flexShrink: 0 }} />
+                                <Typography variant="body1" color="text.primary">Experience: {doctor.yearsOfExperience || doctor.experience ? `${doctor.yearsOfExperience || doctor.experience} years` : 'N/A'}</Typography>
+                            </Box>
+                        )
+                    }
+
+                    {/* language */}
+
+                    {
+                        doctor.languages && doctor.languages.length > 0 && (
+                            <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+                                <GlobeAltIcon sx={{ mr: 1.5, color: 'grey.500', flexShrink: 0 }} />
+                                <Typography variant="body1" color="text.primary">Languages: {doctor.languages?.join(', ') || 'N/A'}</Typography>
+                            </Box>
+                        )
+                    }
+
+                    {/* patient treated */}
+
+                    {
+                        doctor.patientsTreated != null && (
+                            <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+                                <UsersIcon sx={{ mr: 1.5, color: 'grey.500', flexShrink: 0 }} />
+                                <Typography variant="body1" color="text.primary">Patients Treated: {doctor.patientsTreated}</Typography>
+                            </Box>
+                        )
+                    }
 
                     <Typography variant="h6" sx={{ fontWeight: 'semibold', color: 'text.primary', mt: 4, mb: 2 }}>System Information</Typography>
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -274,7 +414,7 @@ const DoctorDetails = ({ doctorId }) => {
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                         <ClockSolidIcon sx={{ mr: 1.5, color: 'grey.500' }} />
                         <Typography variant="body1" color="text.primary">Last Updated:{' '}
-                            {doctor.createdAt ? doctor.createdAt.toDate().toLocaleDateString() : 'N/A'}
+                            {doctor.updatedAt ? doctor.updatedAt.toDate().toLocaleDateString() : 'N/A'}
 
                         </Typography>
                     </Box>
@@ -283,7 +423,7 @@ const DoctorDetails = ({ doctorId }) => {
                             <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                                 <CheckCircleOutlineIcon sx={{ mr: 1.5, color: 'grey.500' }} />
                                 <Typography variant="body1" color="text.primary">Verified On:{' '}
-                                    {doctor.createdAt ? doctor.createdAt.toDate().toLocaleDateString() : 'N/A'}
+                                    {doctor.verificationDate ? doctor.verificationDate.toDate().toLocaleDateString() : 'N/A'}
                                 </Typography>
                             </Box>
                             <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -305,6 +445,37 @@ const DoctorDetails = ({ doctorId }) => {
                             <Typography variant="body1" sx={{ fontWeight: 'semibold', mr: 1 }}>Notes:</Typography>
                             <Typography variant="body1" color="text.primary">{doctor.verificationNotes}</Typography>
                         </Box>
+                    )}
+
+                    <Typography variant="h6" sx={{ fontWeight: 'semibold', color: 'text.primary', mt: 4, mb: 2 }}>Doctor Documents</Typography>
+                    {documentsLoading ? (
+                        <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                            <CircularProgress size={30} color="primary" />
+                        </Box>
+                    ) : documentsError ? (
+                        <Alert severity="error" sx={{ borderRadius: '8px' }}>
+                            {documentsError}
+                        </Alert>
+                    ) : !hasDocuments ? (
+                        <Typography variant="body2" color="text.secondary">No documents found for this doctor.</Typography>
+                    ) : (
+                        Object.keys(doctorDocuments).map((category, index) => (
+                            <Box key={index} sx={{ mb: 2 }}>
+                                <Typography variant="body1" sx={{ fontWeight: 'medium', mb: 1, textDecoration: 'underline' }}>{category.replace(/-/g, ' ')}</Typography>
+                                <List dense disablePadding>
+                                    {doctorDocuments[category].map((doc, docIndex) => (
+                                        <ListItem key={docIndex} disablePadding>
+                                            <ListItemButton onClick={() => window.open(doc.url, '_blank')} sx={{ borderRadius: '4px', '&:hover': { bgcolor: 'grey.50' } }}>
+                                                <ListItemIcon>
+                                                    <DescriptionOutlinedIcon color="primary" />
+                                                </ListItemIcon>
+                                                <ListItemText primary={doc.name} />
+                                            </ListItemButton>
+                                        </ListItem>
+                                    ))}
+                                </List>
+                            </Box>
+                        ))
                     )}
                 </Box>
             </Paper>

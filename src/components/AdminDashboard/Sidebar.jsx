@@ -17,7 +17,7 @@ const navigation = [
     { name: 'Dashboard', href: '/admin/dashboard', icon: HomeOutlined }, // Updated href for admin dashboard
     { name: 'Doctors', href: '/admin/dashboard/doctors', icon: PeopleOutline },
     // 'Admins' link is only visible if the user has 'canManageAdmins' permission
-    { name: 'Admins', href: '/admin/dashboard/admins', icon: GroupOutlined, permission: 'canManageAdmins' },
+    // { name: 'Admins', href: '/admin/dashboard/admins', icon: GroupOutlined, permission: 'canManageAdmins' },
     { name: 'Settings', href: '/admin/dashboard/settings', icon: SettingsOutlined },
 ];
 
