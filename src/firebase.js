@@ -14,9 +14,18 @@ import {
   serverTimestamp,
   orderBy,
   limit,
-  deleteDoc
+  deleteDoc,
+  setDoc
 } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL, listAll } from "firebase/storage";
+import {
+    getAuth,
+    signInWithEmailAndPassword,
+    signInWithPopup,
+    signOut as firebaseSignOut,
+    onAuthStateChanged,
+    GoogleAuthProvider
+} from 'firebase/auth';
 
 // Import the Brevo service for email notifications
 // Email handling is done automatically by Firebase Cloud Functions
@@ -67,6 +76,11 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
+
+// Initialize Auth
+const auth = getAuth(app); // <-- Add this line to initialize auth
+const googleProvider = new GoogleAuthProvider(); // <-- Initialize Google Auth Provider
+
 
 // Initialize Analytics - only in browser environments
 let analytics = null;
@@ -1639,5 +1653,456 @@ export const getPatientDetails = async (patientId, doctorId) => {
     return null;
   }
 };
+
+
+// ====== Admin Functions ======
+
+export const signInWithEmail = async (email, password) => {
+    try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        console.log("User signed in:", user);
+
+        // Check if user is an admin. Admins need an entry in the 'admins' collection.
+        const isAdmin = await verifyAdminStatus(user.uid);
+        if (!isAdmin) {
+            // If not an admin, sign them out immediately to prevent unauthorized access.
+            await firebaseSignOut(auth);
+            throw new Error('Unauthorized: Admin access required.');
+        }
+
+        return user;
+    } catch (error) {
+        console.error("Error signing in with email:", error);
+        throw error;
+    }
+};
+
+export const signInWithGoogle = async () => {
+    try {
+        const result = await signInWithPopup(auth, googleProvider);
+        const user = result.user;
+
+        // Check if the user's email is in the admin whitelist or if they are an existing admin.
+        const existingAdmin = await getAdminData(user.uid);
+        if (!existingAdmin) {
+            const isWhitelisted = checkAdminWhitelist(user.email);
+            if (!isWhitelisted) {
+                // If not whitelisted and not an existing admin, sign them out.
+                await firebaseSignOut(auth);
+                throw new Error('Unauthorized: Your email is not whitelisted for admin access. Please contact support.');
+            }
+        }
+
+        // Create or update the admin document in Firestore.
+        await createOrUpdateAdmin(user);
+
+        return user;
+    } catch (error) {
+        console.error("Error signing in with Google:", error);
+        throw error;
+    }
+};
+
+export const signOut = async () => {
+    try {
+        await firebaseSignOut(auth);
+    } catch (error) {
+        console.error("Error signing out:", error);
+        throw error;
+    }
+};
+
+const checkAdminWhitelist = (email) => {
+    const adminWhitelist = process.env.NEXT_PUBLIC_ADMIN_WHITELIST_EMAILS?.split(',')
+        .map(e => e.trim()) // Trim whitespace from each email
+        .filter(e => e !== '') || []; // Filter out empty strings
+
+    return adminWhitelist.includes(email);
+};
+
+export const verifyAdminStatus = async (uid) => {
+    try {
+        const adminDoc = await getDoc(doc(db, 'admins', uid));
+        return adminDoc.exists() && adminDoc.data()?.status === 'active';
+    } catch (error) {
+        console.error("Error verifying admin status:", error);
+        return false; // Assume not admin on error
+    }
+};
+
+export const getAdminData = async (uid) => {
+    try {
+        const adminDoc = await getDoc(doc(db, 'admins', uid));
+        return adminDoc.exists() ? adminDoc.data() : null;
+    } catch (error) {
+        console.error("Error getting admin data:", error);
+        return null;
+    }
+};
+
+const createOrUpdateAdmin = async (user) => {
+    const adminRef = doc(db, 'admins', user.uid);
+    const adminDoc = await getDoc(adminRef);
+
+    if (!adminDoc.exists()) {
+        // Create new admin with default role (admin), can be upgraded by super admin
+        await setDoc(adminRef, {
+            email: user.email,
+            displayName: user.displayName || user.email,
+            photoURL: user.photoURL || null,
+            role: 'admin', // Default role for new admins
+            status: 'active', // Default status
+            permissions: {
+                canManageAdmins: false, // Default: normal admins cannot manage other admins
+                canVerifyDoctors: true,
+                canViewAnalytics: true
+            },
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            lastLogin: new Date()
+        });
+    } else {
+        // Update last login timestamp for existing admin
+        await setDoc(adminRef, {
+            lastLogin: new Date(),
+            updatedAt: new Date()
+        }, { merge: true }); // Use merge to only update specified fields
+    }
+};
+
+export const onAuthStateChange = (callback) => {
+    return onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            const adminData = await getAdminData(user.uid);
+            if (adminData && adminData.status === 'active') {
+                // Combine Firebase user data with Firestore admin data
+                callback({ ...user, ...adminData });
+            } else {
+                // If not an active admin, ensure they are signed out and return null
+                await firebaseSignOut(auth); // Ensure unauthorized users are logged out
+                callback(null);
+            }
+        } else {
+            callback(null);
+        }
+    });
+};
+
+// adminOperations
+
+// Fetches all administrators from the 'admins' collection, ordered by creation date.
+export const getAllAdmins = async () => {
+    try {
+        const adminsRef = collection(db, 'admins');
+        const q = query(adminsRef, orderBy('createdAt', 'desc')); // May require a Firestore index
+        const snapshot = await getDocs(q);
+
+        return snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            createdAt: doc.data().createdAt?.toDate(),
+            updatedAt: doc.data().updatedAt?.toDate(),
+            lastLogin: doc.data().lastLogin?.toDate()
+        }));
+    } catch (error) {
+        console.error('Error fetching admins:', error);
+        return [];
+    }
+};
+
+// Fetches only active administrators.
+export const getActiveAdmins = async () => {
+    try {
+        const adminsRef = collection(db, 'admins');
+        const q = query(
+            adminsRef,
+            where('status', '==', 'active'),
+            orderBy('createdAt', 'desc') // May require a Firestore index
+        );
+        const snapshot = await getDocs(q);
+
+        return snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            createdAt: doc.data().createdAt?.toDate(),
+            updatedAt: doc.data().updatedAt?.toDate(),
+            lastLogin: doc.data().lastLogin?.toDate()
+        }));
+    } catch (error) {
+        console.error('Error fetching active admins:', error);
+        return [];
+    }
+};
+
+// Updates an admin's status (e.g., 'active', 'inactive', 'suspended').
+export const updateAdminRole = async (adminId, role) => {
+    try {
+        const adminRef = doc(db, 'admins', adminId);
+        const permissions = role === 'super_admin'
+            ? { canManageAdmins: true, canVerifyDoctors: true, canViewAnalytics: true }
+            : { canManageAdmins: false, canVerifyDoctors: true, canViewAnalytics: true };
+
+        await updateDoc(adminRef, {
+            role,
+            permissions,
+            updatedAt: new Date()
+        });
+
+        return true;
+    } catch (error) {
+        console.error('Error updating admin role:', error);
+        throw error;
+    }
+};
+
+// Updates an admin's status (e.g., 'active', 'inactive', 'suspended').
+export const updateAdminStatus = async (adminId, status) => {
+    try {
+        const adminRef = doc(db, 'admins', adminId);
+        await updateDoc(adminRef, {
+            status,
+            updatedAt: new Date()
+        });
+
+        return true;
+    } catch (error) {
+        console.error('Error updating admin status:', error);
+        throw error;
+    }
+};
+
+// Deletes an admin document from Firestore.
+export const deleteAdmin = async (adminId) => {
+    try {
+        const adminRef = doc(db, 'admins', adminId);
+        await deleteDoc(adminRef);
+        return true;
+    } catch (error) {
+        console.error('Error deleting admin:', error);
+        throw error;
+    }
+};
+
+// Creates a new admin entry in Firestore.
+export const createAdmin = async (adminData) => {
+    try {
+        if (!adminData.uid) {
+            throw new Error("Admin UID is required to create an admin document.");
+        }
+        const adminRef = doc(db, 'admins', adminData.uid);
+        // Determine permissions based on the role
+        const permissions = adminData.role === 'super_admin'
+            ? { canManageAdmins: true, canVerifyDoctors: true, canViewAnalytics: true }
+            : { canManageAdmins: false, canVerifyDoctors: true, canViewAnalytics: true };
+
+        await setDoc(adminRef, {
+            email: adminData.email,
+            displayName: adminData.displayName || adminData.email,
+            role: adminData.role || 'admin', // Default to 'admin' if not specified
+            status: 'active', // New admins are active by default
+            permissions,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            createdBy: adminData.createdBy || 'system' // Who created this admin
+        });
+
+        return true;
+    } catch (error) {
+        console.error('Error creating admin:', error);
+        throw error;
+    }
+};
+
+// Fetches a single admin's data by their ID.
+export const getAdminById = async (adminId) => {
+    try {
+        const adminRef = doc(db, 'admins', adminId);
+        const snapshot = await getDoc(adminRef);
+
+        if (snapshot.exists()) {
+            return {
+                id: snapshot.id,
+                ...snapshot.data(),
+                createdAt: snapshot.data().createdAt?.toDate(),
+                updatedAt: snapshot.data().updatedAt?.toDate(),
+                lastLogin: snapshot.data().lastLogin?.toDate()
+            };
+        }
+
+        return null;
+    } catch (error) {
+        console.error('Error fetching admin by ID:', error);
+        return null;
+    }
+};
+
+// doctorOperations controlled by the admins
+
+// Fetches doctors based on their verification status.
+export const getDoctorsByVerificationStatus = async (isVerified) => {
+    try {
+        const doctorsRef = collection(db, 'doctors');
+        const q = query(
+            doctorsRef,
+            where('isVerified', '==', isVerified),
+            orderBy('createdAt', 'desc') // Again, may require a Firestore index
+        );
+        const snapshot = await getDocs(q);
+
+        return snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            createdAt: doc.data().createdAt?.toDate(),
+            updatedAt: doc.data().updatedAt?.toDate(),
+            verificationDate: doc.data().verificationDate?.toDate()
+        }));
+    } catch (error) {
+        console.error('Error fetching doctors by status:', error);
+        return [];
+    }
+};
+
+// Fetches doctors whose 'isVerified' field is false.
+export const getPendingDoctors = async () => {
+    return await getDoctorsByVerificationStatus(false);
+};
+
+// Fetches doctors whose 'isVerified' field is true.
+export const getVerifiedDoctors = async () => {
+    return await getDoctorsByVerificationStatus(true);
+};
+
+// Updates a doctor's verification status and logs the action.
+export const updateDoctorVerification = async (
+    doctorId,
+    isVerified,
+    adminId,
+    adminName,
+    reason = '',
+    notes = ''
+) => {
+    try {
+        const doctorRef = doc(db, 'doctors', doctorId);
+
+        // Get current doctor data to log previous status
+        const doctorDoc = await getDoc(doctorRef);
+        const doctorData = doctorDoc.data();
+        const previousStatus = doctorData?.isVerified || false; // Default to false if not exists
+
+        // Prepare update data
+        const updateData = {
+            isVerified: isVerified,
+            updatedAt: new Date()
+        };
+
+        if (isVerified) {
+            updateData.verificationDate = new Date();
+            updateData.verifiedBy = adminId;
+            updateData.verifiedByName = adminName; // Store admin's name for easier logging
+            if (notes) updateData.verificationNotes = notes;
+            // Clear rejection reason if verifying
+            updateData.rejectionReason = '';
+        } else {
+            if (reason) updateData.rejectionReason = reason;
+            if (notes) updateData.verificationNotes = notes; // Notes can be for rejection too
+            // Clear verification data if unverifying/rejecting
+            updateData.verificationDate = null;
+            updateData.verifiedBy = '';
+            updateData.verifiedByName = '';
+        }
+
+        await updateDoc(doctorRef, updateData);
+
+        // Create a log entry for the verification action
+        await createVerificationLog({
+            doctorId,
+            doctorName: doctorData?.name || doctorData?.displayName || doctorData?.email || 'Unknown Doctor',
+            doctorEmail: doctorData?.email || 'Unknown Email',
+            adminId,
+            adminName,
+            action: isVerified ? 'verified' : 'rejected',
+            previousStatus,
+            newStatus: isVerified,
+            reason,
+            notes
+        });
+
+        return true;
+    } catch (error) {
+        console.error('Error updating doctor verification:', error);
+        throw error;
+    }
+};
+
+// Creates a log entry for doctor verification actions.
+export const createVerificationLog = async (logData) => {
+    try {
+        const logsRef = collection(db, 'verification_logs');
+        await addDoc(logsRef, {
+            ...logData,
+            timestamp: new Date()
+        });
+    } catch (error) {
+        console.error('Error creating verification log:', error);
+    }
+};
+
+// Fetches recent verification logs.
+export const getVerificationLogs = async (limitCount = 50) => {
+    try {
+        const logsRef = collection(db, 'verification_logs');
+        const q = query(logsRef, orderBy('timestamp', 'desc'), limit(limitCount));
+        const snapshot = await getDocs(q);
+
+        return snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            timestamp: doc.data().timestamp?.toDate()
+        }));
+    } catch (error) {
+        console.error('Error fetching verification logs:', error);
+        return [];
+    }
+};
+
+// Retrieves statistics for doctors (total, verified, pending, verification rate).
+export const getDoctorStats = async () => {
+    try {
+        const doctorsRef = collection(db, 'doctors');
+        const allDoctors = await getDocs(doctorsRef);
+
+        let totalDoctors = 0;
+        let verifiedDoctors = 0;
+        let pendingDoctors = 0;
+
+        allDoctors.docs.forEach(doc => {
+            const data = doc.data();
+            totalDoctors++;
+
+            if (data.isVerified === true) {
+                verifiedDoctors++;
+            } else {
+                pendingDoctors++;
+            }
+        });
+
+        return {
+            total: totalDoctors,
+            verified: verifiedDoctors,
+            pending: pendingDoctors,
+            verificationRate: totalDoctors > 0 ? (verifiedDoctors / totalDoctors * 100).toFixed(1) : 0
+        };
+    } catch (error) {
+        console.error('Error fetching doctor stats:', error);
+        return {
+            total: 0,
+            verified: 0,
+            pending: 0,
+            verificationRate: 0
+        };
+    }
+};
+
 
 export default firebaseConfig;

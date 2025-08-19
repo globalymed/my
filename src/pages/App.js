@@ -15,6 +15,7 @@ import ConfirmEmail from './ConfirmEmail.jsx';
 import DoctorLoginPage from '../components/DoctorLoginPage';
 import { DoctorDashboard as NewDoctorDashboard } from '../components/DoctorDashboard/DoctorDashboard.jsx';
 import ClinicRegistration from '../components/DoctorDashboard/components/ClinicRegistration';
+import AdminAuthProvider from '../components/AdminDashboard/auth/context.js';
 
 const AIChat = React.lazy(() => import('../components/AIChatFinal'));
 const ClinicRecommender = React.lazy(() => import('../components/ClinicRecommenderEnhanced'));
@@ -37,6 +38,15 @@ import DentalTreatment from '../components/Treatment/DentalTreatment';
 import IVFTreatment from '../components/Treatment/IVFTreatment';
 import HairTreatment from '../components/Treatment/HairTreatment';
 import CosmeticsTreatment from '../components/Treatment/CosmeticsTreatment';
+
+// Admin Dashboard Components
+import AdminLayout from '../components/AdminLayout'; // The AdminLayout component that caused the nested router
+import AdminLoginPage from '../components/AdminDashboard/LoginPage.jsx'; // Assuming this is the Admin Login Page
+import AdminDashboardPage from '../components/AdminDashboard/AdminDashboardPage.jsx'; // Assuming this is the Admin Dashboard Page
+import DoctorsPage from '../components/AdminDashboard/doctors/DoctorsPage';
+import { AuthGuard } from '../components/AdminDashboard/AuthGuard';
+import SingleDoctorPage from '../components/AdminDashboard/doctors/SingleDoctorPage';
+import PendingDoctors from '../components/AdminDashboard/doctors/PendingDoctorsPage';
 
 // Create a component to render the doctor dashboard with logout functionality
 const DoctorDashboard = () => {
@@ -149,29 +159,51 @@ const DoctorAuthRoute = ({ children }) => {
 const App = () => {
   return (
     <PostHogProvider client={posthog}>
-      <PostHogPageViewTracker/>
+      <PostHogPageViewTracker />
       <ThemeProvider theme={theme}>
-      <Suspense fallback={<LoadingFallback />}>
-        <Routes>
-          {/* Chat route with ChatLayout */}
-          <Route path="/chat" element={
-            <ChatLayout>
-              <AIChat />
-            </ChatLayout>
-          } />
+        <Suspense fallback={<LoadingFallback />}>
+          <Routes>
+            {/* Chat route with ChatLayout */}
+            <Route path="/chat" element={
+              <ChatLayout>
+                <AIChat />
+              </ChatLayout>
+            } />
 
-          <Route path="/dashboard" element={
-            <ProtectedRoute>
-              <DashboardPage />
-            </ProtectedRoute>
-          } />
+            {/* Admin Dashboard routes, wrapped in AdminAuthProvider */}
+            <Route path="/admin/*" element={ // Use /* to match nested routes within /admin
+              <AdminAuthProvider>
+                {/* AdminLayout itself will contain its own Routes for /admin/login, /admin/dashboard etc. */}
+                <AdminLayout>
+                  <Routes>
+                    <Route path="login" element={<AdminLoginPage />} />
+                    {/* Protected admin dashboard main page */}
+                    <Route path="dashboard" element={<AuthGuard><AdminDashboardPage /></AuthGuard>} />
+                    {/* Doctors pages, nested under /admin/dashboard */}
+                    <Route path="dashboard/doctors" element={<AuthGuard><DoctorsPage /></AuthGuard>} />
+                    <Route path="dashboard/doctors/:id" element={<AuthGuard><SingleDoctorPage /></AuthGuard>} />
+                    <Route path="dashboard/doctors/pending" element={<AuthGuard><PendingDoctors /></AuthGuard>} />
+                    {/* Add other admin-specific routes here (e.g., /admin/dashboard/users, /admin/dashboard/settings) */}
+                    {/* Default admin route (redirects to dashboard if authenticated) */}
+                    <Route path="*" element={<Navigate to="dashboard" replace />} />
+                  </Routes>
+                </AdminLayout>
+              </AdminAuthProvider>
+            } />
 
-          {/* Doctor dashboard route without Layout (no footer) */}
-          <Route path="/doctor-dashboard" element={
-            <DoctorProtectedRoute>
-              <DoctorDashboard />
-            </DoctorProtectedRoute>
-          } />
+
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <DashboardPage />
+              </ProtectedRoute>
+            } />
+
+            {/* Doctor dashboard route without Layout (no footer) */}
+            <Route path="/doctor-dashboard" element={
+              <DoctorProtectedRoute>
+                <DoctorDashboard />
+              </DoctorProtectedRoute>
+            } />
 
           {/* All other routes with default Layout */}
           <Route path="/*" element={
