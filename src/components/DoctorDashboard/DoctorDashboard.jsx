@@ -190,6 +190,27 @@ export function DoctorDashboard() {
 
         {/* User Profile */}
         <div style={{ padding: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.2)' }}>
+          {/* Clinic Registration Button - only if doctor.clinicIds is empty */}
+          {doctor && Array.isArray(doctor.clinicIds) && doctor.clinicIds.length === 0 && (
+            <button
+              onClick={() => navigate('/clinic-registration')}
+              style={{
+                width: '100%',
+                marginBottom: '0.75rem',
+                padding: '0.75rem',
+                backgroundColor: '#2563eb',
+                color: 'white',
+                border: 'none',
+                borderRadius: '0.5rem',
+                fontWeight: 600,
+                fontSize: '1rem',
+                cursor: 'pointer',
+                boxShadow: '0 2px 8px rgba(37,99,235,0.08)'
+              }}
+            >
+              Clinic Registration
+            </button>
+          )}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <div style={{
               width: '2rem',
