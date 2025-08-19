@@ -42,7 +42,7 @@ import { getStorage, ref, listAll, getDownloadURL } from 'firebase/storage';
 import { storage } from '../../../firebase.js';
 
 import { useAuth } from '../auth/context.js';
-import { getDoctorById, updateDoctorVerification } from '../../../firebase.js';
+import { getDoctorById, updateDoctorVerification, getClinicByDoctorId } from '../../../firebase.js';
 import { format } from 'date-fns';
 
 /**

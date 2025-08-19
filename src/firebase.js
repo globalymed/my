@@ -135,6 +135,34 @@ export const getClinicById = async (clinicId) => {
   }
 };
 
+// Get clinic by doctor ID
+export const getClinicByDoctorId = async (doctorId) => {
+  try {
+    const clinicsCollection = collection(db, 'clinics');
+    const q = query(
+      clinicsCollection,
+      where('doctorId', '==', doctorId)
+    );
+
+    const clinicsSnapshot = await getDocs(q);
+
+    if (clinicsSnapshot.empty) {
+      console.log(`No clinic found for doctor ID: ${doctorId}`);
+      return null;
+    }
+
+    // Return the first clinic found (assuming one clinic per doctor in this context)
+    const clinicDoc = clinicsSnapshot.docs[0];
+    return {
+      id: clinicDoc.id,
+      ...clinicDoc.data()
+    };
+  } catch (error) {
+    console.error('Error fetching clinic by doctor ID:', error);
+    return null;
+  }
+};
+
 export const getClinicsByTreatmentType = async (treatmentType, location = null) => {
   try {
     const clinicsCollection = collection(db, 'clinics');
@@ -2003,6 +2031,26 @@ export const updateDoctorVerification = async (
             if (notes) updateData.verificationNotes = notes;
             // Clear rejection reason if verifying
             updateData.rejectionReason = '';
+
+            // Find and add clinic ID to doctor's clinicIds when verifying
+            try {
+                const clinic = await getClinicByDoctorId(doctorId);
+                if (clinic) {
+                    const currentClinicIds = doctorData?.clinicIds || [];
+                    // Add clinic ID if it's not already in the array
+                    if (!currentClinicIds.includes(clinic.id)) {
+                        updateData.clinicIds = [...currentClinicIds, clinic.id];
+                        console.log(`Adding clinic ID ${clinic.id} to doctor ${doctorId}`);
+                    } else {
+                        console.log(`Clinic ID ${clinic.id} already exists for doctor ${doctorId}`);
+                    }
+                } else {
+                    console.log(`No clinic found for doctor ${doctorId} during verification`);
+                }
+            } catch (clinicError) {
+                console.error('Error fetching clinic for doctor during verification:', clinicError);
+                // Continue with verification even if clinic fetch fails
+            }
         } else {
             if (reason) updateData.rejectionReason = reason;
             if (notes) updateData.verificationNotes = notes; // Notes can be for rejection too
