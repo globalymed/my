@@ -18,7 +18,9 @@ import {
   DialogActions,
   LinearProgress,
   Select,
-  MenuItem
+  MenuItem,
+  Radio,
+  RadioGroup
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -223,7 +225,7 @@ const ClinicRegistration = () => {
       dental: false
     },
     address: '',
-    city: '',
+    location: '',
     state: '',
     pincode: '',
     country: 'India',
@@ -346,7 +348,7 @@ const ClinicRegistration = () => {
 
     switch (field) {
       case 'name':
-      case 'city':
+      case 'location':
       case 'state':
         if (!validateAlphabetsOnly(value)) {
           isValid = false;
@@ -405,8 +407,8 @@ const ClinicRegistration = () => {
       basic.contactNumber.trim().length >= 7 &&
       !validationErrors.contactNumber &&
       basic.address.trim().length > 5 &&
-      basic.city.trim().length > 1 &&
-      !validationErrors.city &&
+      basic.location.trim().length > 1 &&
+      !validationErrors.location &&
       basic.state.trim().length > 1 &&
       !validationErrors.state &&
       basic.pincode.trim().length === 6 &&
@@ -448,7 +450,14 @@ const ClinicRegistration = () => {
     return null;
   };
 
-  const toggleSpecialty = (key) => setBasic((p) => ({ ...p, specialties: { ...p.specialties, [key]: !p.specialties[key] } }));
+  const toggleSpecialty = (key) => {
+    // Reset all specialties to false, then set the selected one to true
+    const resetSpecialties = Object.keys(basic.specialties).reduce((acc, specialty) => {
+      acc[specialty] = specialty === key;
+      return acc;
+    }, {});
+    setBasic((p) => ({ ...p, specialties: resetSpecialties }));
+  };
   const toggleAmenity = (key) => setFacilities((p) => ({ ...p, amenities: { ...p.amenities, [key]: !p.amenities[key] } }));
   const toggleLanguage = (key) => setFacilities((p) => ({ ...p, languages: { ...p.languages, [key]: !p.languages[key] } }));
   const toggleClosed = (day) => setFacilities((p) => ({ ...p, hours: { ...p.hours, [day]: { ...p.hours[day], closed: !p.hours[day].closed } } }));
@@ -499,11 +508,11 @@ const ClinicRegistration = () => {
     try {
       console.log('Starting clinic registration process for doctor:', doctor.id);
       
-      // Get selected specialties
-      const selectedSpecialties = Object.keys(basic.specialties).filter(key => basic.specialties[key]);
+      // Get selected specialty (single value)
+      const selectedSpecialty = Object.keys(basic.specialties).find(key => basic.specialties[key]);
       
-      if (selectedSpecialties.length === 0) {
-        setError('Please select at least one specialty');
+      if (!selectedSpecialty) {
+        setError('Please select a specialty');
         setSubmitting(false);
         return;
       }
@@ -553,10 +562,10 @@ const ClinicRegistration = () => {
         doctorId: doctor.id,
         name: basic.name,
         contactNumber: basic.contactNumber,
-        treatmentType: selectedSpecialties, // Array of selected specialties
-        location: basic.city, // Use city as location
+        treatmentType: selectedSpecialty, // Single specialty string
+        location: basic.location, // Use location as location
         address: basic.address,
-        city: basic.city,
+        city: basic.location,
         state: basic.state,
         pincode: basic.pincode,
         country: basic.country,
@@ -714,14 +723,25 @@ const ClinicRegistration = () => {
                 </Grid>
                 <Grid item xs={12}>
                   <Typography variant="body2" fontWeight={700}><Req>Clinic Type / Specialty</Req></Typography>
-                  <Stack direction="row" flexWrap="wrap" spacing={1} rowGap={1} mt={1}>
-                    {Object.keys(basic.specialties).map((key) => (
-                      <FormControlLabel key={key} control={<Checkbox checked={basic.specialties[key]} onChange={() => toggleSpecialty(key)} />} label={key.charAt(0).toUpperCase() + key.slice(1)} />
-                    ))}
-                  </Stack>
+                  <RadioGroup
+                    value={Object.keys(basic.specialties).find(key => basic.specialties[key]) || ''}
+                    onChange={(e) => toggleSpecialty(e.target.value)}
+                    sx={{ mt: 1 }}
+                  >
+                    <Stack direction="row" flexWrap="wrap" spacing={1} rowGap={1}>
+                      {Object.keys(basic.specialties).map((key) => (
+                        <FormControlLabel 
+                          key={key} 
+                          value={key}
+                          control={<Radio />} 
+                          label={key.charAt(0).toUpperCase() + key.slice(1)} 
+                        />
+                      ))}
+                    </Stack>
+                  </RadioGroup>
                   {Object.values(basic.specialties).every(specialty => !specialty) && (
                     <Typography variant="caption" color="error.main" sx={{ mt: 1, display: 'block' }}>
-                      Please select at least one specialty
+                      Please select a specialty
                     </Typography>
                   )}
                 </Grid>
@@ -737,12 +757,12 @@ const ClinicRegistration = () => {
                 </Grid>
                 <Grid item xs={12} md={3}>
                   <TextField 
-                    label={<Req>City</Req>} 
+                    label={<Req>Location</Req>} 
                     fullWidth 
-                    value={basic.city} 
-                    onChange={(e) => handleBasicChange('city', e.target.value)}
-                    error={!!validationErrors.city}
-                    helperText={validationErrors.city}
+                    value={basic.location} 
+                    onChange={(e) => handleBasicChange('location', e.target.value)}
+                    error={!!validationErrors.location}
+                    helperText={validationErrors.location}
                   />
                 </Grid>
                 <Grid item xs={12} md={3}>
