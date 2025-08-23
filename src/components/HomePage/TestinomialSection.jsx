@@ -14,18 +14,12 @@ const stats = [
 ];
 
 const reviewImages = [
-<<<<<<< HEAD
+
     '/reviews_post/1.webp',
     '/reviews_post/2.webp',
     '/reviews_post/3.webp',
     '/reviews_post/4.webp',
     '/reviews_post/5.webp',
-=======
-    '/reviews_post/1.png',
-    '/reviews_post/2.png',
-    '/reviews_post/3.png',
-    '/reviews_post/4.png',
->>>>>>> test2
 ];
 
 const IMAGES_PER_VIEW = { xs: 1, sm: 2, md: 3 };
@@ -78,23 +72,13 @@ const TestimonialsSection = () => {
     }, []);
 
     return (
-<<<<<<< HEAD
-        <Box sx={{ 
-            backgroundColor: { xs: '#2b938c', md: '#52C7BE' }, // CHANGED: Mobile background color
-            color: 'white', 
-            py: 10,
-            backgroundImage: { 
-                xs: 'none', // CHANGED: Remove image on mobile
-                md: "url('/testimonial background.webp')" 
-=======
         <Box sx={{
             backgroundColor: { xs: '#2b938c', md: '#52C7BE' },
             color: 'white',
             py: 5, // reduced
             backgroundImage: {
                 xs: 'none',
-                md: "url('/testimonial background.png')"
->>>>>>> test2
+                md: "url('/testimonial background.webp')"
             },
             backgroundSize: 'cover',
             backgroundPosition: 'center bottom',
