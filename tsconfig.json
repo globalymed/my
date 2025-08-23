@@ -14,5 +14,5 @@
     "isolatedModules": true,
     "noEmit": true,
   },
-  "include": ["src", "../new/my/public/types.ts"]
+  "include": ["src", "../new/my/public/types.ts", "test/test-brevo.js"]
 }

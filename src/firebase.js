@@ -2153,4 +2153,134 @@ export const getDoctorStats = async () => {
 };
 
 
+/**
+ * Generates 90 availability documents for a clinic when a doctor is verified
+ * @param {string} clinicId - The ID of the clinic
+ * @param {Object} clinic - The clinic object containing operatingHours
+ * @returns {Promise<number>} - Number of documents created
+ */
+export const generateAvailabilityDocuments = async (clinicId, clinic) => {
+    try {
+        if (!clinicId || !clinic) {
+            throw new Error('Clinic ID and clinic data are required');
+        }
+
+        const availabilityCollection = collection(db, 'availability');
+        const currentDate = new Date();
+        const documentsToCreate = [];
+        let documentsGenerated = 0;
+        let currentDatePointer = new Date(currentDate);
+
+        // Generate time slots from 09:00 to 17:00 (half-hourly)
+        const generateTimeSlots = () => {
+            const slots = [];
+            for (let hour = 9; hour <= 16; hour++) {
+                for (let minute = 0; minute < 60; minute += 30) {
+                    if (hour === 16 && minute > 30) break; // Stop at 16:30
+                    const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+                    slots.push({
+                        availableSlot: true,
+                        time: timeString
+                    });
+                }
+            }
+            return slots;
+        };
+
+        // Helper function to get day name from date (capitalized to match schema)
+        const getDayName = (date) => {
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            return days[date.getDay()];
+        };
+
+        // Debug: Log clinic operating hours structure
+        console.log('Clinic operating hours structure:', JSON.stringify(clinic.operatingHours, null, 2));
+        
+        // Create default operating hours if missing or invalid (using capitalized days)
+        const defaultOperatingHours = {
+            Monday: { open: "09:00", close: "17:00", closed: false },
+            Tuesday: { open: "09:00", close: "17:00", closed: false },
+            Wednesday: { open: "09:00", close: "17:00", closed: false },
+            Thursday: { open: "09:00", close: "17:00", closed: false },
+            Friday: { open: "09:00", close: "17:00", closed: false },
+            Saturday: { open: "09:00", close: "17:00", closed: false },
+            Sunday: { open: "00:00", close: "00:00", closed: true }
+        };
+
+        // Use clinic's operating hours or fall back to default
+        const operatingHours = clinic.operatingHours || defaultOperatingHours;
+        
+        // Validate that operating hours has the expected structure
+        const hasValidOperatingHours = operatingHours && 
+            typeof operatingHours === 'object' &&
+            Object.keys(operatingHours).length > 0;
+            
+        if (!hasValidOperatingHours) {
+            console.warn('Invalid operating hours structure, using default operating hours');
+            clinic.operatingHours = defaultOperatingHours;
+        } else {
+            clinic.operatingHours = operatingHours;
+        }
+        
+        console.log('Final operating hours to be used:', JSON.stringify(clinic.operatingHours, null, 2));
+
+        // Continue generating until we have exactly 90 documents
+        while (documentsGenerated < 90) {
+            const dayName = getDayName(currentDatePointer);
+            const dateString = currentDatePointer.toISOString().split('T')[0]; // YYYY-MM-DD format
+            
+            // Check if the clinic is open on this day
+            const dayOperatingHours = clinic.operatingHours && clinic.operatingHours[dayName];
+            const isOpen = dayOperatingHours && !dayOperatingHours.closed;
+
+            // Debug: Log each day's check (only first 10 days to avoid spam)
+            if (documentsGenerated < 10) {
+                console.log(`Checking day: ${dayName} (${dateString})`);
+                console.log(`Day operating hours:`, dayOperatingHours);
+                console.log(`Is open:`, isOpen);
+            }
+
+            if (isOpen) {
+                // Create availability document for this day
+                const availabilityDoc = {
+                    availableDay: true,
+                    clinicId: clinicId,
+                    date: dateString,
+                    location: clinic.location || '',
+                    slots: generateTimeSlots()
+                };
+
+                documentsToCreate.push(availabilityDoc);
+                documentsGenerated++;
+                console.log(`Document ${documentsGenerated} created for ${dayName} (${dateString})`);
+            }
+
+            // Move to the next day
+            currentDatePointer.setDate(currentDatePointer.getDate() + 1);
+
+            // Safety check to prevent infinite loops (max 365 days)
+            if (currentDatePointer.getTime() - currentDate.getTime() > 365 * 24 * 60 * 60 * 1000) {
+                console.warn('Reached maximum date range. Generated only', documentsGenerated, 'documents.');
+                console.warn('Clinic operating hours that caused this:', JSON.stringify(clinic.operatingHours, null, 2));
+                break;
+            }
+        }
+
+        // Batch create documents for better performance
+        const batchSize = 10;
+        for (let i = 0; i < documentsToCreate.length; i += batchSize) {
+            const batch = documentsToCreate.slice(i, i + batchSize);
+            const promises = batch.map(doc => addDoc(availabilityCollection, doc));
+            await Promise.all(promises);
+        }
+
+        console.log(`Successfully generated ${documentsGenerated} availability documents for clinic ${clinicId}`);
+        return documentsGenerated;
+
+    } catch (error) {
+        console.error('Error generating availability documents:', error);
+        throw error;
+    }
+};
+
 export default firebaseConfig;

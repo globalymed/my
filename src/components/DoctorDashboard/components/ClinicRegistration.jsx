@@ -212,7 +212,7 @@ const ClinicRegistration = () => {
   const [success, setSuccess] = useState('');
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [submissionAcknowledgment, setSubmissionAcknowledgment] = useState(false);
-  const [draftId, setDraftId] = useState(localStorage.getItem('clinicRegistrationDraftId') || '');
+  const [draftId, setDraftId] = useState(''); // Initialize empty, will be set from localStorage only if valid
 
   // Step state
   const [basic, setBasic] = useState({
@@ -295,6 +295,12 @@ const ClinicRegistration = () => {
       
       setDoctor(parsed);
       
+      // Initialize draftId from localStorage only after doctor is validated
+      const storedDraftId = localStorage.getItem('clinicRegistrationDraftId');
+      if (storedDraftId) {
+        setDraftId(storedDraftId);
+      }
+      
       // Verify latest clinicIds from Firestore and redirect if already has clinic
       if (parsed?.id) {
         (async () => {
@@ -321,6 +327,36 @@ const ClinicRegistration = () => {
       navigate('/doctor-login');
     }
   }, [navigate]);
+
+  // Validate draftId on component mount
+  useEffect(() => {
+    const validateDraftId = async () => {
+      if (draftId) {
+        try {
+          const draftDoc = await getDoc(doc(db, 'clinics', draftId));
+          if (!draftDoc.exists()) {
+            console.log('Draft document no longer exists, clearing localStorage');
+            localStorage.removeItem('clinicRegistrationDraftId');
+            setDraftId('');
+            setError('Previous draft no longer exists. Starting a fresh registration.');
+          } else {
+            console.log('Draft document exists, can continue editing');
+            setSuccess('Continuing with existing draft.');
+          }
+        } catch (error) {
+          console.error('Error validating draft document:', error);
+          // If there's an error, clear the draftId to be safe
+          localStorage.removeItem('clinicRegistrationDraftId');
+          setDraftId('');
+          setError('Unable to validate draft. Starting a fresh registration.');
+        }
+      }
+    };
+
+    if (draftId) {
+      validateDraftId();
+    }
+  }, []); // Run only once on mount
 
   const progress = useMemo(() => (activeStep + 1) * 25, [activeStep]);
 
@@ -507,6 +543,16 @@ const ClinicRegistration = () => {
 
     try {
       console.log('Starting clinic registration process for doctor:', doctor.id);
+      console.log('Finalize mode:', finalize);
+      
+      // If this is a final submission, clear any existing draftId to ensure a new document is created
+      let currentDraftId = draftId;
+      if (finalize) {
+        console.log('Final submission - clearing draftId to create new document');
+        localStorage.removeItem('clinicRegistrationDraftId');
+        setDraftId('');
+        currentDraftId = '';
+      }
       
       // Get selected specialty (single value)
       const selectedSpecialty = Object.keys(basic.specialties).find(key => basic.specialties[key]);
@@ -627,20 +673,40 @@ const ClinicRegistration = () => {
         updatedAt: serverTimestamp ? serverTimestamp() : new Date()
       };
 
-      if (draftId) {
-        await updateDoc(doc(db, 'clinics', draftId), clinicData);
-        console.log('Clinic draft updated', { draftId, clinicData });
+      if (currentDraftId) {
+        // Check if the draft document still exists before trying to update
+        const draftDoc = await getDoc(doc(db, 'clinics', currentDraftId));
+        if (draftDoc.exists()) {
+          await updateDoc(doc(db, 'clinics', currentDraftId), clinicData);
+          console.log('Clinic draft updated', { draftId: currentDraftId, clinicData });
+        } else {
+          // Document doesn't exist, clear the draftId and create new document
+          console.log('Draft document no longer exists, creating new document');
+          localStorage.removeItem('clinicRegistrationDraftId');
+          setDraftId('');
+          const res = await addDoc(collection(db, 'clinics'), clinicData);
+          if (!finalize) {
+            setDraftId(res.id);
+            localStorage.setItem('clinicRegistrationDraftId', res.id);
+          }
+          console.log('New clinic document created', { docId: res.id, clinicData });
+        }
       } else {
         const res = await addDoc(collection(db, 'clinics'), clinicData);
-        setDraftId(res.id);
-        localStorage.setItem('clinicRegistrationDraftId', res.id);
-        console.log('Clinic draft created', { docId: res.id, clinicData });
+        if (!finalize) {
+          setDraftId(res.id);
+          localStorage.setItem('clinicRegistrationDraftId', res.id);
+        }
+        console.log('Clinic document created', { docId: res.id, clinicData });
       }
 
       setSuccess(finalize ? 'Registration submitted successfully for review.' : 'Draft saved successfully.');
       if (finalize) {
         setConfirmOpen(false);
         setSubmissionAcknowledgment(true);
+        // Clear localStorage completely after successful final submission
+        localStorage.removeItem('clinicRegistrationDraftId');
+        setDraftId('');
       }
     } catch (e) {
       console.error('Clinic save failed', e);
@@ -652,6 +718,11 @@ const ClinicRegistration = () => {
         setError(`File upload failed: ${e.message}. Please check your internet connection and try again.`);
       } else if (e.message.includes('storage/unauthorized')) {
         setError('Permission denied. Please contact support or try logging in again.');
+      } else if (e.message.includes('No document to update')) {
+        setError('Draft document no longer exists. The form will create a new document. Please try saving again.');
+        // Clear the invalid draftId
+        localStorage.removeItem('clinicRegistrationDraftId');
+        setDraftId('');
       } else {
         setError(`Failed to save: ${e.message}. Please try again.`);
       }
@@ -662,6 +733,85 @@ const ClinicRegistration = () => {
 
   const next = () => setActiveStep((s) => Math.min(3, s + 1));
   const prev = () => setActiveStep((s) => Math.max(0, s - 1));
+
+  // Function to start a completely fresh registration
+  const startFreshRegistration = () => {
+    console.log('Starting fresh clinic registration');
+    localStorage.removeItem('clinicRegistrationDraftId');
+    setDraftId('');
+    setError('');
+    setSuccess('Starting fresh clinic registration.');
+    setActiveStep(0);
+    
+    // Reset all form data to initial state
+    setBasic({
+      name: '',
+      contactNumber: '',
+      specialties: {
+        ivf: false,
+        hair: false,
+        cosmetic: false,
+        dental: false
+      },
+      address: '',
+      location: '',
+      state: '',
+      pincode: '',
+      country: 'India',
+      website: ''
+    });
+    
+    setRegulatory({
+      clinicRegistrationNumber: '',
+      issuingAuthority: '',
+      ownerName: '',
+      panOrGst: '',
+      ownerIdProofFile: [],
+      registrationCertFile: [],
+      addressProofFile: []
+    });
+    
+    setFacilities({
+      numConsultRooms: 0,
+      numOperationTheatres: 0,
+      amenities: {
+        wifi: false,
+        parking: false,
+        wheelchair: false,
+        acWaiting: false,
+        pharmacy: false,
+        other: false
+      },
+      languages: {
+        english: false,
+        hindi: false,
+        bengali: false,
+        tamil: false,
+        punjabi: false,
+        telugu: false,
+        other: false
+      },
+      emergency: false,
+      hours: DAYS.reduce((acc, day) => {
+        acc[day] = { open: '09:00', close: '18:00', closed: false };
+        return acc;
+      }, {})
+    });
+
+    setMedia({
+      exteriorPhoto: [],
+      interiorPhoto: [],
+      logo: [],
+      staffPhotos: []
+    });
+    
+    setValidationErrors({});
+  };
+
+  // Function to clear draft and start fresh
+  const clearDraft = () => {
+    startFreshRegistration();
+  };
 
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', bgcolor: '#f8fafc', p: { xs: 1, md: 3 } }}>
@@ -682,7 +832,26 @@ const ClinicRegistration = () => {
           <Box sx={{ bgcolor: '#0ea5b7', color: 'white', borderRadius: 2, p: 2 }}>
             <Stack direction="row" justifyContent="space-between" alignItems="center">
               <Typography fontWeight={800}>Clinic Registration</Typography>
-              <Typography variant="caption" fontWeight={700}>Progress {progress}%</Typography>
+              <Stack direction="row" spacing={1} alignItems="center">
+                {draftId && (
+                  <Button 
+                    size="small" 
+                    variant="outlined" 
+                    onClick={clearDraft}
+                    sx={{ 
+                      color: 'white', 
+                      borderColor: 'white', 
+                      '&:hover': { 
+                        borderColor: 'white', 
+                        bgcolor: 'rgba(255,255,255,0.1)' 
+                      } 
+                    }}
+                  >
+                    Clear Draft
+                  </Button>
+                )}
+                <Typography variant="caption" fontWeight={700}>Progress {progress}%</Typography>
+              </Stack>
             </Stack>
             <LinearProgress variant="determinate" value={progress} sx={{ mt: 1, bgcolor: 'rgba(255,255,255,0.3)', '& .MuiLinearProgress-bar': { bgcolor: 'white' } }} />
             <Stack direction="row" justifyContent="space-around" mt={2}>
