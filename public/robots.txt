@@ -1,0 +1,29 @@
+User-agent: *
+Allow: /
+
+# Allow all search engines to crawl the production site
+# Block staging and test deployments
+Disallow: /admin/
+Disallow: /doctor-dashboard
+Disallow: /patient-dashboard-ai
+Disallow: /login
+Disallow: /doctor-login
+Disallow: /newLogin
+Disallow: /newSignup
+Disallow: /confirm-email
+Disallow: /clinic-registration
+
+# Block test deployments and staging URLs
+User-agent: *
+Disallow: /
+
+# Override for production domain only
+User-agent: *
+Host: medyatra.space
+Allow: /
+
+# Sitemap reference
+Sitemap: https://medyatra.space/sitemap.xml
+
+# Crawl-delay for respectful crawling
+Crawl-delay: 1
