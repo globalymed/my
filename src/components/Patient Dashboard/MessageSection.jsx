@@ -70,15 +70,37 @@ const MessagesSection = ({user}) => {
   const [activeTab, setActiveTab] = useState(0) 
   const [supportCategory, setSupportCategory] = useState("")
   const [supportMessage, setSupportMessage] = useState("")
-  const [supportQueries, setSupportQueries] = useState([]);  
 
-  
-
-  // console.log("User Data in messageSection:", user);
-
-  const handleTabChange = (event, newValue) => {
+    const handleTabChange = (event, newValue) => {
     setActiveTab(newValue)
   }
+
+  const handleSubmit = async () => {
+    if (supportMessage.trim() === "" || supportCategory === "") {
+      alert("Please enter a question and select a category.");
+      return;
+    }
+    console.log('Submitting:', { supportMessage, supportCategory });
+
+    try {
+      const supportId = await addSupportMessage(user.id, supportMessage, "pending");
+      if (supportId) {
+        console.log(`Support message created with ID: ${supportId}`);
+        alert("Your question has been submitted successfully!");
+        setSupportCategory("");
+        setSupportMessage("");
+      }
+      console.log('Submitting:', { supportMessage, supportCategory });
+          setSupportCategory("");
+          setSupportMessage("");
+        
+      } 
+      catch (error) {
+        console.error("Failed to submit the query:", error);
+        alert("Failed to submit. Please try again later.");
+      }
+      
+  } 
 
   const ChatMessage = ({ isUser, avatar, name, message, time, isAI = false }) => (
     <Box
@@ -333,148 +355,198 @@ const MessagesSection = ({user}) => {
     </Grid>
   )
 
-  const Support = () => {
-  const handleSubmit = async () => {
-  if (supportMessage.trim() === "" || supportCategory === "") {
-    alert("Please enter a question and select a category.");
-    return;
-  }
-  console.log('Submitting:', { supportMessage, supportCategory });
+  const Support = () => (
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={6}>
+          <Card>
+            <CardHeader
+              title="Ask a Question"
+              subheader="Get help from our support team"
+            />
+            <CardContent>
+              <Box display="flex" flexDirection="column" gap={2}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>Category</InputLabel>
+                  <Select
+                    value={supportCategory}
+                    label="Category"
+                    onChange={(e) => setSupportCategory(e.target.value)}
+                  >
+                    <MenuItem value="medical">Medical Question</MenuItem>
+                    <MenuItem value="travel">Travel Assistance</MenuItem>
+                    <MenuItem value="documentation">Documentation Help</MenuItem>
+                    <MenuItem value="billing">Billing Inquiry</MenuItem>
+                    <MenuItem value="technical">Technical Support</MenuItem>
+                  </Select>
+                </FormControl>
+                <TextField
+                  fullWidth
+                  label="Your Question"
+                  multiline
+                  rows={3}
+                  placeholder="Describe your question or concern..."
+                  value={supportMessage}
+                  onChange={(e) => setSupportMessage(e.target.value)}
+                />
+                <Button variant="contained" fullWidth onClick={handleSubmit}>
+                  Submit Question
+                </Button>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <Card>
+            <CardHeader title="Support History" />
+            <CardContent>
+              <Box sx={{ height: 256, overflow: "auto" }}>
+                <List>
+                  <ListItem
+                    sx={{
+                      border: 1,
+                      borderColor: "divider",
+                      borderRadius: 1,
+                      mb: 1.5,
+                      flexDirection: "column",
+                      alignItems: "flex-start"
+                    }}
+                  >
+                    <Box display="flex" justifyContent="space-between" width="100%" mb={1}>
+                      <Typography variant="subtitle2">Travel Insurance Claim</Typography>
+                      <Chip label="Resolved" size="small" color="success" />
+                    </Box>
+                    <Typography variant="caption" color="text.secondary" mb={0.5}>
+                      How to submit travel insurance claim for medical expenses
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Dec 10, 2024
+                    </Typography>
+                  </ListItem>
 
-  try {
-    const supportId = await addSupportMessage(user.id, supportMessage, "pending");
-    if (supportId) {
-      console.log(`Support message created with ID: ${supportId}`);
-      alert("Your question has been submitted successfully!");
-      setSupportCategory("");
-      setSupportMessage("");
-    }
-  } catch (error) {
-    console.error("Failed to submit the query:", error);
-    alert("Failed to submit. Please try again later.");
-  }
-}
+                  <ListItem
+                    sx={{
+                      border: 1,
+                      borderColor: "divider",
+                      borderRadius: 1,
+                      mb: 1.5,
+                      flexDirection: "column",
+                      alignItems: "flex-start"
+                    }}
+                  >
+                    <Box display="flex" justifyContent="space-between" width="100%" mb={1}>
+                      <Typography variant="subtitle2">Airport Assistance</Typography>
+                      <Chip label="In Progress" size="small" color="warning" />
+                    </Box>
+                    <Typography variant="caption" color="text.secondary" mb={0.5}>
+                      Request for wheelchair assistance at Delhi airport
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Dec 12, 2024
+                    </Typography>
+                  </ListItem>
 
-  return (
-    <Grid container spacing={3}>
-      <Grid item xs={12} md={6}>
-        <Card>
-          <CardHeader
-            title="Ask a Question"
-            subheader="Get help from our support team"
-          />
-          <CardContent>
-            <Box display="flex" flexDirection="column" gap={2}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Category</InputLabel>
-                <Select
-                  value={supportCategory}
-                  label="Category"
-                  onChange={(e) => setSupportCategory(e.target.value)}
-                >
-                  <MenuItem value="medical">Medical Question</MenuItem>
-                  <MenuItem value="travel">Travel Assistance</MenuItem>
-                  <MenuItem value="documentation">Documentation Help</MenuItem>
-                  <MenuItem value="billing">Billing Inquiry</MenuItem>
-                  <MenuItem value="technical">Technical Support</MenuItem>
-                </Select>
-              </FormControl>
-              <TextField
-                fullWidth
-                label="Your Question"
-                multiline
-                rows={3}
-                placeholder="Describe your question or concern..."
-                value={supportMessage}
-                onChange={(e) => setSupportMessage(e.target.value)}
-              />
-              <Button variant="contained" fullWidth onClick={handleSubmit}>
-                Submit Question
-              </Button>
-            </Box>
-          </CardContent>
-        </Card>
+                  <ListItem
+                    sx={{
+                      border: 1,
+                      borderColor: "divider",
+                      borderRadius: 1,
+                      flexDirection: "column",
+                      alignItems: "flex-start"
+                    }}
+                  >
+                    <Box display="flex" justifyContent="space-between" width="100%" mb={1}>
+                      <Typography variant="subtitle2">Document Upload Issue</Typography>
+                      <Chip label="Resolved" size="small" color="success" />
+                    </Box>
+                    <Typography variant="caption" color="text.secondary" mb={0.5}>
+                      Unable to upload passport scan
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Dec 8, 2024
+                    </Typography>
+                  </ListItem>
+                </List>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <Card>
+            <CardHeader title="Support History" />
+            <CardContent>
+              <Box sx={{ height: "60vh", overflow: "auto" }}>
+                <List>
+                  <ListItem
+                    sx={{
+                      border: 1,
+                      borderColor: "divider",
+                      borderRadius: 1,
+                      mb: 1.5,
+                      flexDirection: "column",
+                      alignItems: "flex-start"
+                    }}
+                  >
+                    <Box display="flex" justifyContent="space-between" width="100%" mb={1}>
+                      <Typography variant="subtitle2">Travel Insurance Claim</Typography>
+                      <Chip label="Resolved" size="small" color="success" />
+                    </Box>
+                    <Typography variant="caption" color="text.secondary" mb={0.5}>
+                      How to submit travel insurance claim for medical expenses
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Dec 10, 2024
+                    </Typography>
+                  </ListItem>
+
+                  <ListItem
+                    sx={{
+                      border: 1,
+                      borderColor: "divider",
+                      borderRadius: 1,
+                      mb: 1.5,
+                      flexDirection: "column",
+                      alignItems: "flex-start"
+                    }}
+                  >
+                    <Box display="flex" justifyContent="space-between" width="100%" mb={1}>
+                      <Typography variant="subtitle2">Airport Assistance</Typography>
+                      <Chip label="In Progress" size="small" color="warning" />
+                    </Box>
+                    <Typography variant="caption" color="text.secondary" mb={0.5}>
+                      Request for wheelchair assistance at Delhi airport
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Dec 12, 2024
+                    </Typography>
+                  </ListItem>
+
+                  <ListItem
+                    sx={{
+                      border: 1,
+                      borderColor: "divider",
+                      borderRadius: 1,
+                      flexDirection: "column",
+                      alignItems: "flex-start"
+                    }}
+                  >
+                    <Box display="flex" justifyContent="space-between" width="100%" mb={1}>
+                      <Typography variant="subtitle2">Document Upload Issue</Typography>
+                      <Chip label="Resolved" size="small" color="success" />
+                    </Box>
+                    <Typography variant="caption" color="text.secondary" mb={0.5}>
+                      Unable to upload passport scan
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Dec 8, 2024
+                    </Typography>
+                  </ListItem>
+                </List>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
       </Grid>
-
-
-      <Grid item xs={12} md={6}>
-        <Card>
-          <CardHeader title="Support History" />
-          <CardContent>
-            <Box sx={{ height: "60vh", overflow: "auto" }}>
-              <List>
-                <ListItem
-                  sx={{
-                    border: 1,
-                    borderColor: "divider",
-                    borderRadius: 1,
-                    mb: 1.5,
-                    flexDirection: "column",
-                    alignItems: "flex-start"
-                  }}
-                >
-                  <Box display="flex" justifyContent="space-between" width="100%" mb={1}>
-                    <Typography variant="subtitle2">Travel Insurance Claim</Typography>
-                    <Chip label="Resolved" size="small" color="success" />
-                  </Box>
-                  <Typography variant="caption" color="text.secondary" mb={0.5}>
-                    How to submit travel insurance claim for medical expenses
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Dec 10, 2024
-                  </Typography>
-                </ListItem>
-
-                <ListItem
-                  sx={{
-                    border: 1,
-                    borderColor: "divider",
-                    borderRadius: 1,
-                    mb: 1.5,
-                    flexDirection: "column",
-                    alignItems: "flex-start"
-                  }}
-                >
-                  <Box display="flex" justifyContent="space-between" width="100%" mb={1}>
-                    <Typography variant="subtitle2">Airport Assistance</Typography>
-                    <Chip label="In Progress" size="small" color="warning" />
-                  </Box>
-                  <Typography variant="caption" color="text.secondary" mb={0.5}>
-                    Request for wheelchair assistance at Delhi airport
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Dec 12, 2024
-                  </Typography>
-                </ListItem>
-
-                <ListItem
-                  sx={{
-                    border: 1,
-                    borderColor: "divider",
-                    borderRadius: 1,
-                    flexDirection: "column",
-                    alignItems: "flex-start"
-                  }}
-                >
-                  <Box display="flex" justifyContent="space-between" width="100%" mb={1}>
-                    <Typography variant="subtitle2">Document Upload Issue</Typography>
-                    <Chip label="Resolved" size="small" color="success" />
-                  </Box>
-                  <Typography variant="caption" color="text.secondary" mb={0.5}>
-                    Unable to upload passport scan
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Dec 8, 2024
-                  </Typography>
-                </ListItem>
-              </List>
-            </Box>
-          </CardContent>
-        </Card>
-      </Grid>
-    </Grid>
-  )
-}
+    );
 
   const Emergency = () => (
     <Card>
@@ -800,6 +872,6 @@ const MessagesSection = ({user}) => {
       </Box>
     </Box>
   )
-}
+} 
 
 export default MessagesSection;

@@ -16,6 +16,13 @@ const HeroSection = () => {
         { label: 'Trusted by Hospitals', icon: <Verified fontSize="small" /> }
     ];
 
+    const hospitals = [
+        {label: "Fortis", link: "https://www.fortishealthcare.com/"},
+        {label: "Max", link: "https://www.maxhealthcare.in/"},
+        {label: "Apollo", link: "https://www.apollohospitals.com/"},
+        {label: "AIIMS", link: "https://aiims.edu/index.php/en"},
+    ]
+
     return (
         <Box sx={{
             px: { xs: 2, md: 8 },
@@ -43,19 +50,7 @@ const HeroSection = () => {
                                 }
                             }}
                         >
-                            World-Class Medical
-                        </Typography>
-                        <Typography
-                            variant="h3"
-                            component="h1"
-                            sx={{
-                                fontWeight: 700, mb: 2, fontSize: { xs: '2rem', md: '3rem' }, color: "#333333", textAlign: {
-                                    xs: 'center', md: 'left'
-                                }
-                            }}
-                        >
-                            Care Made Simple
-                            & Affordable.
+                            Compare Treatment Costs in India & Get Your Custom Plan and Save Up to 70% on World-Class Care
                         </Typography>
 
                         <Typography sx={{
@@ -66,7 +61,7 @@ const HeroSection = () => {
                                 xs: 'auto', md: 0
                             },
                         }}>
-                            From diagnosis to travel – our AI assistant ensures effortless treatment planning in India's top hospitals.
+                            Speak to our MedYatra AI companion – We’ve Helped 10,000+ People Like You
                         </Typography>
 
                         {/* CTA Buttons */}
@@ -156,22 +151,34 @@ const HeroSection = () => {
                             Trusted by leading healthcare partners:
                         </Typography>
 
-                        <Stack direction="row" spacing={2} flexWrap="wrap"
+                       <Stack
+                            direction="row"
+                            spacing={2}
+                            flexWrap="wrap"
                             sx={{
-                                alignContent: 'center',
-                                justifyContent: { xs: 'center', md: 'flex-start' }, // center on mobile
+                                alignContent: "center",
+                                justifyContent: { xs: "center", md: "flex-start" }, // center on mobile
                             }}
-                        >
-                            {['Apollo', 'Fortis', 'Max', 'AIIMS'].map((name) => (
+                            >
+                            {hospitals.map((hospital) => (
                                 <Chip
-                                    key={name}
-                                    label={name}
-                                    variant="outlined"
-                                    sx={{
-                                        backgroundColor: '#EEFAF9',
-                                        color: '#333333',
-                                        borderColor: "#28938C"
-                                    }}
+                                key={hospital.label}
+                                label={hospital.label}
+                                variant="outlined"
+                                component="a" // Makes it behave like a link
+                                href={hospital.link}
+                                target="_blank" // Open in new tab
+                                clickable // Adds hover effect
+                                sx={{
+                                    backgroundColor: "#EEFAF9",
+                                    color: "#333333",
+                                    borderColor: "#28938C",
+                                    textDecoration: "none",
+                                    "&:hover": {
+                                    textDecoration: "none", 
+                                    color: "#333333"// also remove on hover
+                                    },
+                                }}
                                 />
                             ))}
                         </Stack>

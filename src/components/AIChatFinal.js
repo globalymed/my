@@ -40,6 +40,7 @@ import {
   InfoOutlined, ArrowBackIosNew, ArrowForwardIos
 } from '@mui/icons-material';
 
+
 const FALLBACK_RESPONSE = "I'd like to help you find the right specialist. Could you tell me more about your symptoms or what type of medical treatment you're looking for?";
 
 import { collection, getDocs } from 'firebase/firestore';
@@ -143,6 +144,10 @@ const AIChatFinal = () => {
       text: "I need fertility consultation",
       type: "fertility",
       color: "#4CAF50"
+    },
+    {
+      text: "Other Health Issue",
+      type: "new"
     }
   ];
 
@@ -838,7 +843,7 @@ const AIChatFinal = () => {
 
           {/* Subtitle */}
           <Typography variant="subtitle1" color="#000">
-            Empowering Your Health Journey With AI
+          🏆 Trusted by 5,000+ patients from Bangladesh, Iraq, Africa & beyond
           </Typography>
         </Box>
       )}
@@ -901,6 +906,7 @@ const AIChatFinal = () => {
                 </Box>
                 {action.text}
               </Button>
+              
             ))}
           </Box>
         </Box>

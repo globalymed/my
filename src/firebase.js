@@ -1401,6 +1401,34 @@ export const addSupportMessage = async (userId, question, status = 'In Progress'
   }
 };
 
+// export const getSupportMessagesForUser = async (userId) => {
+//   try {
+//     const supportRef = collection(
+//       db,
+//       "queries",
+//       "patientdashboard",
+//       "supportqueries"
+//     );
+
+//     const q = query(
+//       supportRef,
+//       where("userId", "==", userId),
+//       orderBy("createdAt", "desc")
+//     );
+
+//     const querySnapshot = await getDocs(q);
+
+//     return querySnapshot.docs.map((doc) => ({
+//       id: doc.id,
+//       ...doc.data(),
+//     }));
+//   } catch (error) {
+//     console.error("Error fetching support messages:", error);
+//     return [];
+//   }
+// };
+
+
 // ====== Doctor Appointment Functions ======
 
 // Get appointments for a doctor

@@ -34,7 +34,7 @@ import TermsOfService from './TermsOfService.jsx';
 import PrivacyPolicy from './PrivacyPolicy.jsx';
 import CompareCost from './compareCost.jsx';
 import PostHogPageViewTracker from '../utils/PostHogPageViewTracker';
-import DentalTreatment from '../components/Treatment/DentalTreatment';
+import DentalTreatmentPageMUI from '../components/Treatment/DentalTreatment';
 import IVFTreatment from '../components/Treatment/IVFTreatment';
 import HairTreatment from '../components/Treatment/HairTreatment';
 import CosmeticsTreatment from '../components/Treatment/CosmeticsTreatment';
@@ -47,6 +47,8 @@ import DoctorsPage from '../components/AdminDashboard/doctors/DoctorsPage';
 import { AuthGuard } from '../components/AdminDashboard/AuthGuard';
 import SingleDoctorPage from '../components/AdminDashboard/doctors/SingleDoctorPage';
 import PendingDoctors from '../components/AdminDashboard/doctors/PendingDoctorsPage';
+
+import AboutPage from '../pages/Aboutus';
 
 // Create a component to render the doctor dashboard with logout functionality
 const DoctorDashboard = () => {
@@ -213,7 +215,7 @@ const App = () => {
                 <Route path="/free-consultation" element={<FreeConsultation />} />
                 <Route path="/contact" element={<ContactUs />} />
                 <Route path="/compare-cost" element={<CompareCost />} />
-                <Route path="/treatment/dental" element={<DentalTreatment />} />
+                <Route path="/treatment/dental" element={<DentalTreatmentPageMUI />} />
                 <Route path="/treatment/ivf" element={<IVFTreatment />} />
                 <Route path="/treatment/hair" element={<HairTreatment />} />
                 <Route path="/treatment/cosmetics" element={<CosmeticsTreatment />} />
@@ -254,6 +256,7 @@ const App = () => {
                 } />
                 <Route path="/terms" element={<TermsOfService />} />
                 <Route path="/privacy" element={<PrivacyPolicy />} />
+                <Route path="/about" element={<AboutPage />} />
                 <Route path="/clinic-registration" element={
                   <DoctorProtectedRoute>
                     <ClinicRegistration />
