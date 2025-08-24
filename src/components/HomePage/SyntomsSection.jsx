@@ -39,19 +39,19 @@ const Features = [
   {
     title: 'Smart Symptom Analysis',
     description:
-      'Our AI understands natural language and medical terminology to accurately assess your symptoms.',
+      'AI detects possible conditions & suggests treatments in India or abroad.',
     icon: <RiRobot2Line sx={{ color: '#1D4C4B' }} />,
   },
   {
     title: 'Doctor Matching',
     description:
-      'Get matched with specialists based on your symptoms, location, and insurance preferences.',
+      'Verified specialists based on your symptoms, budget & travel needs.',
     icon: <CiStethoscope sx={{ color: '#1D4C4B' }} />,
   },
   {
     title: 'Available Anytime',
     description:
-      'Get instant medical guidance and book appointments 24/7, even during emergencies.',
+      '24/7 medical assistance, even in emergencies , free consultation for new users.',
     icon: <TbClock24 sx={{ color: '#1D4C4B' }} />,
   },
 ];
@@ -66,11 +66,11 @@ const SymptomChecker = () => {
         textAlign="center"
         mb={1}
       >
-        Try Our AI Symptom Checker
+        AI-Powered Symptom Checker for Fast Medical Treatment in India
       </Typography>
       <Typography variant="body1" textAlign="center" color="#e0f7f6" mb={6}>
-        Experience how our AI understands your symptoms and matches you with
-        the right specialists
+       Our AI health checker instantly analyzes your symptoms and connects you with top Indian hospitals, doctors, and affordable treatment packages, <br />
+       trusted by patients from 20+ countries.
       </Typography>
 
       <Grid container gap={4} justifyContent="center">
@@ -85,7 +85,9 @@ const SymptomChecker = () => {
             background: 'linear-gradient(to bottom right, #ffffff, #fde2e4, #e0c3fc)',
           }
         }>
+          
           <AIChatFinal />
+          
         </Grid>
 
         {/* Feature Points */}
@@ -123,6 +125,7 @@ const SymptomChecker = () => {
                     {feature.description}
                   </Typography>
                 </Box>
+                
               </Paper>
             ))}
           </Stack>

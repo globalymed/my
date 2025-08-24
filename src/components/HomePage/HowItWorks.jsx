@@ -11,19 +11,19 @@ const steps = [
     icon: <ChatBubbleOutline fontSize="large" sx={{ color: '#1D4645' }} />,
     title: 'Describe Symptoms',
     description:
-      'Tell our AI about your health concerns in simple language. Our intelligent system understands medical terminology and common symptoms.',
+      'Share your health concerns in a simple language, no medical jargon needed. Our advanced AI understands medical terms and everyday symptoms to guide your care.',
   },
   {
     icon: <PeopleAlt fontSize="large" sx={{ color: '#1D4645' }} />,
     title: 'Get Matched with Best Doctor',
     description:
-      'Our AI analyzes your symptoms, location, and preferences to match you with the most suitable verified doctors in your area.',
+      'Our AI instantly analyzes your symptoms, location, and preferences to connect you with top-rated, verified doctors in your area or anywhere in India.',
   },
   {
     icon: <EventAvailable fontSize="large" sx={{ color: '#1D4645' }} />,
     title: 'Schedule & Consult',
     description:
-      'Book your appointment instantly and consult with your doctor online or in-person based on your preference.',
+      'Book your appointment in seconds. Choose an online video consultation or an in-person visit at your convenience.',
   },
 ];
 

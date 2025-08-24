@@ -21,6 +21,8 @@ import {
   LinkedIn,
   ExpandMore as ExpandMoreIcon,
 } from '@mui/icons-material';
+import { Link as RouterLink } from 'react-router-dom'; 
+
 
 const socialLinks = [
   {
@@ -64,26 +66,24 @@ const footerLinks = [
   },
 ];
 
-
-
 const Footer = () => {
   const isMobile = window.innerWidth < 600; // Simple check for mobile devices
+
   return (
     <Box component="footer" sx={{ backgroundColor: 'black', color: 'white', pt: 2 }}>
       <Box maxWidth="lg" mx="auto" sx={{ px: { xs: 2, md: 4 } }}>
-
         {/* Main Footer Content */}
         <Box sx={{ px: { xs: 2, md: 8 }, py: 4 }}>
           <Grid container spacing={4}>
             <Grid item xs={12} md={4}>
-              <a href="https://medyatra.space" style={{ textDecoration: 'none', color: 'inherit'}}>
+              <a href="https://medyatra.space" style={{ textDecoration: 'none', color: 'inherit' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                   <Avatar
                     src="/logo.webp"
                     alt="MedYatra Logo"
                     sx={{ width: 36, height: 36, mr: 1 }}
                   />
-                  <Typography variant="h6" component="div" sx={{ fontWeight: 700}}>
+                  <Typography variant="h6" component="div" sx={{ fontWeight: 700 }}>
                     MedYatra
                   </Typography>
                 </Box>
@@ -141,6 +141,7 @@ const Footer = () => {
               </Box>
             </Grid>
 
+            {/* Footer Sections */}
             {footerLinks.map((section, index) => (
               <Grid item xs={12} sm={6} md={2} key={index}>
                 {isMobile ? (
@@ -150,10 +151,7 @@ const Footer = () => {
                     sx={{ backgroundColor: "transparent", boxShadow: "none", color: 'white' }}
                   >
                     <AccordionSummary
-                      expandIcon={<ExpandMoreIcon sx={{
-                        color: 'white'
-                      }
-                      } />}
+                      expandIcon={<ExpandMoreIcon sx={{ color: 'white' }} />}
                       sx={{
                         px: 0,
                         minHeight: "unset",
@@ -168,7 +166,17 @@ const Footer = () => {
                       <Stack spacing={0.8}>
                         {section.links.map((link, i) => (
                           <Typography key={i} variant="body2">
-                            {link}
+                            {link === "About Us" ? (
+                              <Link
+                                component={RouterLink}
+                                to="/about"
+                                sx={{ color: 'inherit', textDecoration: 'underline', mx: 1  }}
+                              >
+                                {link}
+                              </Link>
+                            ) : (
+                              link
+                            )}
                           </Typography>
                         ))}
                       </Stack>
@@ -182,7 +190,17 @@ const Footer = () => {
                     <Stack spacing={0.8}>
                       {section.links.map((link, i) => (
                         <Typography key={i} variant="body2">
-                          {link}
+                          {link === "About Us" ? (
+                            <Link
+                              component={RouterLink}
+                              to="/about"
+                              sx={{ color: 'inherit', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+                            >
+                              {link}
+                            </Link>
+                          ) : (
+                            link
+                          )}
                         </Typography>
                       ))}
                     </Stack>
@@ -210,7 +228,6 @@ const Footer = () => {
                   key={index}
                   sx={{
                     color: 'white',
-                    // backgroundColor: 'white',
                     borderRadius: 1,
                     mx: 0.5,
                     transition: 'transform 0.3s ease-in-out',

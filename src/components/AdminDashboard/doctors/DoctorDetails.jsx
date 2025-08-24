@@ -42,7 +42,7 @@ import { getStorage, ref, listAll, getDownloadURL } from 'firebase/storage';
 import { storage } from '../../../firebase.js';
 
 import { useAuth } from '../auth/context.js';
-import { getDoctorById, updateDoctorVerification, getClinicByDoctorId } from '../../../firebase.js';
+import { getDoctorById, updateDoctorVerification, getClinicByDoctorId, generateAvailabilityDocuments } from '../../../firebase.js';
 import { format } from 'date-fns';
 
 /**
@@ -69,6 +69,7 @@ const DoctorDetails = ({ doctorId }) => {
     const [actionType, setActionType] = useState('');
     const [loadingAction, setLoadingAction] = useState(false);
     const [actionError, setActionError] = useState(null);
+    const [availabilityGenerationStatus, setAvailabilityGenerationStatus] = useState('');
 
     const fetchDoctorDetails = async () => {
         setLoading(true);
@@ -166,8 +167,13 @@ const DoctorDetails = ({ doctorId }) => {
 
         setLoadingAction(true);
         setActionError(null);
+        setAvailabilityGenerationStatus('');
+        
         try {
             const newIsVerifiedStatus = actionType === 'verify';
+            
+            // Update doctor verification status
+            setAvailabilityGenerationStatus('Updating doctor verification status...');
             await updateDoctorVerification(
                 doctor.id,
                 newIsVerifiedStatus,
@@ -176,12 +182,48 @@ const DoctorDetails = ({ doctorId }) => {
                 modalReason,
                 modalNotes
             );
+
+            // If verifying the doctor, generate availability documents
+            if (actionType === 'verify') {
+                try {
+                    setAvailabilityGenerationStatus('Fetching clinic information...');
+                    console.log('Fetching clinic data for doctor:', doctor.id);
+                    const clinic = await getClinicByDoctorId(doctor.id);
+                    
+                    if (clinic) {
+                        setAvailabilityGenerationStatus('Generating 90 availability documents...');
+                        console.log('Clinic found:', clinic.id, 'Generating availability documents...');
+                        const documentsCreated = await generateAvailabilityDocuments(clinic.id, clinic);
+                        console.log(`Successfully generated ${documentsCreated} availability documents`);
+                        
+                        setAvailabilityGenerationStatus(`Successfully generated ${documentsCreated} availability documents!`);
+                        setActionError(null);
+                    } else {
+                        console.warn('No clinic found for doctor:', doctor.id);
+                        setActionError('Doctor verified successfully, but no clinic found to generate availability documents.');
+                        setAvailabilityGenerationStatus('');
+                    }
+                } catch (availabilityError) {
+                    console.error('Error generating availability documents:', availabilityError);
+                    setActionError(`Doctor verified successfully, but failed to generate availability documents: ${availabilityError.message}`);
+                    setAvailabilityGenerationStatus('');
+                }
+            }
+
             // Refresh doctor details after action
+            setAvailabilityGenerationStatus('Refreshing doctor details...');
             await fetchDoctorDetails();
-            setIsModalOpen(false);
+            
+            // Clear status and close modal after a brief delay to show success message
+            setTimeout(() => {
+                setAvailabilityGenerationStatus('');
+                setIsModalOpen(false);
+            }, 2000);
+            
         } catch (error) {
             console.error(`Error ${actionType} doctor:`, error);
             setActionError(`Failed to ${actionType} doctor: ${error.message}`);
+            setAvailabilityGenerationStatus('');
         } finally {
             setLoadingAction(false);
         }
@@ -340,7 +382,8 @@ const DoctorDetails = ({ doctorId }) => {
                         doctor.qualifications && doctor.qualifications.length > 0 && (
                             <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
                                 <AcademicCapIcon sx={{ mr: 1.5, color: 'grey.500', flexShrink: 0 }} />
-                                <Typography variant="body1" color="text.primary">Qualifications:
+                                <Box sx={{ flexGrow: 1 }}>
+                                    <Typography variant="body1" color="text.primary" sx={{ mb: 1 }}>Qualifications:</Typography>
                                     <List dense disablePadding>
                                         {doctor.qualifications.map((qual, index) => (
                                             <ListItem key={index} disablePadding sx={{ py: 0.2 }}>
@@ -348,7 +391,7 @@ const DoctorDetails = ({ doctorId }) => {
                                             </ListItem>
                                         ))}
                                     </List>
-                                </Typography>
+                                </Box>
                             </Box>
                         )
                     }
@@ -358,7 +401,8 @@ const DoctorDetails = ({ doctorId }) => {
                         doctor.clinicIds && doctor.clinicIds.length > 0 && (
                             <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
                                 <BuildingOfficeIcon sx={{ mr: 1.5, color: 'grey.500', flexShrink: 0 }} />
-                                <Typography variant="body1" color="text.primary">Clinic/Hospital:
+                                <Box sx={{ flexGrow: 1 }}>
+                                    <Typography variant="body1" color="text.primary" sx={{ mb: 1 }}>Clinic/Hospital:</Typography>
                                     <List dense disablePadding>
                                         {doctor.clinicIds.map((clinic, index) => (
                                             <ListItem key={index} disablePadding sx={{ py: 0.2 }}>
@@ -366,7 +410,7 @@ const DoctorDetails = ({ doctorId }) => {
                                             </ListItem>
                                         ))}
                                     </List>
-                                </Typography>
+                                </Box>
                             </Box>
                         )
                     }
@@ -499,6 +543,16 @@ const DoctorDetails = ({ doctorId }) => {
                                 </Typography>
                                 ?
                             </Typography>
+                            
+                            {actionType === 'verify' && (
+                                <Alert severity="info" sx={{ mb: 2, borderRadius: '8px' }}>
+                                    <Typography variant="body2">
+                                        <strong>Note:</strong> Verifying this doctor will automatically generate 90 availability documents 
+                                        for their clinic based on the clinic's operating hours.
+                                    </Typography>
+                                </Alert>
+                            )}
+                            
                             {actionType === 'unverify' && (
                                 <TextField
                                     label="Reason for Unverification (Required)"
@@ -513,6 +567,7 @@ const DoctorDetails = ({ doctorId }) => {
                                     helperText={actionType === 'unverify' && !modalReason ? 'Reason is required to unverify.' : ''}
                                 />
                             )}
+                            
                             <TextField
                                 label="Additional Notes (Optional)"
                                 fullWidth
@@ -522,6 +577,17 @@ const DoctorDetails = ({ doctorId }) => {
                                 onChange={(e) => setModalNotes(e.target.value)}
                                 placeholder="Any additional details..."
                             />
+                            
+                            {availabilityGenerationStatus && (
+                                <Alert 
+                                    severity={availabilityGenerationStatus.includes('Successfully') ? 'success' : 'info'} 
+                                    sx={{ mt: 2, borderRadius: '8px' }}
+                                >
+                                    <Typography variant="body2">
+                                        {availabilityGenerationStatus}
+                                    </Typography>
+                                </Alert>
+                            )}
                         </Box>
                     )}
                 </DialogContent>

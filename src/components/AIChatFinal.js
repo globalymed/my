@@ -37,13 +37,15 @@ import {
   Mic,
   SmartToy,
   Person,
-  InfoOutlined
+  InfoOutlined, ArrowBackIosNew, ArrowForwardIos
 } from '@mui/icons-material';
+
 
 const FALLBACK_RESPONSE = "I'd like to help you find the right specialist. Could you tell me more about your symptoms or what type of medical treatment you're looking for?";
 
 import { collection, getDocs } from 'firebase/firestore';
-import { db } from '../firebase';
+import { ref, listAll, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '../firebase';
 import { LocationOnOutlined } from '@mui/icons-material';
 
 const AIChatFinal = () => {
@@ -71,6 +73,10 @@ const AIChatFinal = () => {
   const [availableLocations, setAvailableLocations] = useState([]);
   const [isLoadingLocations, setIsLoadingLocations] = useState(true);
 
+  const [clinicImages, setClinicImages] = useState({});
+  const [currentImageIndex, setCurrentImageIndex] = useState({});
+
+
   // Fetch unique locations from clinics collection
   useEffect(() => {
     const fetchLocations = async () => {
@@ -79,14 +85,14 @@ const AIChatFinal = () => {
         const clinicsRef = collection(db, 'clinics');
         const clinicsSnapshot = await getDocs(clinicsRef);
         const locations = new Set();
-        
+
         clinicsSnapshot.forEach((doc) => {
           const clinic = doc.data();
           if (clinic.location) {
             locations.add(clinic.location);
           }
         });
-        
+
         setAvailableLocations(Array.from(locations));
       } catch (error) {
         console.error('Error fetching locations:', error);
@@ -103,13 +109,13 @@ const AIChatFinal = () => {
       ...prev,
       location
     }));
-    
+
     // Add message to chat about selected location
     setMessages(prev => [...prev, {
       text: `I'm in ${location}`,
       sender: 'user'
     }]);
-    
+
     // Clear input field if location was selected from suggestions
     setInputValue('');
   };
@@ -138,6 +144,10 @@ const AIChatFinal = () => {
       text: "I need fertility consultation",
       type: "fertility",
       color: "#4CAF50"
+    },
+    {
+      text: "Other Health Issue",
+      type: "new"
     }
   ];
 
@@ -161,7 +171,7 @@ const AIChatFinal = () => {
           // We'll fall back to local processing when the user sends messages
         }
       } catch (error) {
-      // console.error("Error initializing chat session:", error);
+        // console.error("Error initializing chat session:", error);
 
         // Even on error, we'll show the UI and use local fallbacks
       }
@@ -282,32 +292,32 @@ const AIChatFinal = () => {
         // Extract medical information from the conversation
         const info = await extractMedicalInfo(messages);
         //console.log("Extracted medical info:", info);
-        
+
         // Update the extracted info state
         setExtractedInfo(info);
-        
+
         // Check if we need to show calendar after the user provided location
         if (info.medicalIssue && info.location && !info.appointmentDate) {
-        // console.log("Location provided but no appointment date - showing calendar directly");
+          // console.log("Location provided but no appointment date - showing calendar directly");
           setShowCalendar(true);
-          
+
           // Add an AI message with the calendar component
-          setMessages(prev => [...prev, { 
-            text: "When would you like to schedule your appointment? Please select a date from the calendar below:", 
-            sender: 'ai', 
-            showCalendar: true 
+          setMessages(prev => [...prev, {
+            text: "When would you like to schedule your appointment? Please select a date from the calendar below:",
+            sender: 'ai',
+            showCalendar: true
           }]);
-          
+
           setIsProcessing(false);
           return;
         }
-        
+
         // Check if we have enough information to recommend a clinic
         const hasAllParameters = !!info.treatmentType && !!info.medicalIssue && !!info.location && !!info.appointmentDate;
         setAllParametersCollected(hasAllParameters);
-        
+
         if (hasAllParameters) {
-         // console.log("All parameters collected, ready to recommend clinic");
+          // console.log("All parameters collected, ready to recommend clinic");
           // Set treatment details based on extracted information
           setTreatmentDetails({
             treatmentType: info.treatmentType,
@@ -319,18 +329,18 @@ const AIChatFinal = () => {
           // Select the best clinic based on the treatment type, location, and date
           const clinics = await selectBestClinic(info.treatmentType, info.location, info.appointmentDate);
           if (clinics && clinics.length > 0) {
-           // console.log("Found clinics:", clinics);
+            // console.log("Found clinics:", clinics);
             setBestClinic(clinics);
             setShowRecommendations(true);
-            
+
             // DO NOT add a message here - let the Gemini API handle responses
             // The clinic recommendations will be shown in the UI separately
           } else {
-           // console.log("No clinic found for the given parameters");
+            // console.log("No clinic found for the given parameters");
             // Add message that no clinics are available for the selected date
-            setMessages(prev => [...prev, { 
-              text: `I'm sorry, but there are no clinics available in ${info.location} for ${info.treatmentType} treatment on ${info.appointmentDate}. Would you like to try another date or location?`, 
-              sender: 'ai' 
+            setMessages(prev => [...prev, {
+              text: `I'm sorry, but there are no clinics available in ${info.location} for ${info.treatmentType} treatment on ${info.appointmentDate}. Would you like to try another date or location?`,
+              sender: 'ai'
             }]);
           }
         } else {
@@ -340,7 +350,7 @@ const AIChatFinal = () => {
             setShowRecommendations(false);
             setBestClinic(null);
           }
-          
+
           // DO NOT add hardcoded AI messages here - the Gemini API will handle responses
           // Just log the missing info for debugging
           if (!info.medicalIssue) {
@@ -354,9 +364,9 @@ const AIChatFinal = () => {
             // Try to determine treatment type from medical issue
             const inferredType = determineTreatmentType(info.medicalIssue);
             if (inferredType) {
-             //console.log("Inferred treatment type:", inferredType);
+              //console.log("Inferred treatment type:", inferredType);
               setExtractedInfo(prev => ({ ...prev, treatmentType: inferredType }));
-              
+
               // Now process with the inferred treatment type
               const clinic = await selectBestClinic(
                 inferredType,
@@ -504,7 +514,7 @@ const AIChatFinal = () => {
         }, 1000);
       }
     } catch (error) {
-     //  console.error("Error processing date selection:", error);
+      //  console.error("Error processing date selection:", error);
       setLoading(false);
       setMessages(prev => [...prev, {
         text: "I'm sorry, but there was an error processing your request. Please try again or select a different date.",
@@ -527,11 +537,11 @@ const AIChatFinal = () => {
     try {
       // Check if the input might be a location if we're expecting one
       const lastAiMessage = messages.find(m => m.sender === 'ai');
-      if (lastAiMessage && 
-          !extractedInfo.location && 
-          (lastAiMessage.text.toLowerCase().includes('location') ||
-           lastAiMessage.text.toLowerCase().includes('city') ||
-           lastAiMessage.text.toLowerCase().includes('where'))) {
+      if (lastAiMessage &&
+        !extractedInfo.location &&
+        (lastAiMessage.text.toLowerCase().includes('location') ||
+          lastAiMessage.text.toLowerCase().includes('city') ||
+          lastAiMessage.text.toLowerCase().includes('where'))) {
         // Update location in extracted info
         setExtractedInfo(prev => ({
           ...prev,
@@ -590,7 +600,7 @@ const AIChatFinal = () => {
         // console.log("No chat session available, falling back to local detection");
         const symptomType = determineTreatmentType(sanitizedInput);
         if (symptomType) {
-        // console.log("Detected symptom type:", symptomType);
+          // console.log("Detected symptom type:", symptomType);
           response = `I see you're mentioning symptoms related to ${symptomType} treatment. Could you tell me more about your specific concerns? This will help me find the best clinic for you.`;
         } else {
           response = FALLBACK_RESPONSE;
@@ -600,7 +610,7 @@ const AIChatFinal = () => {
       addAIResponseWithCalendar(response);
 
     } catch (error) {
-     // console.error("Error in AI response:", error);
+      // console.error("Error in AI response:", error);
       addAIResponseWithCalendar(FALLBACK_RESPONSE);
     } finally {
       setLoading(false);
@@ -626,7 +636,7 @@ const AIChatFinal = () => {
       const clinics = await getClinicsByTreatmentType(normalizedType, location);
 
       if (!clinics || clinics.length === 0) {
-// console.log(`No clinics found for ${normalizedType} in ${location}`);
+        // console.log(`No clinics found for ${normalizedType} in ${location}`);
         return null;
       }
 
@@ -640,7 +650,7 @@ const AIChatFinal = () => {
 
         if (availability &&
           availability.length > 0 &&
-            availability[0].availableDay) {
+          availability[0].availableDay) {
           availableClinics.push({
             ...clinic,
             slots: availability[0].slots || []
@@ -649,11 +659,11 @@ const AIChatFinal = () => {
       }
 
       if (availableClinics.length === 0) {
-     //   console.log(`No clinics available on ${appointmentDate}`);
+        //   console.log(`No clinics available on ${appointmentDate}`);
         return null;
       }
 
-    //  console.log(`Found ${availableClinics.length} clinics available on ${appointmentDate}`);
+      //  console.log(`Found ${availableClinics.length} clinics available on ${appointmentDate}`);
 
       // Step 3: Sort by rating and return up to three clinics (instead of just the best one)
       availableClinics.sort((a, b) => b.rating - a.rating);
@@ -666,7 +676,7 @@ const AIChatFinal = () => {
       // This change will allow us to modify other parts of the code to handle multiple clinics
       return topClinics;
     } catch (error) {
-    //  console.error("Error selecting best clinic:", error);
+      //  console.error("Error selecting best clinic:", error);
       return null;
     }
   };
@@ -676,6 +686,99 @@ const AIChatFinal = () => {
   };
 
   const [isMobile, setIsMobile] = useState(window.innerWidth < 600);
+
+  useEffect(() => {
+    const fetchImagesForClinics = async () => {
+      if (bestClinic && bestClinic.length > 0) {
+        const imagePromises = bestClinic.map(async (clinic) => {
+          const fetchedImages = await fetchClinicImages(clinic.doctorId);
+          const combinedImages = [
+            ...(fetchedImages.logo || []),
+            ...(fetchedImages.exterior || []),
+            ...(fetchedImages.interior || []),
+          ];
+          return { id: clinic.id, images: combinedImages };
+        });
+
+        const imagesArray = await Promise.all(imagePromises);
+        const imagesMap = imagesArray.reduce((acc, current) => {
+          acc[current.id] = {
+            images: current.images,
+            currentImageIndex: 0
+          };
+          return acc;
+        }, {});
+        setClinicImages(imagesMap);
+      }
+    };
+
+    fetchImagesForClinics();
+  }, [bestClinic]); // Depend on bestClinic state
+
+
+  const fetchClinicImages = async (doctorId) => {
+    const images = {
+      logo: [],
+      exterior: [],
+      interior: []
+    };
+
+    const baseRef = `registration-documents/${doctorId}`;
+    const folders = ['clinic-logo', 'clinic-exterior-photos', 'clinic-interior-photos'];
+
+    for (const folder of folders) {
+      const folderRef = ref(storage, `${baseRef}/${folder}`);
+      try {
+        const listResult = await listAll(folderRef);
+        const urls = await Promise.all(listResult.items.map(itemRef => getDownloadURL(itemRef)));
+
+        if (folder === 'clinic-logo') {
+          images.logo = urls;
+        } else if (folder === 'clinic-exterior-photos') {
+          images.exterior = urls;
+        } else if (folder === 'clinic-interior-photos') {
+          images.interior = urls;
+        }
+
+      } catch (error) {
+        console.error(`Error fetching images from ${folder}:`, error);
+      }
+    }
+
+    return images;
+  };
+
+  // NEW: Functions to handle image navigation
+  const handleNextImage = (clinicId) => {
+    setClinicImages(prev => {
+      const clinicData = prev[clinicId];
+      if (!clinicData) return prev;
+      const nextIndex = (clinicData.currentImageIndex + 1) % clinicData.images.length;
+      return {
+        ...prev,
+        [clinicId]: {
+          ...clinicData,
+          currentImageIndex: nextIndex
+        }
+      };
+    });
+  };
+
+  const handlePreviousImage = (clinicId) => {
+    setClinicImages(prev => {
+      const clinicData = prev[clinicId];
+      if (!clinicData) return prev;
+      const prevIndex = (clinicData.currentImageIndex - 1 + clinicData.images.length) % clinicData.images.length;
+      return {
+        ...prev,
+        [clinicId]: {
+          ...clinicData,
+          currentImageIndex: prevIndex
+        }
+      };
+    });
+  };
+
 
   return (
     <Box sx={{
@@ -740,7 +843,7 @@ const AIChatFinal = () => {
 
           {/* Subtitle */}
           <Typography variant="subtitle1" color="#000">
-            Empowering Your Health Journey With AI
+          🏆 Trusted by 5,000+ patients from Bangladesh, Iraq, Africa & beyond
           </Typography>
         </Box>
       )}
@@ -803,6 +906,7 @@ const AIChatFinal = () => {
                 </Box>
                 {action.text}
               </Button>
+              
             ))}
           </Box>
         </Box>
@@ -929,75 +1033,75 @@ const AIChatFinal = () => {
                 </Typography>
 
                 {/* Show location buttons when AI asks for location */}
-                {message.sender === 'ai' && 
-                 !extractedInfo.location && 
-                 (message.text.toLowerCase().includes('location') || 
-                  message.text.toLowerCase().includes('city') || 
-                  message.text.toLowerCase().includes('where')) && 
-                 availableLocations.length > 0 && (
-                  <Box 
-                    sx={{ 
-                      mt: 2,
-                      p: 2, 
-                      bgcolor: 'background.paper',
-                      borderRadius: 2,
-                      border: '1px solid',
-                      borderColor: 'rgba(0, 0, 0, 0.08)',
-                      boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
-                    }}
-                  >
-                    <Typography 
-                      variant="subtitle2" 
-                      sx={{ 
-                        mb: 1.5, 
-                        fontWeight: 600,
-                        color: 'text.secondary',
-                        fontSize: '0.875rem'
+                {message.sender === 'ai' &&
+                  !extractedInfo.location &&
+                  (message.text.toLowerCase().includes('location') ||
+                    message.text.toLowerCase().includes('city') ||
+                    message.text.toLowerCase().includes('where')) &&
+                  availableLocations.length > 0 && (
+                    <Box
+                      sx={{
+                        mt: 2,
+                        p: 2,
+                        bgcolor: 'background.paper',
+                        borderRadius: 2,
+                        border: '1px solid',
+                        borderColor: 'rgba(0, 0, 0, 0.08)',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
                       }}
                     >
-                      Available locations:
-                    </Typography>
-                    <Box 
-                      sx={{ 
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
-                        gap: 1.5 
-                      }}
-                    >
-                      {availableLocations.map((location) => (
-                        <Button
-                          key={location}
-                          variant="outlined"
-                          onClick={() => handleLocationSelect(location)}
-                          sx={{
-                            p: 1.5,
-                            borderRadius: 2,
-                            textTransform: 'none',
-                            borderColor: 'rgba(0, 0, 0, 0.12)',
-                            color: '#1D4645',
-                            fontWeight: 500,
-                            '&:hover': {
-                              borderColor: '#1D4645',
-                              bgcolor: 'rgba(29, 70, 69, 0.05)',
-                              transform: 'translateY(-1px)',
-                              boxShadow: '0 4px 8px rgba(0,0,0,0.05)'
-                            },
-                            '&:active': {
-                              transform: 'translateY(0)',
-                            },
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: 1
-                          }}
-                        >
-                          <LocationOnOutlined sx={{ fontSize: 18 }} />
-                          {location}
-                        </Button>
-                      ))}
+                      <Typography
+                        variant="subtitle2"
+                        sx={{
+                          mb: 1.5,
+                          fontWeight: 600,
+                          color: 'text.secondary',
+                          fontSize: '0.875rem'
+                        }}
+                      >
+                        Available locations:
+                      </Typography>
+                      <Box
+                        sx={{
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+                          gap: 1.5
+                        }}
+                      >
+                        {availableLocations.map((location) => (
+                          <Button
+                            key={location}
+                            variant="outlined"
+                            onClick={() => handleLocationSelect(location)}
+                            sx={{
+                              p: 1.5,
+                              borderRadius: 2,
+                              textTransform: 'none',
+                              borderColor: 'rgba(0, 0, 0, 0.12)',
+                              color: '#1D4645',
+                              fontWeight: 500,
+                              '&:hover': {
+                                borderColor: '#1D4645',
+                                bgcolor: 'rgba(29, 70, 69, 0.05)',
+                                transform: 'translateY(-1px)',
+                                boxShadow: '0 4px 8px rgba(0,0,0,0.05)'
+                              },
+                              '&:active': {
+                                transform: 'translateY(0)',
+                              },
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: 1
+                            }}
+                          >
+                            <LocationOnOutlined sx={{ fontSize: 18 }} />
+                            {location}
+                          </Button>
+                        ))}
+                      </Box>
                     </Box>
-                  </Box>
-                )}
+                  )}
 
                 {message.sender === 'ai' && message.showCalendar && (
                   <Box
@@ -1063,200 +1167,257 @@ const AIChatFinal = () => {
               </Paper>
             </Box>
           )}
-        
-      {/* CLINIC RECOMMENDATIONS MOVED INSIDE CHAT CONTAINER */}
+
+          {/* CLINIC RECOMMENDATIONS MOVED INSIDE CHAT CONTAINER */}
           {showRecommendations && bestClinic && (
-            <Box sx={{ 
-              mt: 2, 
-              p: 2, 
-              bgcolor: 'background.paper', 
-              borderRadius: 3, 
+            <Box sx={{
+              mt: 2,
+              p: 2,
+              bgcolor: 'background.paper',
+              borderRadius: 3,
               boxShadow: theme.shadows[1],
               border: '1px solid',
               borderColor: 'rgba(0, 0, 0, 0.08)',
               alignSelf: 'flex-start',
               width: '100%'
             }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-            <InfoOutlined fontSize="small" color="action" />
-            <Typography variant="body2" color="text.secondary">
-              Based on your symptoms and availability, here are the best clinics for your needs
-            </Typography>
-          </Box>
-
-          {bestClinic.map((clinic, index) => (
-                <Card 
-                  key={clinic.id || index} 
-                  sx={{ 
-                    mb: 2, 
-                    overflow: 'hidden', 
-                    borderRadius: 2, 
-                    boxShadow: theme.shadows[1],
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease-in-out',
-                    '&:hover': {
-                      boxShadow: theme.shadows[3],
-                      transform: 'translateY(-2px)'
-                    }
-                  }}
-                  onClick={() => navigate('/book-now', {
-                    state: {
-                      clinic: clinic,
-                      date: extractedInfo.appointmentDate || '',
-                      time: '10:00 AM'
-                    }
-                  })}
-                >
-                  <Box sx={{ position: 'relative', height: 120, overflow: 'hidden' }}>
-                <Box
-                  component="img"
-                  src={clinic.image}
-                  alt={clinic.name}
-                  sx={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                  }}
-                />
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                        p: 1.5,
-                    background: 'linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0))',
-                    color: 'white',
-                  }}
-                >
-                      <Typography variant="subtitle1" fontWeight="bold">{clinic.name}</Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <Rating value={clinic.rating} precision={0.1} readOnly size="small" />
-                    <Typography variant="body2">{clinic.rating || 'N/A'}</Typography>
-                  </Box>
-                </Box>
-              </Box>
-                  <CardContent sx={{ p: 2 }}>
-                    <Box sx={{ mb: 1.5 }}>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                        📍 {clinic.location} {clinic.distance ? `(${clinic.distance})` : ''}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                        ⏰ {clinic.availability || 'Contact for availability'}
-                  </Typography>
-                </Box>
-
-                <Typography variant="subtitle2" gutterBottom>
-                  Services:
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                <InfoOutlined fontSize="small" color="action" />
+                <Typography variant="body2" color="text.secondary">
+                  Based on your symptoms and availability, here are the best clinics for your needs
                 </Typography>
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1.5 }}>
-                      {(clinic.services || []).slice(0, 3).map((service, index) => (
-                    <Chip
-                      key={index}
-                      label={service}
-                      size="small"
-                      sx={{
-                        bgcolor: `${theme.palette.primary.main}15`,
-                        color: theme.palette.primary.main,
-                        fontWeight: 500
-                      }}
-                    />
-                  ))}
-                </Box>
+              </Box>
 
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1, mt: 2 }}>
-                  <Button
-                        size="small"
-                    color="primary"
-                    startIcon={<InfoOutlined />}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowExpandedClinicDetails(!showExpandedClinicDetails);
-                        }}
-                  >
-                        Details
-                  </Button>
-                  <Button
-                        size="small"
-                    variant="contained"
-                    color="primary"
-                        sx={{
-                          bgcolor: '#1D4645',
-                          '&:hover': {
-                            bgcolor: '#143433',
-                          }
-                        }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate('/book-now', {
+              {bestClinic.map((clinic, index) => {
+                const imagesData = clinicImages[clinic.id] || { images: [], currentImageIndex: 0 };
+                const images = imagesData.images;
+                const currentImage = images[imagesData.currentImageIndex] || 'https://via.placeholder.com/600x400.png?text=Clinic+Image';
+                const hasMultipleImages = images.length > 1;
+
+                return (
+                  <Card
+                    key={clinic.id}
+                    elevation={0}
+                    sx={{
+                      mb: 2,
+                      overflow: 'hidden',
+                      borderRadius: 2,
+                      boxShadow: theme.shadows[1],
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease-in-out',
+                      '&:hover': {
+                        boxShadow: theme.shadows[3],
+                        transform: 'translateY(-2px)'
+                      }
+                    }}
+                    onClick={() => navigate('/book-now', {
                       state: {
                         clinic: clinic,
                         date: extractedInfo.appointmentDate || '',
-                              time: '10:00 AM'
-                            }
-                          });
-                        }}
+                        time: '10:00 AM'
+                      }
+                    })}
                   >
-                    Book Now
-                  </Button>
-                </Box>
-              </CardContent>
-
-              {showExpandedClinicDetails && (
-                <Box sx={{ p: 2, bgcolor: 'rgba(0, 0, 0, 0.02)', borderTop: '1px solid rgba(0, 0, 0, 0.08)' }}>
-                  <Typography variant="h6" gutterBottom>Detailed Information</Typography>
-
-                  <Box sx={{ mb: 3 }}>
-                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>About the Clinic</Typography>
-                    <Typography variant="body2" paragraph>
-                      {clinic.name} is a premier healthcare facility specializing in {treatmentDetails?.treatmentType || 'specialized'} treatments.
-                      With state-of-the-art equipment and experienced specialists, they provide personalized care
-                      tailored to each patient's unique needs.
-                    </Typography>
-                  </Box>
-
-                  <Box sx={{ mb: 3 }}>
-                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>Doctors</Typography>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Avatar sx={{ width: 50, height: 50 }}>{clinic.name ? clinic.name[0] : 'D'}</Avatar>
-                        <Box>
-                          <Typography variant="subtitle2">Dr. Rajesh Sharma</Typography>
-                          <Typography variant="body2" color="text.secondary">Senior Specialist, 15+ years experience</Typography>
-                        </Box>
-                      </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Avatar sx={{ width: 50, height: 50 }}>A</Avatar>
-                        <Box>
-                          <Typography variant="subtitle2">Dr. Anjali Patel</Typography>
-                          <Typography variant="body2" color="text.secondary">Consultant, 10+ years experience</Typography>
+                    <Box sx={{ position: 'relative', height: 300, overflow: 'hidden' }}>
+                      <Box
+                        component="img"
+                        src={currentImage}
+                        alt={clinic.name}
+                        sx={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                        }}
+                      />
+                      {hasMultipleImages && (
+                        <>
+                          <Button
+                            sx={{
+                              position: 'absolute',
+                              left: 8,
+                              top: '50%',
+                              transform: 'translateY(-50%)',
+                              minWidth: 0,
+                              p: 2,
+                              borderRadius: '50%',
+                              color: 'white',
+                              bgcolor: 'rgba(0,0,0,0.5)',
+                              '&:hover': {
+                                bgcolor: 'rgba(0,0,0,0.7)',
+                              }
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handlePreviousImage(clinic.id);
+                            }}
+                          >
+                            <ArrowBackIosNew fontSize="small" />
+                          </Button>
+                          <Button
+                            sx={{
+                              position: 'absolute',
+                              right: 8,
+                              top: '50%',
+                              transform: 'translateY(-50%)',
+                              minWidth: 0,
+                              p: 2,
+                              borderRadius: '50%',
+                              color: 'white',
+                              bgcolor: 'rgba(0,0,0,0.5)',
+                              '&:hover': {
+                                bgcolor: 'rgba(0,0,0,0.7)',
+                              }
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleNextImage(clinic.id);
+                            }}
+                          >
+                            <ArrowForwardIos fontSize="small" />
+                          </Button>
+                        </>
+                      )}
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          p: 1.5,
+                          background: 'linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0))',
+                          color: 'white',
+                        }}
+                      >
+                        <Typography variant="subtitle1" fontWeight="bold">{clinic.name}</Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                          <Rating value={clinic.rating} precision={0.1} readOnly size="small" />
+                          <Typography variant="body2">{clinic.rating || 'N/A'}</Typography>
                         </Box>
                       </Box>
                     </Box>
-                  </Box>
+                    <CardContent sx={{ p: 2 }}>
+                      <Box sx={{ mb: 1.5 }}>
+                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                          📍 {clinic.location} {clinic.distance ? `(${clinic.distance})` : ''}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                          ⏰ {clinic.availability || 'Contact for availability'}
+                        </Typography>
+                      </Box>
 
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>Facilities</Typography>
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                      <Chip label="Modern Equipment" size="small" />
-                      <Chip label="Comfortable Waiting Area" size="small" />
-                      <Chip label="Digital Records" size="small" />
-                      <Chip label="Lab Services" size="small" />
-                      <Chip label="Pharmacy" size="small" />
-                    </Box>
-                  </Box>
-                </Box>
-              )}
-            </Card>
-          ))}
+                      <Typography variant="subtitle2" gutterBottom>
+                        Services:
+                      </Typography>
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1.5 }}>
+                        {(clinic.services || []).slice(0, 3).map((service, index) => (
+                          <Chip
+                            key={index}
+                            label={service}
+                            size="small"
+                            sx={{
+                              bgcolor: `${theme.palette.primary.main}15`,
+                              color: theme.palette.primary.main,
+                              fontWeight: 500
+                            }}
+                          />
+                        ))}
+                      </Box>
 
-          <Button
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1, mt: 2 }}>
+                        <Button
+                          size="small"
+                          color="primary"
+                          startIcon={<InfoOutlined />}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowExpandedClinicDetails(prev => ({ ...prev, [clinic.id]: !prev[clinic.id] }));
+                          }}
+                        >
+                          Details
+                        </Button>
+                        <Button
+                          size="small"
+                          variant="contained"
+                          color="primary"
+                          sx={{
+                            bgcolor: '#1D4645',
+                            '&:hover': {
+                              bgcolor: '#143433',
+                            }
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate('/book-now', {
+                              state: {
+                                clinic: clinic,
+                                date: extractedInfo.appointmentDate || '',
+                                time: '10:00 AM'
+                              }
+                            });
+                          }}
+                        >
+                          Book Now
+                        </Button>
+                      </Box>
+                    </CardContent>
+
+                    {showExpandedClinicDetails[clinic.id] && (
+                      <Box sx={{ p: 2, bgcolor: 'rgba(0, 0, 0, 0.02)', borderTop: '1px solid rgba(0, 0, 0, 0.08)' }}>
+                        <Typography variant="h6" gutterBottom>Detailed Information</Typography>
+
+                        <Box sx={{ mb: 3 }}>
+                          <Typography variant="subtitle2" color="text.secondary" gutterBottom>About the Clinic</Typography>
+                          <Typography variant="body2" paragraph>
+                            {clinic.name} is a premier healthcare facility specializing in {treatmentDetails?.treatmentType || 'specialized'} treatments.
+                            With state-of-the-art equipment and experienced specialists, they provide personalized care
+                            tailored to each patient's unique needs.
+                          </Typography>
+                        </Box>
+
+                        <Box sx={{ mb: 3 }}>
+                          <Typography variant="subtitle2" color="text.secondary" gutterBottom>Doctors</Typography>
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                              <Avatar sx={{ width: 50, height: 50 }}>{clinic.ownerName ? clinic.ownerName[0] : 'D'}</Avatar>
+                              <Box>
+                                <Typography variant="subtitle2">Dr. Rajesh Sharma</Typography>
+                                <Typography variant="body2" color="text.secondary">Senior Specialist, 15+ years experience</Typography>
+                              </Box>
+                            </Box>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                              <Avatar sx={{ width: 50, height: 50 }}>A</Avatar>
+                              <Box>
+                                <Typography variant="subtitle2">Dr. Anjali Patel</Typography>
+                                <Typography variant="body2" color="text.secondary">Consultant, 10+ years experience</Typography>
+                              </Box>
+                            </Box>
+                          </Box>
+                        </Box>
+
+                        <Box>
+                          <Typography variant="subtitle2" color="text.secondary" gutterBottom>Facilities</Typography>
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                            <Chip label="Modern Equipment" size="small" />
+                            <Chip label="Comfortable Waiting Area" size="small" />
+                            <Chip label="Digital Records" size="small" />
+                            <Chip label="Lab Services" size="small" />
+                            <Chip label="Pharmacy" size="small" />
+                          </Box>
+                        </Box>
+                      </Box>
+                    )}
+                  </Card>
+                )
+              })}
+
+
+              <Button
                 variant="outlined"
-            fullWidth
-            color="primary"
+                fullWidth
+                color="primary"
                 size="small"
-            onClick={() => setShowTreatmentsInfo(true)}
-                sx={{ 
+                onClick={() => setShowTreatmentsInfo(true)}
+                sx={{
                   mt: 1,
                   borderColor: '#1D4645',
                   color: '#1D4645',
@@ -1265,11 +1426,11 @@ const AIChatFinal = () => {
                     bgcolor: 'rgba(29, 70, 69, 0.05)'
                   }
                 }}
-          >
-            View Treatment Information
-          </Button>
-        </Box>
-      )}
+              >
+                View Treatment Information
+              </Button>
+            </Box>
+          )}
         </Box>
 
         <Divider />
