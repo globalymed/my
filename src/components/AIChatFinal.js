@@ -296,9 +296,30 @@ const AIChatFinal = () => {
         // Update the extracted info state
         setExtractedInfo(info);
 
+        // NEW: If we have a medical issue but no location, proactively show location options
+        if (info.medicalIssue && !info.location) {
+          console.log("Medical issue detected but no location - showing location suggestions");
+          
+          // Determine treatment type if not already determined
+          const treatmentType = info.treatmentType || determineTreatmentType(info.medicalIssue);
+          
+          // Create a contextual location request message
+          const treatmentTypeText = treatmentType ? `${treatmentType} ` : '';
+          const locationMessage = `I understand you're experiencing ${info.medicalIssue}. To help you find the best ${treatmentTypeText}specialists, could you please tell me which city you'd prefer for treatment?`;
+          
+          setMessages(prev => [...prev, {
+            text: locationMessage,
+            sender: 'ai',
+            showLocationSuggestions: true
+          }]);
+          
+          setIsProcessing(false);
+          return;
+        }
+
         // Check if we need to show calendar after the user provided location
         if (info.medicalIssue && info.location && !info.appointmentDate) {
-          // console.log("Location provided but no appointment date - showing calendar directly");
+          console.log("Location provided but no appointment date - showing calendar directly");
           setShowCalendar(true);
 
           // Add an AI message with the calendar component
@@ -351,12 +372,11 @@ const AIChatFinal = () => {
             setBestClinic(null);
           }
 
-          // DO NOT add hardcoded AI messages here - the Gemini API will handle responses
-          // Just log the missing info for debugging
+          // Handle missing parameters
           if (!info.medicalIssue) {
             console.log("Missing medical issue, Gemini should ask the user");
           } else if (!info.location) {
-            console.log("Missing location, Gemini should ask the user");
+            console.log("Missing location, should show location suggestions (handled above)");
           } else if (!info.appointmentDate) {
             console.log("Missing appointment date, should show calendar");
           } else if (!info.treatmentType) {
@@ -571,7 +591,7 @@ const AIChatFinal = () => {
         }
 
         if (context) {
-          //    console.log("Added context to request:", context);
+         // console.log("Added context to request:", context);
         }
 
         // Send the context along with the user's message
@@ -583,9 +603,6 @@ const AIChatFinal = () => {
         } else {
           response = await sendMessage(chatSession, message, contextForGemini);
         }
-
-        // If the AI is asking for date selection, show the calendar component
-        // Removed this block of code
 
         // If we got a fallback response, try to determine if this is a symptom and provide a more specific response
         if (response === FALLBACK_RESPONSE) {
@@ -1032,13 +1049,22 @@ const AIChatFinal = () => {
                   {message.text}
                 </Typography>
 
-                {/* Show location buttons when AI asks for location */}
+                {/* Show location buttons with new condition */}
                 {message.sender === 'ai' &&
                   !extractedInfo.location &&
-                  (message.text.toLowerCase().includes('location') ||
-                    message.text.toLowerCase().includes('city') ||
-                    message.text.toLowerCase().includes('where')) &&
-                  availableLocations.length > 0 && (
+                  availableLocations.length > 0 && 
+                  (
+                    // Show when specifically flagged for location suggestions
+                    message.showLocationSuggestions ||
+                    // Original condition: AI message contains location-related keywords
+                    (message.text.toLowerCase().includes('location') ||
+                     message.text.toLowerCase().includes('city') ||
+                     message.text.toLowerCase().includes('where')) ||
+                    // Show when AI mentions treatment-related terms
+                    (message.text.toLowerCase().includes('treatment') ||
+                     message.text.toLowerCase().includes('clinic') ||
+                     message.text.toLowerCase().includes('specialist'))
+                  ) && (
                     <Box
                       sx={{
                         mt: 2,
