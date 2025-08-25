@@ -235,9 +235,9 @@ const AIChatFinal = () => {
         // If it's not asking about dates, override with a date request that includes the calendar
         const treatmentDesc = extractedInfo.treatmentType || determineTreatmentType(extractedInfo.medicalIssue) || "treatment";
         const calendarMessage = `Please select your preferred appointment date for ${treatmentDesc} in ${extractedInfo.location}. The calendar below shows real-time availability:
-• Green dates indicate days when clinics are available
-• Red dates indicate days when no clinics are available
-• You can only select available (green) dates`;
+          • Green dates indicate days when clinics are available
+          • Red dates indicate days when no clinics are available
+          • You can only select available (green) dates`;
 
         setMessages(prev => [...prev, {
           text: calendarMessage,
@@ -749,7 +749,8 @@ const AIChatFinal = () => {
   };
 
   // NEW: Functions to handle image navigation
-  const handleNextImage = (clinicId) => {
+  const handleNextImage = (e, clinicId) => {
+    e.stopPropagation(); // Prevents card's onClick from firing
     setClinicImages(prev => {
       const clinicData = prev[clinicId];
       if (!clinicData) return prev;
@@ -764,7 +765,8 @@ const AIChatFinal = () => {
     });
   };
 
-  const handlePreviousImage = (clinicId) => {
+  const handlePreviousImage = (e, clinicId) => {
+    e.stopPropagation(); // Prevents card's onClick from firing
     setClinicImages(prev => {
       const clinicData = prev[clinicId];
       if (!clinicData) return prev;
@@ -1193,6 +1195,8 @@ const AIChatFinal = () => {
                 const images = imagesData.images;
                 const currentImage = images[imagesData.currentImageIndex] || 'https://via.placeholder.com/600x400.png?text=Clinic+Image';
                 const hasMultipleImages = images.length > 1;
+                // console.log(clinic, images);
+                // console.log(currentImage);
 
                 return (
                   <Card
@@ -1247,8 +1251,7 @@ const AIChatFinal = () => {
                               }
                             }}
                             onClick={(e) => {
-                              e.stopPropagation();
-                              handlePreviousImage(clinic.id);
+                              handlePreviousImage(e, clinic.id);
                             }}
                           >
                             <ArrowBackIosNew fontSize="small" />
@@ -1268,10 +1271,7 @@ const AIChatFinal = () => {
                                 bgcolor: 'rgba(0,0,0,0.7)',
                               }
                             }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleNextImage(clinic.id);
-                            }}
+                            onClick={(e) => handleNextImage(e, clinic.id)}
                           >
                             <ArrowForwardIos fontSize="small" />
                           </Button>
