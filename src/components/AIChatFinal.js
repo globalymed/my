@@ -76,7 +76,6 @@ const AIChatFinal = () => {
   const [clinicImages, setClinicImages] = useState({});
   const [currentImageIndex, setCurrentImageIndex] = useState({});
 
-
   // Fetch unique locations from clinics collection
   useEffect(() => {
     const fetchLocations = async () => {
@@ -158,21 +157,15 @@ const AIChatFinal = () => {
   useEffect(() => {
     const initializeChatSession = async () => {
       try {
-        // console.log("Initializing chat session");
         const session = await createChatSession();
 
         if (session) {
-          // console.log("Chat session initialized successfully");
           setChatSession(session);
         } else {
-          // console.error("Failed to initialize chat session - null session returned");
-
           // Even though we don't have a chat session, we can still show the UI
           // We'll fall back to local processing when the user sends messages
         }
       } catch (error) {
-        // console.error("Error initializing chat session:", error);
-
         // Even on error, we'll show the UI and use local fallbacks
       }
     };
@@ -180,41 +173,10 @@ const AIChatFinal = () => {
     initializeChatSession();
   }, []);
 
-  // Special function for hair loss detection which was causing errors
-  const detectHairIssue = (inputText) => {
-    if (!inputText) return false;
-    const lowerText = inputText.toLowerCase();
-    return lowerText.includes('hair loss') ||
-      lowerText.includes('hair fall') ||
-      lowerText.includes('bald') ||
-      lowerText.includes('hair thinning') ||
-      lowerText.includes('receding') ||
-      lowerText.includes('hair problem');
-  };
-
-  // Add AI message with enhanced fallback handling
+  // Add AI message with enhanced fallback handling (REMOVED HAIR-SPECIFIC CODE)
   const addAIResponseWithCalendar = (response) => {
-    // If we're dealing with hair issues but got a generic fallback,
-    // override with a more specific hair loss response
-    if (response === FALLBACK_RESPONSE &&
-      (extractedInfo.medicalIssue?.toLowerCase().includes('hair') ||
-        detectHairIssue(inputValue))) {
-      console.log("Detected hair issue, providing specialized response");
-
-      // Update extractedInfo
-      setExtractedInfo(prev => ({
-        ...prev,
-        medicalIssue: 'hair loss',
-        treatmentType: 'hair'
-      }));
-
-      // Provide a specific response for hair issues
-      response = "I understand you're experiencing hair loss. Our Hair specialists can help. Could you tell me which city you'd prefer for treatment?";
-    }
-
     // If we have medical issue and location but no date, show calendar with any message about dates
     if (extractedInfo.medicalIssue && extractedInfo.location && !extractedInfo.appointmentDate) {
-      // console.log("Location provided but no appointment date - showing calendar directly");
       setShowCalendar(true);
 
       // First check if the response is asking about dates
@@ -291,7 +253,6 @@ const AIChatFinal = () => {
         }
         // Extract medical information from the conversation
         const info = await extractMedicalInfo(messages);
-        //console.log("Extracted medical info:", info);
 
         // Update the extracted info state
         setExtractedInfo(info);
@@ -338,7 +299,6 @@ const AIChatFinal = () => {
         setAllParametersCollected(hasAllParameters);
 
         if (hasAllParameters) {
-          // console.log("All parameters collected, ready to recommend clinic");
           // Set treatment details based on extracted information
           setTreatmentDetails({
             treatmentType: info.treatmentType,
@@ -350,14 +310,12 @@ const AIChatFinal = () => {
           // Select the best clinic based on the treatment type, location, and date
           const clinics = await selectBestClinic(info.treatmentType, info.location, info.appointmentDate);
           if (clinics && clinics.length > 0) {
-            // console.log("Found clinics:", clinics);
             setBestClinic(clinics);
             setShowRecommendations(true);
 
             // DO NOT add a message here - let the Gemini API handle responses
             // The clinic recommendations will be shown in the UI separately
           } else {
-            // console.log("No clinic found for the given parameters");
             // Add message that no clinics are available for the selected date
             setMessages(prev => [...prev, {
               text: `I'm sorry, but there are no clinics available in ${info.location} for ${info.treatmentType} treatment on ${info.appointmentDate}. Would you like to try another date or location?`,
@@ -365,7 +323,6 @@ const AIChatFinal = () => {
             }]);
           }
         } else {
-          //console.log("Not all parameters collected yet, continuing conversation");
           // Reset recommendations if parameters are incomplete
           if (showRecommendations) {
             setShowRecommendations(false);
@@ -384,7 +341,6 @@ const AIChatFinal = () => {
             // Try to determine treatment type from medical issue
             const inferredType = determineTreatmentType(info.medicalIssue);
             if (inferredType) {
-              //console.log("Inferred treatment type:", inferredType);
               setExtractedInfo(prev => ({ ...prev, treatmentType: inferredType }));
 
               // Now process with the inferred treatment type
@@ -394,7 +350,6 @@ const AIChatFinal = () => {
                 info.appointmentDate
               );
               if (clinic) {
-                // console.log("Found clinic with inferred treatment type:", clinic);
                 setTreatmentDetails({
                   treatmentType: inferredType,
                   symptoms: info.medicalIssue,
@@ -422,8 +377,6 @@ const AIChatFinal = () => {
 
   // Handle date selection from the calendar
   const handleDateSelect = async (date) => {
-    // console.log("Selected available date:", date);
-
     // Update the extracted info with the selected date
     const updatedInfo = {
       ...extractedInfo,
@@ -444,7 +397,6 @@ const AIChatFinal = () => {
     try {
       if (updatedInfo.treatmentType || determineTreatmentType(updatedInfo.medicalIssue)) {
         const treatmentType = updatedInfo.treatmentType || determineTreatmentType(updatedInfo.medicalIssue);
-        // console.log("All parameters collected, searching for clinic now...");
 
         // Set treatment details based on extracted information
         setTreatmentDetails({
@@ -495,7 +447,6 @@ const AIChatFinal = () => {
         // Add a short delay to ensure messages appear in proper sequence
         setTimeout(() => {
           if (clinics && clinics.length > 0) {
-            // console.log("Found available clinic:", clinics[0]);
             setBestClinic(clinics); // Now storing an array of clinics
             setShowRecommendations(true);
             setAllParametersCollected(true);
@@ -509,8 +460,6 @@ const AIChatFinal = () => {
               sender: 'ai'
             }]);
           } else {
-            //console.log("No available clinics found for the selected date and location");
-
             if (alternativeDates.length > 0) {
               // Suggest alternative dates
               const alternativesText = alternativeDates
@@ -534,7 +483,6 @@ const AIChatFinal = () => {
         }, 1000);
       }
     } catch (error) {
-      //  console.error("Error processing date selection:", error);
       setLoading(false);
       setMessages(prev => [...prev, {
         text: "I'm sorry, but there was an error processing your request. Please try again or select a different date.",
@@ -573,8 +521,6 @@ const AIChatFinal = () => {
 
       // If we have a chat session, use it to send the message to the AI
       if (chatSession) {
-        // console.log("Using chat session to send message");
-
         // Create context from all extracted information
         let context = "";
         if (extractedInfo.medicalIssue) {
@@ -588,10 +534,6 @@ const AIChatFinal = () => {
         }
         if (extractedInfo.treatmentType) {
           context += `The treatment they need is: ${extractedInfo.treatmentType}. `;
-        }
-
-        if (context) {
-         // console.log("Added context to request:", context);
         }
 
         // Send the context along with the user's message
@@ -608,17 +550,14 @@ const AIChatFinal = () => {
         if (response === FALLBACK_RESPONSE) {
           const symptomType = determineTreatmentType(sanitizedInput);
           if (symptomType) {
-            //  console.log("Detected symptom type:", symptomType);
-            response = `I see you're mentioning symptoms related to ${symptomType} treatment. Could you tell me more about your specific concerns? This will help me find the best clinic for you.`;
+            response = `I understand you're experiencing symptoms related to ${symptomType} treatment. Could you tell me more about your specific concerns? This will help me find the best clinic for you.`;
           }
         }
       } else {
         // Fall back to simple detection if no Gemini is available
-        // console.log("No chat session available, falling back to local detection");
         const symptomType = determineTreatmentType(sanitizedInput);
         if (symptomType) {
-          // console.log("Detected symptom type:", symptomType);
-          response = `I see you're mentioning symptoms related to ${symptomType} treatment. Could you tell me more about your specific concerns? This will help me find the best clinic for you.`;
+          response = `I understand you're experiencing symptoms related to ${symptomType} treatment. Could you tell me more about your specific concerns? This will help me find the best clinic for you.`;
         } else {
           response = FALLBACK_RESPONSE;
         }
@@ -636,12 +575,8 @@ const AIChatFinal = () => {
 
   const selectBestClinic = async (treatmentType, location, appointmentDate) => {
     try {
-      //  console.log(`Selecting best clinic for: ${treatmentType} in ${location} on ${appointmentDate}`);
-
       // Normalize treatment type to lowercase for database consistency
       const normalizedType = treatmentType ? treatmentType.toLowerCase() : null;
-
-      // console.log(`Using normalized treatment type: ${normalizedType}`);
 
       // Guard clause: If missing any parameter, return null
       if (!normalizedType || !location || !appointmentDate) {
@@ -656,8 +591,6 @@ const AIChatFinal = () => {
         // console.log(`No clinics found for ${normalizedType} in ${location}`);
         return null;
       }
-
-      // console.log(`Found ${clinics.length} clinics matching ${normalizedType} in ${location}`);
 
       // Step 2: Filter for clinics available on the requested date
       const availableClinics = [];
@@ -680,23 +613,19 @@ const AIChatFinal = () => {
         return null;
       }
 
-      //  console.log(`Found ${availableClinics.length} clinics available on ${appointmentDate}`);
-
-      // Step 3: Sort by rating and return up to three clinics (instead of just the best one)
+      // Step 3: Sort by rating and return up to three clinics
       availableClinics.sort((a, b) => b.rating - a.rating);
 
       // Return up to 3 clinics
       const topClinics = availableClinics.slice(0, 3);
-      // console.log(`Returning top ${topClinics.length} clinics sorted by rating`);
 
-      // For backward compatibility, if we need to return a single clinic, return the array
-      // This change will allow us to modify other parts of the code to handle multiple clinics
       return topClinics;
     } catch (error) {
-      //  console.error("Error selecting best clinic:", error);
+      console.error("Error selecting best clinic:", error);
       return null;
     }
   };
+
   const handleQuickAction = (action) => {
     setInputValue(action.text);
     inputRef.current?.focus();
@@ -730,8 +659,7 @@ const AIChatFinal = () => {
     };
 
     fetchImagesForClinics();
-  }, [bestClinic]); // Depend on bestClinic state
-
+  }, [bestClinic]);
 
   const fetchClinicImages = async (doctorId) => {
     const images = {
@@ -765,7 +693,7 @@ const AIChatFinal = () => {
     return images;
   };
 
-  // NEW: Functions to handle image navigation
+  // Functions to handle image navigation
   const handleNextImage = (clinicId) => {
     setClinicImages(prev => {
       const clinicData = prev[clinicId];
@@ -795,7 +723,6 @@ const AIChatFinal = () => {
       };
     });
   };
-
 
   return (
     <Box sx={{
@@ -1435,7 +1362,6 @@ const AIChatFinal = () => {
                   </Card>
                 )
               })}
-
 
               <Button
                 variant="outlined"
