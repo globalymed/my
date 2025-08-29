@@ -33,6 +33,29 @@
 
     <!-- Google Maps API -->
     <script src="https://maps.googleapis.com/maps/api/js?key=%REACT_APP_GOOGLE_MAPS_API_KEY%"></script>
+    
+    <!-- Blog section links for SEO -->
+    <link rel="prerender" href="/treatment/blog" />
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "url": "https://yourdomain.com/",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://yourdomain.com/treatment/blog?search={search_term_string}",
+        "query-input": "required name=search_term_string"
+      },
+      "hasPart": [
+        {
+          "@type": "WebPage",
+          "url": "https://yourdomain.com/treatment/blog",
+          "name": "MedYatra Blog",
+          "description": "Explore medical tourism and treatment options with MedYatra's comprehensive blog"
+        }
+      ]
+    }
+    </script>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
@@ -43,4 +66,4 @@
       </div>
     </div>
   </body>
-</html> 
+</html>

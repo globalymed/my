@@ -1,0 +1,11 @@
+# Enable URL rewriting
+RewriteEngine On
+
+# Handle blog routes
+RewriteRule ^treatment/blog/?$ blog.html [L]
+RewriteRule ^treatment/([^/]+)/?$ blog-post.html [L]
+
+# Send all other requests to index.html
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.html [L]
