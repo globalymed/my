@@ -1,5 +1,7 @@
 import React from 'react';
 import { Box, Container, Typography, Divider, Link } from '@mui/material';
+import SEO from '../components/SEO.jsx';
+import { structuredDataTemplates } from '../utils/structuredData.js';
 
 const privacyContent = `
 Medyatra Privacy Policy
@@ -77,27 +79,47 @@ Address: Medyatra, New Delhi, India
 For more information, refer to our Terms of Service.
 `;
 
-const PrivacyPolicy = () => (
-  <Container maxWidth="md" sx={{ py: 8 }}>
-    <Box sx={{ bgcolor: 'white', borderRadius: 2, boxShadow: 1, p: { xs: 2, sm: 4 }, maxHeight: '80vh', overflowY: 'auto' }}>
-      <Typography variant="h3" fontWeight="bold" gutterBottom align="center">
-        Privacy Policy
-      </Typography>
-      <Divider sx={{ mb: 3 }} />
-      {privacyContent.split('\n').map((line, idx) =>
-        line.trim().length === 0 ? <br key={idx} /> :
-        line.match(/^\d+\./) ? (
-          <Typography key={idx} variant="h5" fontWeight="bold" sx={{ mt: 3, mb: 1 }}>
-            {line}
+const PrivacyPolicy = () => {
+  const privacyStructuredData = [
+    structuredDataTemplates.organization
+  ];
+
+  return (
+    <>
+      <SEO
+        title="Privacy Policy - MedYatra Medical Tourism Platform"
+        description="Read MedYatra's Privacy Policy to understand how we collect, use, and protect your personal information on our AI-powered medical tourism platform."
+        keywords="privacy policy, MedYatra privacy, data protection, personal information, medical tourism privacy, data security"
+        canonical="https://medyatra.space/privacy"
+        ogTitle="Privacy Policy - MedYatra Medical Tourism Platform"
+        ogDescription="MedYatra's Privacy Policy covering data collection, usage, protection, and user rights on our medical tourism platform."
+        ogImage="https://medyatra.space/logo.webp"
+        ogUrl="https://medyatra.space/privacy"
+        structuredData={privacyStructuredData}
+      />
+      
+      <Container maxWidth="md" sx={{ py: 8 }}>
+        <Box sx={{ bgcolor: 'white', borderRadius: 2, boxShadow: 1, p: { xs: 2, sm: 4 }, maxHeight: '80vh', overflowY: 'auto' }}>
+          <Typography variant="h3" fontWeight="bold" gutterBottom align="center">
+            Privacy Policy
           </Typography>
-        ) : (
-          <Typography key={idx} variant="body1" sx={{ mb: 1 }}>
-            {line}
-          </Typography>
-        )
-      )}
-    </Box>
-  </Container>
-);
+          <Divider sx={{ mb: 3 }} />
+          {privacyContent.split('\n').map((line, idx) =>
+            line.trim().length === 0 ? <br key={idx} /> :
+            line.match(/^\d+\./) ? (
+              <Typography key={idx} variant="h5" fontWeight="bold" sx={{ mt: 3, mb: 1 }}>
+                {line}
+              </Typography>
+            ) : (
+              <Typography key={idx} variant="body1" sx={{ mb: 1 }}>
+                {line}
+              </Typography>
+            )
+          )}
+        </Box>
+      </Container>
+    </>
+  );
+};
 
 export default PrivacyPolicy; 

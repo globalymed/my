@@ -14,47 +14,72 @@ import SuccessStoriesTreatmentSection from './components/hairComponents/SuccessS
 import ReviewsTreatmentSecion from './components/hairComponents/ReviewsTreatmentSection';
 import TravelSupportTreatmentSection from './components/hairComponents/TravelSupportTreatmentSection';
 import LatestBlogTreatmentSection from './components/hairComponents/LatestBlogTreatmentSection';
+import SEO from '../SEO.jsx';
+import { structuredDataTemplates } from '../../utils/structuredData.js';
 
 
 const HairTreatment = () => {
+  const hairStructuredData = [
+    structuredDataTemplates.service(
+      "Hair Transplant in India", 
+      "Advanced hair restoration procedures including FUE, FUT, PRP therapy, and hair transplant surgery with world-renowned hair transplant specialists and state-of-the-art facilities.",
+      "https://medyatra.space/treatment/hair"
+    ),
+    structuredDataTemplates.medicalOrganization
+  ];
+
   return (
-    <Box sx={{ bgcolor: 'white', overflow: 'hidden' }}>
-      {/* Hero Section */}
-      <TreatmentHeroSection />
+    <>
+      <SEO
+        title="Hair Transplant in India - Advanced Hair Restoration Services"
+        description="Get world-class hair transplant treatment in India with FUE, FUT, PRP therapy, and advanced hair restoration procedures. Book appointments with top hair transplant specialists."
+        keywords="hair transplant India, FUE hair transplant India, FUT hair transplant India, PRP therapy India, hair restoration India, hair transplant cost India, hair transplant clinic India"
+        canonical="https://medyatra.space/treatment/hair"
+        ogTitle="Hair Transplant in India - Advanced Hair Restoration Services"
+        ogDescription="World-class hair transplant treatments in India with FUE, FUT, and PRP therapy. Get natural-looking results with experienced hair transplant specialists."
+        ogImage="https://medyatra.space/hair/hair.webp"
+        ogUrl="https://medyatra.space/treatment/hair"
+        structuredData={hairStructuredData}
+      />
+      
+      <Box sx={{ bgcolor: 'white', overflow: 'hidden' }}>
+        {/* Hero Section */}
+        <TreatmentHeroSection />
 
-      {/* Common Dental Treatments Section */}
-      <AdvanceTreatmentSection />
+        {/* Common Dental Treatments Section */}
+        <AdvanceTreatmentSection />
 
-      {/* Why India Section */}
-      <GlobalTreatmentSection />
+        {/* Why India Section */}
+        <GlobalTreatmentSection />
 
-      {/* Medyatra Working Section */}
-      <WorkingTreatmentSection />
+        {/* Medyatra Working Section */}
+        <WorkingTreatmentSection />
 
-      {/* Top Clinic Section */}
-      <TopClinicsTreatmentSection />
+        {/* Top Clinic Section */}
+        <TopClinicsTreatmentSection />
 
-      {/* Transformation */}
-      <TransformationTreatmentSection />
+        {/* Transformation */}
+        <TransformationTreatmentSection />
 
-      {/* Success Stories */}
-      <SuccessStoriesTreatmentSection />
+        {/* Success Stories */}
+        <SuccessStoriesTreatmentSection />
 
-      {/* Reviews and Testinomials */}
-      {/* <ReviewsTreatmentSecion /> */}
+        {/* Reviews and Testinomials */}
+        {/* <ReviewsTreatmentSecion /> */}
 
-      {/* Travel & Accommodation Support */}
-      {/* <TravelSupportTreatmentSection /> */}
+        {/* Travel & Accommodation Support */}
+        {/* <TravelSupportTreatmentSection /> */}
 
-      {/* Latest Blog Section */}
-      {/* <LatestBlogTreatmentSection /> */}
+        {/* Latest Blog Section */}
+        {/* <LatestBlogTreatmentSection /> */}
 
-      {/* FAQs Section */}
-      <FAQTreatmentSection />
+        {/* FAQs Section */}
+        <FAQTreatmentSection />
 
-      {/* Final CTA Section */}
-      <FinalCTATreatmentSecion />
-    </Box>
+        {/* Final CTA Section */}
+        <FinalCTATreatmentSecion />
+      </Box>
+    </>
   );
 }
 

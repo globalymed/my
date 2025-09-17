@@ -199,6 +199,10 @@ const TreatmentHeroSection = () => {
                                 component="img"
                                 src="https://preview-blog-landing-page-kzmp1mycf5zc3dxvr145.vusercontent.net/placeholder.svg?height=800&width=1200"
                                 alt="Happy patient after dental treatment"
+                                loading="lazy"
+                                decoding="async"
+                                width="1200"
+                                height="800"
                                 sx={{
                                     borderRadius: '16px', 
                                     boxShadow: 20, 

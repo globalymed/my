@@ -4,7 +4,7 @@ import { CircularProgress, Box, Button, Typography, useTheme } from '@mui/materi
 import { db } from '../firebase';
 import Layout from './Layout';
 import { PostHogProvider } from 'posthog-js/react';
-import posthog from '../utils/posthog';
+import posthog, { initPosthog } from '../utils/posthog';
 import { ThemeProvider } from '@mui/material/styles';
 import theme from '../theme';
 import LogoutIcon from '@mui/icons-material/Logout';
@@ -159,6 +159,9 @@ const DoctorAuthRoute = ({ children }) => {
 };
 
 const App = () => {
+  React.useEffect(() => {
+    initPosthog();
+  }, []);
   return (
     <PostHogProvider client={posthog}>
       <PostHogPageViewTracker />

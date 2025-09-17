@@ -24,6 +24,7 @@ import {
   CheckCircle as CheckCircleIcon
 } from '@mui/icons-material';
 import DynamicTableOfContents from './TableOfContents.jsx';
+import { Helmet } from 'react-helmet-async';
 
 const DynamicBlogRenderer = ({ slug }) => {
   const [blogData, setBlogData] = useState(null);
@@ -423,14 +424,56 @@ const DynamicBlogRenderer = ({ slug }) => {
 
   const groupedBlocks = groupBlocks(blogData.body);
 
+  // Derive plain-text content and description for SEO/AI crawlers
+  const plainParagraphs = (blogData.body || [])
+    .filter(b => b.style === 'normal' && Array.isArray(b.children))
+    .map(b => b.children.map(c => c.text).join('').trim())
+    .filter(Boolean);
+  const articleText = plainParagraphs.join('\n\n').slice(0, 15000);
+  const metaDescription = (plainParagraphs[0] || blogData.title || '').slice(0, 160);
+
+  // JSON-LD for BlogPosting
+  const imageRef = blogData.image?.asset?._ref || '';
+  const parts = imageRef.split('-');
+  const imageUrl = parts.length >= 4
+    ? `https://cdn.sanity.io/images/${process.env.REACT_APP_SANITY_PROJECT_ID}/production/${parts[1]}-${parts[2]}.${parts[3]}`
+    : undefined;
+  const canonicalUrl = typeof window !== 'undefined' ? window.location.origin + '/treatment/' + (blogData.slug?.current || '') : '';
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: blogData.title,
+    datePublished: blogData.publishedAt,
+    author: blogData.author?.name ? { '@type': 'Person', name: blogData.author.name } : undefined,
+    image: imageUrl,
+    url: canonicalUrl,
+    mainEntityOfPage: canonicalUrl,
+    articleBody: articleText,
+  };
+
   return (
     <Container maxWidth="lg" sx={{ py: 2 }}>
+      <Helmet>
+        <title>{blogData.title}</title>
+        {metaDescription && <meta name="description" content={metaDescription} />}
+        {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
+        {imageUrl && <meta property="og:image" content={imageUrl} />}
+        <meta property="og:type" content="article" />
+        <meta property="og:title" content={blogData.title} />
+        {metaDescription && <meta property="og:description" content={metaDescription} />}
+      </Helmet>
       <Paper elevation={0} sx={{
         overflow: "hidden",
         position: "relative",
         bgcolor: 'transparent'
       }}>
-        <Box component="article" sx={{ maxWidth: '100%', typography: 'body1' }}>
+        <Box component="script" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+        <Box component="article" itemScope itemType="https://schema.org/BlogPosting" sx={{ maxWidth: '100%', typography: 'body1' }}>
+          <meta itemProp="headline" content={blogData.title} />
+          {imageUrl && <meta itemProp="image" content={imageUrl} />}
+          {canonicalUrl && <meta itemProp="url" content={canonicalUrl} />}
+          <meta itemProp="datePublished" content={blogData.publishedAt} />
+          <Box itemProp="articleBody">
           {groupedBlocks.map((group) => {
             if (group.type === 'list') {
               return (
@@ -442,6 +485,7 @@ const DynamicBlogRenderer = ({ slug }) => {
               return renderBlock(group.block, group.key);
             }
           })}
+          </Box>
         </Box>
       </Paper>
     </Container>

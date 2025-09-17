@@ -34,6 +34,8 @@ import {
 } from "@mui/icons-material"
 
 import ConsultationForm from "../components/HomePage/ConsultationForm.jsx";
+import SEO from "../components/SEO.jsx";
+import { structuredDataTemplates } from "../utils/structuredData.js";
 
 import { FaStethoscope, FaHeartbeat, FaUser, FaTooth } from "react-icons/fa";
 import { GrShieldSecurity } from "react-icons/gr";
@@ -44,6 +46,14 @@ export default function ConsultationPage() {
     }, []);
     const [menuAnchorEl, setMenuAnchorEl] = useState(null)
 
+    const consultationStructuredData = [
+        structuredDataTemplates.service(
+            "Free Medical Consultation", 
+            "Get a complimentary 30-minute consultation with our medical experts to discuss your health concerns and treatment options for Hair Transplant, IVF, Dental, and Cosmetic procedures.",
+            "https://medyatra.space/free-consultation"
+        ),
+        structuredDataTemplates.organization
+    ];
 
     const treatments = [
         {
@@ -89,11 +99,24 @@ export default function ConsultationPage() {
     ];
 
     return (
-        <Box sx={{
-            px: { xs: 2, md: 8 },
-            py: 4,
-            background: 'linear-gradient(to bottom right, #ffffff, #fde2e4, #e0c3fc)',
-        }}>
+        <>
+            <SEO
+                title="Free Medical Consultation - Expert Health Advice"
+                description="Get a complimentary 30-minute consultation with our medical experts. Discuss your health concerns and treatment options for Hair Transplant, IVF, Dental, and Cosmetic procedures."
+                keywords="free medical consultation, health consultation, medical advice, treatment consultation, healthcare consultation, medical tourism consultation"
+                canonical="https://medyatra.space/free-consultation"
+                ogTitle="Free Medical Consultation - Expert Health Advice"
+                ogDescription="Get expert medical advice with our free consultation service. Discuss treatment options for Hair Transplant, IVF, Dental, and Cosmetic procedures."
+                ogImage="https://medyatra.space/logo.webp"
+                ogUrl="https://medyatra.space/free-consultation"
+                structuredData={consultationStructuredData}
+            />
+            
+            <Box sx={{
+                px: { xs: 2, md: 8 },
+                py: 4,
+                background: 'linear-gradient(to bottom right, #ffffff, #fde2e4, #e0c3fc)',
+            }}>
 
             <Box sx={{ py: 10,color: "#2f2f2f", textAlign: "center" }}>
                 <Container>
@@ -200,5 +223,6 @@ export default function ConsultationPage() {
                 </Container>
             </Box>
         </Box>
+        </>
     )
 }

@@ -3,20 +3,59 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="" />
+    <meta name="theme-color" content="#2563eb" />
     <meta
       name="description"
-      content="AI-powered clinic recommendation and booking app"
+      content="MedYatra - AI-powered medical tourism platform connecting patients with top clinics in India for Hair Transplant, IVF, Dental, and Cosmetic treatments. Get expert recommendations, travel assistance, and seamless booking experience."
     />
+    <meta name="keywords" content="medical tourism India, hair transplant India, IVF treatment India, dental care India, cosmetic surgery India, healthcare travel, medical tourism platform, AI healthcare recommendations, medical tourism cost comparison" />
+    <meta name="author" content="MedYatra" />
+    <meta name="robots" content="index, follow" />
     <meta name="google-site-verification" content="5cP-YjbuPv_FhMbklwpfQM-64HfXVKPqE2gaiYtoscs" />
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="MedYatra - AI-Powered Medical Tourism in India" />
+    <meta property="og:description" content="Connect with top medical clinics in India for Hair Transplant, IVF, Dental, and Cosmetic treatments. AI-powered recommendations and seamless booking experience." />
+    <meta property="og:image" content="https://medyatra.space/logo.webp" />
+    <meta property="og:url" content="https://medyatra.space/" />
+    <meta property="og:site_name" content="MedYatra" />
+    <meta property="og:locale" content="en_US" />
+    
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="MedYatra - AI-Powered Medical Tourism in India" />
+    <meta name="twitter:description" content="Connect with top medical clinics in India for Hair Transplant, IVF, Dental, and Cosmetic treatments. AI-powered recommendations and seamless booking experience." />
+    <meta name="twitter:image" content="https://medyatra.space/logo.webp" />
+    
+    <!-- Additional SEO Meta Tags -->
+    <meta name="language" content="en" />
+    <meta name="revisit-after" content="7 days" />
+    <meta name="distribution" content="global" />
+    <meta name="rating" content="general" />
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://www.medyatra.space/" />
+    
+    <!-- Favicon and Icons -->
     <link rel="icon" href="%PUBLIC_URL%/favicon.webp" />
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo.webp" />
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" />
-    <link rel="canonical" href="https://medyatra.space/" id="canonical-link" />
+    
+    <!-- Fonts: swap to CSS2 endpoint and preload one weight, defer stylesheet -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap" media="print" onload="this.media='all'" />
+    <noscript>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap" />
+    </noscript>
+    
+    <!-- Preconnect limited to two critical origins -->
+    <link rel="preconnect" href="https://www.googletagmanager.com" />
 
+    <link rel="preload" as="image" href="/logo.webp" imagesrcset="/logo.webp" fetchpriority="high" />
     <title>MedYatra - AI-Powered Medical Tourism in India</title>
-    <meta name="description" content="Find top clinics for Hair, IVF, Dental, and Cosmetic treatments in India. AI-powered recommendations, travel assistance, and appointment booking." />
     
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-6L9SHL748Z"></script>
@@ -28,20 +67,26 @@
       gtag('config', 'G-6L9SHL748Z');
     </script>
     
-    <!-- Firebase App (the core Firebase SDK) -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    
-    <!-- Firebase Performance Monitoring -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-performance-compat.js"></script>
-
-    <!-- Google Maps API -->
-    <script src="https://maps.googleapis.com/maps/api/js?key=%REACT_APP_GOOGLE_MAPS_API_KEY%"></script>
+    <!-- Defer non-critical third-party scripts -->
+    <script defer src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/9.22.1/firebase-performance-compat.js"></script>
+    <!-- Lazy-load Google Maps after interaction -->
+    <script>
+      window.addEventListener('load', function () {
+        setTimeout(function(){
+          var s = document.createElement('script');
+          s.src = 'https://maps.googleapis.com/maps/api/js?key=%REACT_APP_GOOGLE_MAPS_API_KEY%';
+          s.defer = true;
+          document.head.appendChild(s);
+        }, 3000);
+      });
+    </script>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root">
       <div style="display: flex; align-items: center; justify-content: center; height: 100vh;">
-        <img src="%PUBLIC_URL%/logo.webp" alt="ClinicAI Logo" style="width: 120px; height: 120px;" />
+        <img src="%PUBLIC_URL%/logo.webp" alt="MedYatra Logo - AI-Powered Medical Tourism Platform" style="width: 120px; height: 120px;" />
         <h2>Loading...</h2>
       </div>
     </div>

@@ -137,10 +137,16 @@ const TestimonialsSection = () => {
                 <Box sx={{ textAlign: 'center', mb: 4 }}>
                     <Box
                         component="img"
-                        src="/google review.webp"
+                        srcSet="/google review-300w.webp 300w, /google review-600w.webp 600w, /google review-900w.webp 900w"
+                        sizes="(max-width: 600px) 267px, (max-width: 960px) 400px, 534px"
+                        src="/google review-300w.webp"
                         alt="Google Review"
+                        loading="lazy"
+                        decoding="async"
+                        width={534}
+                        height={300}
                         sx={{
-                            height: { xs: '150px', md: '120px' }, // reduced
+                            height: { xs: '150px', md: '120px' },
                             width: 'auto',
                             maxWidth: '100%',
                             objectFit: 'contain',
@@ -174,6 +180,10 @@ const TestimonialsSection = () => {
                                     key={idx}
                                     component="img"
                                     src={image}
+                                    loading="lazy"
+                                    decoding="async"
+                                    width={300}
+                                    height={375}
                                     alt={`Review ${idx + 1}`}
                                     sx={{
                                         height: '100%',

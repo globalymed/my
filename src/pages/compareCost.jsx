@@ -36,6 +36,8 @@ import {
   Female,
   FamilyRestroom,
 } from "@mui/icons-material"
+import SEO from "../components/SEO.jsx";
+import { structuredDataTemplates } from "../utils/structuredData.js";
 
 const treatmentData = {
   "Hair Transplant Surgery": {
@@ -280,6 +282,15 @@ export default function Component() {
   const [animatedSavings, setAnimatedSavings] = useState(0)
   const [animatedPercentage, setAnimatedPercentage] = useState(0)
 
+  const compareCostStructuredData = [
+    structuredDataTemplates.service(
+      "Medical Cost Comparison", 
+      "Compare medical treatment costs across different countries including Hair Transplant, IVF, Dental, and Cosmetic procedures. Find the best value for your healthcare needs.",
+      "https://medyatra.space/compare-cost"
+    ),
+    structuredDataTemplates.organization
+  ];
+
   const handleTreatmentSelect = (treatment) => {
     setSelectedTreatment(treatment)
     setShowComparison(true)
@@ -323,12 +334,25 @@ export default function Component() {
   }, [showComparison, savings, savingsPercentage])
 
   return (
-    <Box sx={{ 
-      minHeight: '100vh', 
-      background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
-      position: 'relative',
-      overflow: 'hidden'
-    }}>
+    <>
+      <SEO
+        title="Compare Medical Treatment Costs - Global Healthcare Pricing"
+        description="Compare medical treatment costs across different countries for Hair Transplant, IVF, Dental, and Cosmetic procedures. Find the best value for your healthcare needs with MedYatra."
+        keywords="medical cost comparison, healthcare pricing, treatment costs, medical tourism costs, hair transplant cost, IVF cost, dental cost, cosmetic surgery cost"
+        canonical="https://medyatra.space/compare-cost"
+        ogTitle="Compare Medical Treatment Costs - Global Healthcare Pricing"
+        ogDescription="Compare medical treatment costs across countries. Find the best value for Hair Transplant, IVF, Dental, and Cosmetic procedures with transparent pricing."
+        ogImage="https://medyatra.space/logo.webp"
+        ogUrl="https://medyatra.space/compare-cost"
+        structuredData={compareCostStructuredData}
+      />
+      
+      <Box sx={{ 
+        minHeight: '100vh', 
+        background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
       {/* Animated Background Elements */}
       <Box sx={{
         position: 'fixed',
@@ -809,5 +833,6 @@ export default function Component() {
         )}
       </Container>
     </Box>
+    </>
   )
 }

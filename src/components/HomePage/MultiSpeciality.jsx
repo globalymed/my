@@ -17,7 +17,7 @@ const treatments = [
         ],
         fee: "Free",
         tag: "Available Today",
-        image: "/doctors/ivf.webp",
+        image: "/multispeciality_treatment/ivf.webp",
     },
     {
         name: "Hair Transplant",
@@ -33,7 +33,7 @@ const treatments = [
         ],
         fee: "Free",
         tag: "Available Today",
-        image: "/doctors/hair transplant.webp",
+        image: "/multispeciality_treatment/hair transplant.webp",
     },
     {
         name: "Dental Care",
@@ -49,7 +49,7 @@ const treatments = [
         ],
         fee: "Free",
         tag: "Available Today",
-        image: "/doctors/dental.webp",
+        image: "/multispeciality_treatment/dental.webp",
     },
     {
         name: "Cosmetic Procedures",
@@ -65,7 +65,8 @@ const treatments = [
         ],
         fee: "Free",
         tag: "Available Today",
-        image: "/doctors/cosmetic.webp",
+        image: "/multispeciality_treatment/cosmetic.webp",
+
     },
 ];
 
@@ -86,7 +87,14 @@ const TreatmentCard = ({ treatment }) => {
       }}
     >
       <Box position="relative">
-        <CardMedia component="img" height="200" image={treatment.image} alt="Doctor" />
+        <CardMedia 
+          component="img" 
+          height="200" 
+          image={treatment.image}
+          alt={`${treatment.name} representative`} 
+          loading="lazy"
+          decoding="async"
+        />
         <Chip
           label={treatment.tag}
           size="small"

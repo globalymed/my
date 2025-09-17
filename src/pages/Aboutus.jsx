@@ -28,6 +28,8 @@ import {
   Users,
   Bold,
 } from "lucide-react";
+import SEO from "../components/SEO.jsx";
+import { structuredDataTemplates } from "../utils/structuredData.js";
 
 const socialLinks = [
   { icon: <Facebook />, label: "Facebook", href: "https://www.facebook.com" },
@@ -142,8 +144,26 @@ export default function AboutPage() {
     window.scrollTo(0, 0);
   }, []);
 
+  const aboutStructuredData = [
+    structuredDataTemplates.organization,
+    structuredDataTemplates.medicalOrganization
+  ];
+
   return (
-    <Box sx={{ backgroundColor: "#f9fafb", minHeight: "100vh", py: 8 }}>
+    <>
+      <SEO
+        title="About MedYatra - AI-Powered Medical Tourism Platform"
+        description="Learn about MedYatra's mission to revolutionize medical tourism. We're building India's first AI-powered platform for seamless, safe, and supported cross-border healthcare."
+        keywords="about MedYatra, medical tourism platform, AI healthcare, medical travel India, healthcare innovation, medical tourism mission"
+        canonical="https://medyatra.space/about"
+        ogTitle="About MedYatra - AI-Powered Medical Tourism Platform"
+        ogDescription="Discover MedYatra's mission to revolutionize medical tourism with AI-powered solutions for seamless, safe, and supported cross-border healthcare."
+        ogImage="https://medyatra.space/logo.webp"
+        ogUrl="https://medyatra.space/about"
+        structuredData={aboutStructuredData}
+      />
+      
+      <Box sx={{ backgroundColor: "#f9fafb", minHeight: "100vh", py: 8 }}>
       {/* Title */}
       <Typography  sx={{
         fontSize: {
@@ -868,5 +888,6 @@ So we got to work, using AI, automation, and human-centered design to build an e
         ))}
       </Box>
     </Box>
+    </>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
     Grid,
     Card,
@@ -12,6 +12,7 @@ import {
     Button
 } from "@mui/material";
 import { useNavigate } from 'react-router-dom';
+import { useSearchParams, Link as RouterLink } from 'react-router-dom';
 
 import ArrowRightIcon from "@mui/icons-material/ArrowRight"
 import AccessTimeIcon from "@mui/icons-material/AccessTime"
@@ -23,10 +24,13 @@ const BlogGrid = () => {
     const [loading, setLoading] = useState(true);
 
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
+    const pageSize = 9;
+    const pageParam = parseInt(searchParams.get('page') || '1', 10);
+    const page = Number.isNaN(pageParam) || pageParam < 1 ? 1 : pageParam;
 
     const handleCardClick = (slug) => {
-        navigate(`/treatment/${blog.slug.current}`);
-        // console.log(window.location.pathname); // Debugging line to check the current path
+        navigate(`/treatment/${slug}`);
     };
 
     const fetchBlogs = async () => {
@@ -80,6 +84,19 @@ const BlogGrid = () => {
         fetchBlogs();
     }, []);
 
+    const totalPages = Math.max(1, Math.ceil(posts.length / pageSize));
+    const currentPage = Math.min(page, totalPages);
+    const paginatedPosts = useMemo(() => {
+        const start = (currentPage - 1) * pageSize;
+        return posts.slice(start, start + pageSize);
+    }, [posts, currentPage]);
+
+    const handlePageChange = (nextPage) => {
+        const p = Math.min(Math.max(1, nextPage), totalPages);
+        setSearchParams(p === 1 ? {} : { page: String(p) });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
     if (loading) {
         return (
             <Container sx={{ textAlign: "center", mt: 8 }}>
@@ -88,8 +105,21 @@ const BlogGrid = () => {
         );
     }
 
+    // Structured data: ItemList for current page
+    const itemListJsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'ItemList',
+        itemListElement: paginatedPosts.map((post, idx) => ({
+            '@type': 'ListItem',
+            position: (currentPage - 1) * pageSize + idx + 1,
+            url: `${window.location.origin}/treatment/${post.slug?.current}`,
+            name: post.title || ''
+        }))
+    };
+
     return (
-        <Container sx={{ py: 6 }}>
+        <Container sx={{ py: 6 }} component="section" aria-label="Latest Blog Posts">
+            <Box component="script" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }} />
             <Typography
                 variant="h4"
                 component="h2"
@@ -99,7 +129,7 @@ const BlogGrid = () => {
                 Latest Blog Posts
             </Typography>
             <Grid container spacing={4}>
-                {posts.map((post) => {
+                {paginatedPosts.map((post) => {
 
                     // console.log("Post data:", post); // Debugging line to check post data
                     const badgeStyle = {
@@ -108,7 +138,7 @@ const BlogGrid = () => {
                     }
 
                     return (
-                        <Grid item xs={12} sm={6} md={4} key={post._id}>
+                        <Grid item xs={12} sm={6} md={4} key={post._id} component="article" itemScope itemType="https://schema.org/BlogPosting">
                             <Card
                                 sx={{
                                     transition: "all 0.3s",
@@ -129,6 +159,9 @@ const BlogGrid = () => {
                                             objectFit: "cover",
                                             transition: "transform 0.3s ease",
                                         }}
+                                        loading="lazy"
+                                        decoding="async"
+                                        itemProp="image"
                                     />
                                     <Chip
                                         label={post.treatmentType}
@@ -146,6 +179,8 @@ const BlogGrid = () => {
                                 <CardContent sx={{ p: 3 }}>
                                     <Typography
                                         variant="h6"
+                                        component="h3"
+                                        itemProp="headline"
                                         sx={{
                                             fontWeight: 600,
                                             mb: 1,
@@ -159,7 +194,9 @@ const BlogGrid = () => {
                                             }
                                         }}
                                     >
-                                        {post.title}
+                                        <RouterLink to={`/treatment/${post.slug?.current}`} style={{ textDecoration: 'none', color: 'inherit' }} rel="bookmark">
+                                            {post.title}
+                                        </RouterLink>
                                     </Typography>
 
                                     <Typography
@@ -173,7 +210,7 @@ const BlogGrid = () => {
                                             overflow: "hidden"
                                         }}
                                     >
-                                        {post.snippet}
+                                        <span itemProp="description">{post.snippet}</span>
                                     </Typography>
 
                                     <Box
@@ -198,7 +235,7 @@ const BlogGrid = () => {
                                         </Box>
                                     </Box>
 
-                                    <Link to={`/treatment/${post.slug.current}`} style={{ textDecoration: "none" }}>
+                                    <RouterLink to={`/treatment/${post.slug?.current}`} style={{ textDecoration: "none" }}>
                                         <Button
                                             variant="text"
                                             fullWidth
@@ -217,13 +254,20 @@ const BlogGrid = () => {
                                         >
                                             Read More
                                         </Button>
-                                    </Link>
+                                    </RouterLink>
                                 </CardContent>
                             </Card>
                         </Grid>
                     )
                 })}
             </Grid>
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4, gap: 2 }}>
+                <Button variant="outlined" disabled={currentPage <= 1} onClick={() => handlePageChange(currentPage - 1)} aria-label="Previous page">Previous</Button>
+                <Typography component="span" sx={{ display: 'inline-flex', alignItems: 'center' }}>
+                    Page {currentPage} of {totalPages}
+                </Typography>
+                <Button variant="outlined" disabled={currentPage >= totalPages} onClick={() => handlePageChange(currentPage + 1)} aria-label="Next page">Next</Button>
+            </Box>
         </Container>
     );
 };

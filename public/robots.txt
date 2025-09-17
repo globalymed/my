@@ -1,6 +1,7 @@
 User-agent: *
 Allow: /
 
+# Disallow admin and private areas
 Disallow: /admin/
 Disallow: /doctor-dashboard
 Disallow: /patient-dashboard-ai
@@ -10,6 +11,25 @@ Disallow: /newLogin
 Disallow: /newSignup
 Disallow: /confirm-email
 Disallow: /clinic-registration
+Disallow: /dashboard
+Disallow: /appointment-booking
+
+# Allow important pages
+Allow: /treatment/
+Allow: /free-consultation
+Allow: /contact
+Allow: /about
+Allow: /compare-cost
+Allow: /blog
+Allow: /terms
+Allow: /privacy
+
+# Crawl delay for better server performance
+Crawl-delay: 1
 
 # Sitemap reference
 Sitemap: https://medyatra.space/sitemap.xml
+
+# Additional directives for better SEO
+# Host directive
+Host: https://medyatra.space

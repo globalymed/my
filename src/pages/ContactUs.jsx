@@ -22,6 +22,8 @@ import {
 import { createTheme, ThemeProvider } from "@mui/material/styles"
 import { Mail, MapPin, Phone } from "@mui/icons-material"
 import { FaLocationDot } from "react-icons/fa6";
+import SEO from "../components/SEO.jsx"
+import { structuredDataTemplates } from "../utils/structuredData.js"
 
 // Custom theme to match the original design
 const theme = createTheme({
@@ -81,6 +83,11 @@ export default function ContactPage() {
     consent: false,
   })
 
+  const contactStructuredData = [
+    structuredDataTemplates.contactPage,
+    structuredDataTemplates.organization
+  ];
+
   const handleInputChange = (e) => {
     const { name, value } = e.target
     setFormData((prev) => ({
@@ -110,6 +117,18 @@ export default function ContactPage() {
 
   return (
     <ThemeProvider theme={theme}>
+      <SEO
+        title="Contact MedYatra - Get in Touch for Medical Tourism"
+        description="Contact MedYatra for medical tourism inquiries, appointment bookings, and support. Get in touch with our team for Hair Transplant, IVF, Dental, and Cosmetic treatments in India."
+        keywords="contact MedYatra, medical tourism contact, healthcare inquiry, appointment booking, medical tourism support, India healthcare contact"
+        canonical="https://medyatra.space/contact"
+        ogTitle="Contact MedYatra - Get in Touch for Medical Tourism"
+        ogDescription="Get in touch with MedYatra for medical tourism inquiries and support. Contact us for Hair Transplant, IVF, Dental, and Cosmetic treatments in India."
+        ogImage="https://medyatra.space/logo.webp"
+        ogUrl="https://medyatra.space/contact"
+        structuredData={contactStructuredData}
+      />
+      
       <Box sx={{
         minHeight: '100vh',
         background: 'linear-gradient(to bottom right, #ffffff, #fde2e4, #e0c3fc)',

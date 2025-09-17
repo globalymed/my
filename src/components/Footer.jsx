@@ -97,6 +97,7 @@ const Footer = () => {
                 <Box display="flex" alignItems="center" mb={1}>
                   <IconButton
                     size="small"
+                    aria-label="Call support"
                     sx={{
                       color: 'black',
                       backgroundColor: 'white',
@@ -119,6 +120,7 @@ const Footer = () => {
                 <Box display="flex" alignItems="center">
                   <IconButton
                     size="small"
+                    aria-label="Email support"
                     sx={{
                       color: 'black',
                       backgroundColor: 'white',
@@ -226,6 +228,7 @@ const Footer = () => {
                 <IconButton
                   size="small"
                   key={index}
+                  aria-label={item.label}
                   sx={{
                     color: 'white',
                     borderRadius: 1,

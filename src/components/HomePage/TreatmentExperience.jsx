@@ -133,6 +133,10 @@ const TreatmentExperience = () => {
                                     key={idx}
                                     component="img"
                                     src={image}
+                                    loading="lazy"
+                                    decoding="async"
+                                    width={800}
+                                    height={600}
                                     alt={`Review ${idx + 1}`}
                                     sx={{
                                         height: '100%',

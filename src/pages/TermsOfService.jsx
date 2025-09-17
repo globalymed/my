@@ -1,5 +1,7 @@
 import React from 'react';
 import { Box, Container, Typography, Divider } from '@mui/material';
+import SEO from '../components/SEO.jsx';
+import { structuredDataTemplates } from '../utils/structuredData.js';
 
 const termsContent = `
 Medyatra Terms of Service
@@ -103,27 +105,47 @@ Address: New Delhi, India
 Thank you for choosing Medyatra. We are committed to delivering safe, transparent, and reliable services.
 `;
 
-const TermsOfService = () => (
-  <Container maxWidth="md" sx={{ py: 8 }}>
-    <Box sx={{ bgcolor: 'white', borderRadius: 2, boxShadow: 1, p: { xs: 2, sm: 4 }, maxHeight: '80vh', overflowY: 'auto' }}>
-      <Typography variant="h3" fontWeight="bold" gutterBottom align="center">
-        Terms and Conditions
-      </Typography>
-      <Divider sx={{ mb: 3 }} />
-      {termsContent.split('\n').map((line, idx) =>
-        line.trim().length === 0 ? <br key={idx} /> :
-        line.match(/^\d+\./) ? (
-          <Typography key={idx} variant="h5" fontWeight="bold" sx={{ mt: 3, mb: 1 }}>
-            {line}
+const TermsOfService = () => {
+  const termsStructuredData = [
+    structuredDataTemplates.organization
+  ];
+
+  return (
+    <>
+      <SEO
+        title="Terms of Service - MedYatra Medical Tourism Platform"
+        description="Read MedYatra's Terms of Service governing the use of our AI-powered medical tourism platform. Learn about user rights, data protection, and platform policies."
+        keywords="terms of service, MedYatra terms, medical tourism terms, platform terms, user agreement, legal terms"
+        canonical="https://medyatra.space/terms"
+        ogTitle="Terms of Service - MedYatra Medical Tourism Platform"
+        ogDescription="MedYatra's Terms of Service covering platform usage, user rights, data protection, and legal policies for our medical tourism services."
+        ogImage="https://medyatra.space/logo.webp"
+        ogUrl="https://medyatra.space/terms"
+        structuredData={termsStructuredData}
+      />
+      
+      <Container maxWidth="md" sx={{ py: 8 }}>
+        <Box sx={{ bgcolor: 'white', borderRadius: 2, boxShadow: 1, p: { xs: 2, sm: 4 }, maxHeight: '80vh', overflowY: 'auto' }}>
+          <Typography variant="h3" fontWeight="bold" gutterBottom align="center">
+            Terms and Conditions
           </Typography>
-        ) : (
-          <Typography key={idx} variant="body1" sx={{ mb: 1 }}>
-            {line}
-          </Typography>
-        )
-      )}
-    </Box>
-  </Container>
-);
+          <Divider sx={{ mb: 3 }} />
+          {termsContent.split('\n').map((line, idx) =>
+            line.trim().length === 0 ? <br key={idx} /> :
+            line.match(/^\d+\./) ? (
+              <Typography key={idx} variant="h5" fontWeight="bold" sx={{ mt: 3, mb: 1 }}>
+                {line}
+              </Typography>
+            ) : (
+              <Typography key={idx} variant="body1" sx={{ mb: 1 }}>
+                {line}
+              </Typography>
+            )
+          )}
+        </Box>
+      </Container>
+    </>
+  );
+};
 
 export default TermsOfService; 

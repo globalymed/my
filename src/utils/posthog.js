@@ -1,21 +1,31 @@
 import posthog from 'posthog-js';
 
-// Initialize PostHog with environment variables
 const posthogApiKey = process.env.REACT_APP_POSTHOG_API_KEY;
 const posthogHost = process.env.REACT_APP_POSTHOG_HOST || 'https://us.posthog.com';
 
-if (!posthogApiKey) {
-    console.warn('PostHog API key not found in environment variables');
+let initializedPosthog = null;
+
+function initPosthog() {
+    if (initializedPosthog || !posthogApiKey || process.env.NODE_ENV !== 'production') {
+        return posthog;
+    }
+    posthog.init(posthogApiKey, {
+        api_host: posthogHost,
+        capture_pageview: false,
+        autocapture: true,
+        persistence: 'localStorage',
+    });
+    initializedPosthog = posthog;
+    return posthog;
 }
 
-posthog.init(posthogApiKey || 'dummy_key', {
-    api_host: posthogHost,
-    loaded: (posthog) => {
-        if (process.env.NODE_ENV === 'development') posthog.debug();
-    },
-    autocapture: true, // Automatically capture clicks, form submissions etc
-    capture_pageview: true, // Automatically capture pageviews
-    persistence: 'localStorage',
-});
+if (typeof window !== 'undefined') {
+    if ('requestIdleCallback' in window) {
+        window.requestIdleCallback(() => initPosthog());
+    } else {
+        setTimeout(() => initPosthog(), 2000);
+    }
+}
 
 export default posthog;
+export { initPosthog };
