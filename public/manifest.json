@@ -1,6 +1,6 @@
 {
-  "short_name": "ClinicAI",
-  "name": "Clinic Recommendation System",
+ "short_name": "MedYatra",
+  "name": "MedYatra - AI-Powered Medical Tourism",
   "icons": [
     {
       "src": "logo.webp",
